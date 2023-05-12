@@ -62,6 +62,8 @@ library
         MyLib
         Football.Player
         Football.Ball
+        Football.Engine
+        Core
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -73,7 +75,8 @@ library
     build-depends:    
         base ^>=4.17.0.0,
         lens,
-        linear
+        linear,
+        stm
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -100,8 +103,10 @@ executable football-sim
         base ^>=4.17.0.0,
         lens,
         linear,
+        mtl,
         sdl2,
         sdl2-gfx,
+        stm,
         football-sim,
         
 
