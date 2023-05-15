@@ -2,26 +2,31 @@ module Football.Ball where
 
 import Linear.V3
 import Control.Lens ((^.))
-import Linear (Metric(norm, signorm, dot))
+import Linear (Metric(norm, signorm, dot), normalize)
 
 
 data Ball = Ball
-  { ballPosition :: (Double, Double)
+  { ballPositionVector :: V3 Double
   , ballMotionVector :: V3 Double
   }
 
 updateBall :: Double -> Ball -> Ball
 updateBall dt ball =
-  let (bx, by) = ballPosition ball
-      bx' = bx + (ballMotionVector ball ^. _x / dt)
-      by' = by + (ballMotionVector ball ^. _y / dt)
+  let bpv = ballPositionVector ball
+      bpv' = bpv + ballMotionVector ball / pure dt
       frictionMag = 0.5 * 9.81 * 0.43 / dt
-      airResistanceMag = 0.5 * 1.293 * norm (ballMotionVector ball) ** 2.0 * 0.9 * (0.22 ** 2.0) * pi / dt
+      airResistanceMag = 0.43 * 0.5 * 1.293 * norm (ballMotionVector ball) ** 2.0 * 0.5 * (0.22 ** 2.0) * pi / dt
       resistanceMag = frictionMag + airResistanceMag
-      ballUnitDirection = signorm $ ballMotionVector ball
-      frictionVector = V3 (- resistanceMag * ballUnitDirection ^. _x) (- resistanceMag * ballUnitDirection ^. _y) (- resistanceMag * ballUnitDirection ^. _z)
-      ballMotion' = ballMotionVector ball + frictionVector
-  in ball { ballPosition = (bx', by'), ballMotionVector = ballMotion' }
+
+      ballUnitDirection = normalize $ ballMotionVector ball
+      frictionVector = - pure resistanceMag * ballUnitDirection
+
+      ballMotion' = ballMotionVector ball  + frictionVector
+  in ball { ballPositionVector = bpv', ballMotionVector = ballMotion' }
+
+
+
+
 
 -- kickBall :: (Double, Double) -> Ball -> Ball
 -- kickBall (targetX, targetY) ball = 

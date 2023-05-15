@@ -63,6 +63,12 @@ library
         Football.Player
         Football.Ball
         Football.Engine
+        Football.Behaviours.General
+        Football.Behaviours.FindSpace
+        Football.Behaviours.Kick
+        Football.Behaviours.Generic
+        Voronoi.BreakpointTree
+        Voronoi.Fortune
         Core
 
     -- Modules included in this library but not exported.
@@ -73,10 +79,16 @@ library
 
     -- Other library packages from which modules are imported.
     build-depends:    
-        base ^>=4.17.0.0,
+        base ^>=4.16.0.0,
+        containers,
+        hgeometry ^>= 0.14,
+        hgeometry-combinatorial,
         lens,
         linear,
-        stm
+        psqueues,
+        random,
+        stm,
+        vector
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -100,13 +112,14 @@ executable football-sim
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base ^>=4.17.0.0,
+        base ^>=4.16.0.0,
         lens,
         linear,
         mtl,
         sdl2,
         sdl2-gfx,
         stm,
+        vector,
         football-sim,
         
 
@@ -140,5 +153,5 @@ test-suite football-sim-test
 
     -- Test dependencies.
     build-depends:
-        base ^>=4.17.0.0,
+        base ^>=4.16.0.0,
         football-sim

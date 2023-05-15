@@ -4,33 +4,40 @@ import Linear.V3
 import Control.Lens ((^.))
 import Linear (Metric(norm, signorm, dot, quadrance))
 import Football.Ball
-import GHC.IO (unsafePerformIO)
 import Data.List (sort)
+
+data Team
+  = Team1
+  | Team2
+  deriving (Eq, Show)
 
 data PlayerIntention
   = KickIntention (Double, Double)
+  | DoNothing
+  deriving (Eq, Show)
 
 data PlayerSpeed = PlayerSpeed
   { playerSpeedAcceleration :: Double
   , playerSpeedMax :: Double
   }
+  deriving (Eq, Show)
 
 data Player = Player
-  { playerPosition :: (Double, Double)
+  { playerPositionVector :: V3 Double
   , playerNumber :: Int
   , playerSpeed :: PlayerSpeed
   , playerMotionVector :: V3 Double
   , playerIntention :: PlayerIntention
+  , playerTeam :: Team
   }
+  deriving (Eq, Show)
 
 updatePlayer :: Double -> Player -> Player
 updatePlayer dt player =
-  let (px, py) = playerPosition player
-      px' = px + (playerMotionVector player ^. _x / dt)
-      py' = py + (playerMotionVector player ^. _y / dt)
-      --playerUnitDirection = signorm $ playerMotionVector player
+  let ppv = playerPositionVector player
+      ppv' = ppv + playerMotionVector player / pure dt
       playerMotionVector' = playerMotionVector player
-  in player { playerPosition = (px', py'), playerMotionVector = playerMotionVector' }
+  in player { playerPositionVector = ppv', playerMotionVector = playerMotionVector' }
 
 maxMag :: Double -> V3 Double -> V3 Double
 maxMag m v =
@@ -39,17 +46,29 @@ maxMag m v =
   else
     v
 
-  
-interceptionVector :: Double -> (Double, Double) -> V3 Double -> (Double, Double) -> V3 Double -> V3 Double
-interceptionVector speed (tx, ty) tv (px, py) pv =
+interceptionTimePlayerBall :: Player -> Ball -> Maybe Double
+interceptionTimePlayerBall player ball =
+  interceptionTime maxSpeed bpv (ballMotionVector ball) ppv (playerMotionVector player)
+  where 
+    ppv = playerPositionVector player
+    bpv = ballPositionVector ball
+    maxSpeed = playerSpeedMax $ playerSpeed player
+
+interceptionTime :: Double -> V3 Double -> V3 Double -> V3 Double -> V3 Double -> Maybe Double
+interceptionTime speed tpv tv ppv pv =
   let a = quadrance tv - speed ** 2.0
-      b = 2.0 * dot (V3 tx ty 0 - V3 px py 0) tv
-      c = quadrance (V3 tx ty 0 - V3 px py 0)
+      b = 2.0 * dot (tpv - ppv) tv
+      c = quadrance (tpv - ppv)
       root1 = (-b + sqrt(b ** 2.0  - 4 * a * c / 2)) / (2 * a)
       root2 = (-b - sqrt(b ** 2.0  - 4 * a * c / 2)) / (2 * a)
       ts = sort . filter (>0) $ [root1, root2]
-      
   in case ts of 
-    t : _ -> signorm (V3 tx ty 0 + pure t * (tv - pv) - V3 px py 0)
-    []    -> tv
+    t : _ -> Just t
+    []    -> Nothing
+  
+interceptionVector :: Double -> V3 Double -> V3 Double -> V3 Double -> V3 Double -> V3 Double
+interceptionVector speed tpv tv ppv pv =
+  case interceptionTime speed tpv tv ppv pv of
+    Just t -> signorm (tpv + pure t * (tv - pv) - ppv)
+    Nothing -> tv
 

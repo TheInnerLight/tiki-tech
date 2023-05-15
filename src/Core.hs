@@ -8,3 +8,6 @@ class Has m a where
 
 class LiftSTM m where
  liftSTM :: STM a -> m a
+
+class Log m where
+  logOutput :: Show a => a -> m ()

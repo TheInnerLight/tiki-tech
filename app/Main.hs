@@ -20,7 +20,10 @@ import Control.Lens ((^.))
 import Control.Monad.Reader (ReaderT (runReaderT), MonadReader (ask))
 import Control.Monad.IO.Class
 import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO)
-import Football.Engine (Engine(..), kickImpl, updateIntentionImpl, MatchState(..), canKickImpl)
+import Football.Engine
+import Football.Behaviours.General
+import Data.Foldable (traverse_)
+import Voronoi.Fortune (voronoiPolygons)
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -42,9 +45,14 @@ instance LiftSTM AppM where
   liftSTM = liftIO . atomically
 
 instance Engine AppM where
+  gameBall = gameBallImpl
+  allPlayers = allPlayersImpl
   kickBall = kickImpl
-  updateIntention = updateIntentionImpl
   canKick = canKickImpl
+  update = updateImpl
+
+instance Log AppM where
+  logOutput stuff = liftIO $ print stuff
 
 
 
@@ -64,29 +72,78 @@ main = do
     screenWidth = 1050
     screenHeight = 680
 
--- data MatchState = MatchState 
---   { matchStateBall :: Ball
---   , matchStatePlayer :: Player
---   }
 
 player :: Player
 player = Player 
-  { playerPosition = (35.0, 35.0)
+  { playerPositionVector = V3 2.0 12.0 0
   , playerNumber = 1
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
   , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = KickIntention (45.0, 45.0)
+  , playerIntention = KickIntention (85.0, 45.0)
+  , playerTeam = Team1
   }
 
+player2 :: Player
+player2 = Player 
+  { playerPositionVector = V3 55.0 50.0 0
+  , playerNumber = 2
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team1
+  }
+
+player3 :: Player
+player3 = Player 
+  { playerPositionVector = V3 2.0 45.0 0
+  , playerNumber = 3
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team1
+  }
+
+player4 :: Player
+player4 = Player 
+  { playerPositionVector = V3 45.0 20.0 0
+  , playerNumber = 1
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team2
+  }
+
+player5 :: Player
+player5 = Player 
+  { playerPositionVector = V3 10.0 55.0 0
+  , playerNumber = 2
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team2
+  }
+
+player6 :: Player
+player6 = Player 
+  { playerPositionVector = V3 34.0 42.0 0
+  , playerNumber = 3
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team2
+  }
+
+
+
 ball :: Ball
-ball = Ball { ballPosition = (3.0, 14.0), ballMotionVector = V3 10.0 0.0 0.0 }
+ball = Ball { ballPositionVector = V3 3.0 14.0 0, ballMotionVector = V3 0.0 0.0 0.0 }
 
 
 loopFor :: S.Renderer -> SF.Manager -> IO ()
 loopFor r fpsm = do
-  pt <- newTVarIO player
+  pt <- newTVarIO [player, player2, player3, player4, player5, player6]
   bt <- newTVarIO ball
-  let initialState = MatchState { matchStateBall = bt, matchStatePlayer = pt }
+  let initialState = MatchState { matchStateBall = bt, matchStatePlayers = pt }
   runReaderT (unAppM loop') initialState
   where
     loop' :: AppM ()
@@ -95,20 +152,23 @@ loopFor r fpsm = do
       -- Clear the screen!
       S.rendererDrawColor r $= black
       S.clear r
-      st <- has
 
-      (ball', player') <- liftSTM $ do
-        ball <- readTVar $ matchStateBall st
-        let ball' = updateBall (fromIntegral fps) ball
-        writeTVar (matchStateBall st) ball'
-        player <- readTVar $ matchStatePlayer st
-        let player' = updatePlayer (fromIntegral fps) player
-        writeTVar (matchStatePlayer st) player'
-        pure (ball', player')
+      update fps
 
-      updateIntention player'
+      players <- allPlayers
+      --traverse_ updateIntention players
+      traverse_ (liftIO . render r) players
+      ball' <- gameBall
 
-      liftIO $ render r player'
+      let playerPositionPoint p = 
+            let ppv = playerPositionVector p
+            in (ppv ^. _x, ppv ^. _y) 
+      let team1Players = filter (\p -> playerTeam p /= Team1) players
+      let points = fmap playerPositionPoint players
+      let polys = voronoiPolygons ((0, 0),(105.0,68.0)) points
+
+      traverse_ (liftIO . render r) polys
+
       liftIO $ render r ball'
 
       S.present r
@@ -117,29 +177,4 @@ loopFor r fpsm = do
 
       loop'
 
-
-
-
--- loopFor :: S.Renderer -> SF.Manager -> IO ()
--- loopFor r fpsm = void $ loop' $ MatchState { matchStateBall = ball, matchStatePlayer = player}
---   where
---     loop' :: MatchState -> IO MatchState
---     loop' st = do
---       -- How many frames have we drawn until now?
---       frames <- fromIntegral `fmap` SF.count fpsm
---       -- Clear the screen!
---       S.rendererDrawColor r $= black
---       S.clear r
-
---       let ball' = updateBall (fromIntegral fps) $ matchStateBall st
---       let player' = updatePlayer (fromIntegral fps) . updateIntention ball' $ matchStatePlayer st
-
---       render r player'
---       render r ball'
-
---       S.present r
-
---       SF.delay_ fpsm
-
---       loop' $ st { matchStateBall = ball', matchStatePlayer = player' }
 
