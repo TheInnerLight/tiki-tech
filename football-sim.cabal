@@ -67,9 +67,14 @@ library
         Football.Behaviours.FindSpace
         Football.Behaviours.Kick
         Football.Behaviours.Generic
+        Football.Behaviours.Pass
         Voronoi.BreakpointTree
         Voronoi.Fortune
+        Voronoi.JCVoronoi
         Core
+
+    extra-lib-dirs: /home/phil/Projects/football-sim/libs
+    extra-libraries: voronoi
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -79,15 +84,15 @@ library
 
     -- Other library packages from which modules are imported.
     build-depends:    
-        base ^>=4.16.0.0,
+        base ^>=4.17.0.0,
         containers,
-        hgeometry ^>= 0.14,
-        hgeometry-combinatorial,
         lens,
         linear,
+        normaldistribution,
         psqueues,
         random,
         stm,
+        time,
         vector
 
     -- Directories containing source files.
@@ -112,13 +117,16 @@ executable football-sim
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base ^>=4.16.0.0,
+        base ^>=4.17.0.0,
         lens,
         linear,
         mtl,
+        normaldistribution,
+        random,
         sdl2,
         sdl2-gfx,
         stm,
+        time,
         vector,
         football-sim,
         
@@ -153,5 +161,5 @@ test-suite football-sim-test
 
     -- Test dependencies.
     build-depends:
-        base ^>=4.16.0.0,
+        base ^>=4.17.0.0,
         football-sim

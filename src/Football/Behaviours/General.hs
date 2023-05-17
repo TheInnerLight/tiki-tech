@@ -16,21 +16,18 @@ import Football.Behaviours.Kick
 import Football.Behaviours.Generic 
 import Data.List (sortOn)
 import Data.Maybe (isJust)
-import Football.Behaviours.FindSpace (findSpace)
+import Football.Behaviours.FindSpace (findSpace, optimalNearbySpace)
 
-kickImpl :: (Monad m, Has m MatchState, LiftSTM m) => (Double, Double) -> m ()
-kickImpl (targetX, targetY) = do
+kickImpl :: (Monad m, Has m MatchState, LiftSTM m) => V3 Double -> m ()
+kickImpl motionVector' = do
   (state :: MatchState) <- has
   let stBall = matchStateBall state
   liftSTM $ do
     ball <- readTVar stBall
-    let targetVector = V3 targetX targetY 0
-        ballDirection = normalize (targetVector - ballPositionVector ball)
-        dist = norm (targetVector - ballPositionVector ball)
-        ball' = ball { ballMotionVector = ballMotionVector ball + ballDirection * pure (min 31 $ dist ** 0.5 * 2.6) }
+    let ball' = ball { ballMotionVector = ballMotionVector ball + motionVector'  }
     writeTVar stBall ball'
 
-enactIntentions :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m) => m ()
+enactIntentions :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m, GetSystemTime m, Random m) => m ()
 enactIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -40,9 +37,10 @@ enactIntentions = do
     enactIntention player =
       case playerIntention player of
         KickIntention loc -> kickBallToLocation loc player
-        DoNothing -> do 
-          findSpace player
-          --stop player
+        MoveIntoSpace loc -> runTowardsLocation loc player
+        ControlBallIntention -> controlBall player
+        IntentionCooldown _ -> pure player
+        DoNothing -> do stop player
       
 canKickImpl :: (Monad m, Has m MatchState, LiftSTM m) => Player -> m Bool
 canKickImpl player = do
@@ -53,7 +51,7 @@ canKickImpl player = do
       let dist = norm (playerPositionVector player - ballPositionVector ball)
       pure (dist < 0.5) 
 
-updateImpl :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m) => Int -> m ()
+updateImpl :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m, GetSystemTime m, Random m) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
   ensureBallInPlay
@@ -91,38 +89,60 @@ ensureBallInPlay = do
     writeTVar (matchStateBall state) ball'
     
 
-decideIntentions :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m) => m ()
+decideIntentions :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m, GetSystemTime m) => m ()
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
-    players' <- traverse (decideIntention players) players
+    players' <- traverse updateIntention players
     liftSTM $ writeTVar (matchStatePlayers state) players'
-  where 
-    decideIntention players player = do
+  where
+    updateIntention player = do
+      time <- systemTimeNow
+      case playerIntention player of
+        IntentionCooldown endTime | time < endTime -> pure player
+        _ -> decideIntention player
+    decideIntention player = do
       ball <- gameBall
+      oppositionPlayers' <- oppositionPlayers $ playerTeam player
+      teamPlayers' <- teamPlayers $ playerTeam player
       let closerPlayers = 
             sortOn (\p -> interceptionTimePlayerBall p ball)
             . filter (\p -> interceptionTimePlayerBall p ball < interceptionTimePlayerBall player ball)
-            . filter (\p -> isJust $ interceptionTimePlayerBall p ball)
-            . filter (\p -> playerTeam p == playerTeam player) 
-            $ players
-          canReach = isJust $ interceptionTimePlayerBall player ball
+            . filter (\p -> interceptionTimePlayerBall p ball < 1/0)
+            $ teamPlayers'
+          canReach = interceptionTimePlayerBall player ball < 1/0
           closeTeamPlayers = 
             sortOn (\p -> dist p ball) 
-            . filter (\p -> playerTeam p == playerTeam player) 
+            . filter (\p -> any (\p2 -> pointToLineDistance (playerPositionVector player, playerPositionVector p) (playerPositionVector p2) < norm (playerPositionVector p2 - playerPositionVector player)  ) oppositionPlayers'  )
             . filter (\p -> distpp p player > 0) 
-            $ players
+            $ teamPlayers'
+          relBallSpeed = norm (ballMotionVector ball - playerMotionVector player)
+          nearbySpace = optimalNearbySpace player oppositionPlayers'
           newIntention = case closerPlayers of
-              cps : _ -> DoNothing
-              _ | canReach ->
+              cps : _ | not (null nearbySpace) -> 
+                MoveIntoSpace $ p2p $ head nearbySpace
+              _ | canReach && relBallSpeed <= 9 && not (null closeTeamPlayers)  ->
                 let targetPlayer = head closeTeamPlayers
-                    tppv = playerPositionVector targetPlayer 
+                    tppv = playerPositionVector targetPlayer + playerMotionVector targetPlayer
                 in KickIntention (tppv ^. _x, tppv ^. _y)
-              _ -> DoNothing
+              _ | canReach ->
+                ControlBallIntention
+              _ -> 
+                ControlBallIntention
       --logOutput $ player { playerIntention = newIntention }
       pure player { playerIntention = newIntention }
     --dist (x1, y1) (x2, y2) = sqrt $ (x2 - x1) ** 2.0 + (y2 - y1) **2.0
     dist p b = norm (playerPositionVector p - ballPositionVector b)
     distpp p1 p2 = norm (playerPositionVector p1 - playerPositionVector p2)
+    p2p (V3 x y _) = (x, y)
+
+
+pointToLineDistance :: (V3 Double, V3 Double) -> V3 Double -> Double
+pointToLineDistance vs@(V3 x1 y1 z1, V3 x2 y2 z2) point =
+  let normal = normalize $  V3 (x1 - x2) (y2 - y1) (z2-z1)
+      (v1, _) = vs
+      lineV = point - v1
+  in abs $ dot lineV normal
+
 
   

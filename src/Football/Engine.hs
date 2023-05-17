@@ -20,8 +20,18 @@ data MatchState = MatchState
 class Engine m where
   gameBall :: m Ball
   allPlayers :: m [Player]
-  kickBall :: (Double, Double) -> m ()
+  kickBall :: V3 Double -> m ()
   canKick :: Player -> m Bool
   update :: Int -> m ()
+
+oppositionPlayers :: (Functor m, Engine m) => Team -> m [Player]
+oppositionPlayers team = filter (\p -> playerTeam p /= team) <$> allPlayers
+
+teamPlayers :: (Functor m, Engine m) => Team -> m [Player]
+teamPlayers team = filter (\p -> playerTeam p == team) <$> allPlayers
+
+teammates :: (Functor m, Engine m) => Player -> m [Player]
+teammates player = filter (/= player) <$> teamPlayers (playerTeam player)
+
 
   

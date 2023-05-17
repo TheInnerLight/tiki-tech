@@ -2,9 +2,10 @@ module Football.Player where
 
 import Linear.V3
 import Control.Lens ((^.))
-import Linear (Metric(norm, signorm, dot, quadrance))
+import Linear (Metric(norm, signorm, dot, quadrance), normalize)
 import Football.Ball
 import Data.List (sort)
+import Data.Time.Clock.System (SystemTime)
 
 data Team
   = Team1
@@ -13,6 +14,9 @@ data Team
 
 data PlayerIntention
   = KickIntention (Double, Double)
+  | MoveIntoSpace (Double, Double)
+  | ControlBallIntention
+  | IntentionCooldown SystemTime
   | DoNothing
   deriving (Eq, Show)
 
@@ -46,9 +50,11 @@ maxMag m v =
   else
     v
 
-interceptionTimePlayerBall :: Player -> Ball -> Maybe Double
+interceptionTimePlayerBall :: Player -> Ball -> Double
 interceptionTimePlayerBall player ball =
-  interceptionTime maxSpeed bpv (ballMotionVector ball) ppv (playerMotionVector player)
+  case interceptionTime maxSpeed bpv (ballMotionVector ball) ppv (playerMotionVector player) of
+    Just d -> d
+    Nothing -> 1/0
   where 
     ppv = playerPositionVector player
     bpv = ballPositionVector ball

@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Main where
 
@@ -24,6 +25,9 @@ import Football.Engine
 import Football.Behaviours.General
 import Data.Foldable (traverse_)
 import Voronoi.Fortune (voronoiPolygons)
+import Voronoi.JCVoronoi
+import Data.Time.Clock.System (getSystemTime)
+import Data.Random.Normal (normalIO')
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -54,7 +58,12 @@ instance Engine AppM where
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff
 
+instance GetSystemTime AppM where
+  systemTimeNow = liftIO getSystemTime
 
+instance Random AppM where
+  randomNormalMeanStd :: Double -> Double -> AppM Double
+  randomNormalMeanStd mean std = liftIO $ normalIO' (mean, std)
 
 main :: IO ()
 main = do
@@ -69,15 +78,15 @@ main = do
   S.destroyWindow w
   S.quit
   where
-    screenWidth = 1050
-    screenHeight = 680
+    screenWidth = 2100
+    screenHeight = 1360
 
 
 player :: Player
 player = Player 
   { playerPositionVector = V3 2.0 12.0 0
   , playerNumber = 1
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = KickIntention (85.0, 45.0)
   , playerTeam = Team1
@@ -87,7 +96,7 @@ player2 :: Player
 player2 = Player 
   { playerPositionVector = V3 55.0 50.0 0
   , playerNumber = 2
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -97,7 +106,7 @@ player3 :: Player
 player3 = Player 
   { playerPositionVector = V3 2.0 45.0 0
   , playerNumber = 3
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -107,7 +116,7 @@ player4 :: Player
 player4 = Player 
   { playerPositionVector = V3 45.0 20.0 0
   , playerNumber = 1
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -117,7 +126,7 @@ player5 :: Player
 player5 = Player 
   { playerPositionVector = V3 10.0 55.0 0
   , playerNumber = 2
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -127,7 +136,7 @@ player6 :: Player
 player6 = Player 
   { playerPositionVector = V3 34.0 42.0 0
   , playerNumber = 3
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 9 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -163,13 +172,29 @@ loopFor r fpsm = do
       let playerPositionPoint p = 
             let ppv = playerPositionVector p
             in (ppv ^. _x, ppv ^. _y) 
-      let team1Players = filter (\p -> playerTeam p /= Team1) players
+      let team1Players = filter (\p -> playerTeam p == Team1) players
+      let team2Players = filter (\p -> playerTeam p == Team2) players
       let points = fmap playerPositionPoint players
+      let t1points = fmap playerPositionPoint team1Players
+      let t2points = fmap playerPositionPoint team2Players
       let polys = voronoiPolygons ((0, 0),(105.0,68.0)) points
 
-      traverse_ (liftIO . render r) polys
+      --traverse_ (liftIO . render r) polys
 
       liftIO $ render r ball'
+
+      liftIO $ print "-------------------------------"
+      --vd <- liftIO $ jcVoronoi points
+      --sites <- liftIO $ jcvSites vd
+      let sites = jcvSites2 points
+      let sites1 = jcvSites2 t1points
+      let sites2 = jcvSites2 t2points
+
+      traverse_ (liftIO . render r) sites1
+      traverse_ (liftIO . render r) sites2
+
+
+      liftIO $ print sites
 
       S.present r
 
