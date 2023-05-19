@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Football.Behaviours.General where
+module Football.Match.Engine where
 
 import Linear.V3
 import Control.Lens ((^.))
@@ -10,13 +10,28 @@ import Football.Ball
 import Football.Player
 import Core
 import Control.Concurrent.STM.TVar
+import Control.Concurrent.STM.TMVar
 import Control.Monad (when)
-import Football.Engine
+import Football.Match
 import Football.Behaviours.Kick
 import Football.Behaviours.Generic 
 import Data.List (sortOn)
 import Data.Maybe (isJust)
-import Football.Behaviours.FindSpace (findSpace, optimalNearbySpace)
+import Football.Behaviours.FindSpace (optimalNearbySpace)
+import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passSafetyCoeff), PassTarget (PlayerTarget, SpaceTarget))
+import Voronoi.JCVoronoi (JCVPoly, jcvSites2)
+import Control.Concurrent.STM (readTMVar, writeTMVar)
+import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
+import Football.Understanding.Space (createSpaceMap)
+import Football.Understanding.Space.Data (SpaceMap)
+
+data MatchState = MatchState 
+  { matchStateBall :: TVar Ball
+  , matchStatePlayers :: TVar [Player]
+  , matchStateTeam1VoronoiMap :: TMVar [JCVPoly]
+  , matchStateTeam2VoronoiMap :: TMVar [JCVPoly]
+  , matchStateSpaceMap :: TMVar SpaceMap
+  }
 
 kickImpl :: (Monad m, Has m MatchState, LiftSTM m) => V3 Double -> m ()
 kickImpl motionVector' = do
@@ -27,7 +42,7 @@ kickImpl motionVector' = do
     let ball' = ball { ballMotionVector = ballMotionVector ball + motionVector'  }
     writeTVar stBall ball'
 
-enactIntentions :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m, GetSystemTime m, Random m) => m ()
+enactIntentions :: (Monad m, Has m MatchState, LiftSTM m, Match m, Log m, GetSystemTime m, Random m) => m ()
 enactIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -51,9 +66,16 @@ canKickImpl player = do
       let dist = norm (playerPositionVector player - ballPositionVector ball)
       pure (dist < 0.5) 
 
-updateImpl :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m, GetSystemTime m, Random m) => Int -> m ()
+updateImpl :: (Monad m, Has m MatchState, LiftSTM m, Match m, Log m, GetSystemTime m, Random m) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
+  team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team1
+  team2Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team2
+  spaceMap <- createSpaceMap
+  liftSTM $ do
+    writeTMVar (matchStateTeam1VoronoiMap state) team1Voronoi
+    writeTMVar (matchStateTeam2VoronoiMap state) team2Voronoi
+    writeTMVar (matchStateSpaceMap state) spaceMap
   ensureBallInPlay
   decideIntentions
   enactIntentions
@@ -89,7 +111,7 @@ ensureBallInPlay = do
     writeTVar (matchStateBall state) ball'
     
 
-decideIntentions :: (Monad m, Has m MatchState, LiftSTM m, Engine m, Log m, GetSystemTime m) => m ()
+decideIntentions :: (Monad m, Has m MatchState, LiftSTM m, Match m, Log m, GetSystemTime m) => m ()
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -103,46 +125,48 @@ decideIntentions = do
         _ -> decideIntention player
     decideIntention player = do
       ball <- gameBall
-      oppositionPlayers' <- oppositionPlayers $ playerTeam player
-      teamPlayers' <- teamPlayers $ playerTeam player
+      teamPlayers' <- teammates player
+      safePassingOptions <- safestPassingOptions player
+      nearbySpace <- optimalNearbySpace player
+      logOutput safePassingOptions
       let closerPlayers = 
             sortOn (\p -> interceptionTimePlayerBall p ball)
             . filter (\p -> interceptionTimePlayerBall p ball < interceptionTimePlayerBall player ball)
             . filter (\p -> interceptionTimePlayerBall p ball < 1/0)
             $ teamPlayers'
           canReach = interceptionTimePlayerBall player ball < 1/0
-          closeTeamPlayers = 
-            sortOn (\p -> dist p ball) 
-            . filter (\p -> any (\p2 -> pointToLineDistance (playerPositionVector player, playerPositionVector p) (playerPositionVector p2) < norm (playerPositionVector p2 - playerPositionVector player)  ) oppositionPlayers'  )
-            . filter (\p -> distpp p player > 0) 
-            $ teamPlayers'
+          
           relBallSpeed = norm (ballMotionVector ball - playerMotionVector player)
-          nearbySpace = optimalNearbySpace player oppositionPlayers'
-          newIntention = case closerPlayers of
-              cps : _ | not (null nearbySpace) -> 
-                MoveIntoSpace $ p2p $ head nearbySpace
-              _ | canReach && relBallSpeed <= 9 && not (null closeTeamPlayers)  ->
-                let targetPlayer = head closeTeamPlayers
-                    tppv = playerPositionVector targetPlayer + playerMotionVector targetPlayer
-                in KickIntention (tppv ^. _x, tppv ^. _y)
+          newIntention = case (closerPlayers, safePassingOptions) of
+              (cps : _, _) | not (null nearbySpace) -> 
+                MoveIntoSpace $ locate2D $ head nearbySpace
+              (_, passOpt : _) | canReach && relBallSpeed <= 9 && passSafetyCoeff passOpt >= 0.7  ->
+                case passTarget passOpt of
+                  PlayerTarget targetPlayer ->
+                    let tppv = playerPositionVector targetPlayer + 0.3*(playerMotionVector targetPlayer)
+                    in KickIntention (tppv ^. _x, tppv ^. _y)
+                  SpaceTarget targetLoc ->
+                    KickIntention targetLoc
               _ | canReach ->
                 ControlBallIntention
               _ -> 
                 ControlBallIntention
       --logOutput $ player { playerIntention = newIntention }
       pure player { playerIntention = newIntention }
-    --dist (x1, y1) (x2, y2) = sqrt $ (x2 - x1) ** 2.0 + (y2 - y1) **2.0
-    dist p b = norm (playerPositionVector p - ballPositionVector b)
-    distpp p1 p2 = norm (playerPositionVector p1 - playerPositionVector p2)
-    p2p (V3 x y _) = (x, y)
 
+team1VoronoiMapImpl :: (Monad m, Has m MatchState, LiftSTM m) => m [JCVPoly]
+team1VoronoiMapImpl = do
+  (state :: MatchState) <- has
+  liftSTM $ readTMVar $ matchStateTeam1VoronoiMap state
 
-pointToLineDistance :: (V3 Double, V3 Double) -> V3 Double -> Double
-pointToLineDistance vs@(V3 x1 y1 z1, V3 x2 y2 z2) point =
-  let normal = normalize $  V3 (x1 - x2) (y2 - y1) (z2-z1)
-      (v1, _) = vs
-      lineV = point - v1
-  in abs $ dot lineV normal
+team2VoronoiMapImpl :: (Monad m, Has m MatchState, LiftSTM m) => m [JCVPoly]
+team2VoronoiMapImpl = do
+  (state :: MatchState) <- has
+  liftSTM $ readTMVar $ matchStateTeam2VoronoiMap state
 
+allPlayersVoronoiMapImpl :: (Monad m, Has m MatchState, LiftSTM m) => m SpaceMap
+allPlayersVoronoiMapImpl = do
+  (state :: MatchState) <- has
+  liftSTM $ readTMVar $ matchStateSpaceMap state
 
   

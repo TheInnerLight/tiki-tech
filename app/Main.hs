@@ -20,20 +20,37 @@ import Control.Monad (void)
 import Control.Lens ((^.))
 import Control.Monad.Reader (ReaderT (runReaderT), MonadReader (ask))
 import Control.Monad.IO.Class
-import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO)
-import Football.Engine
-import Football.Behaviours.General
+import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO, newEmptyTMVarIO)
+import Football.Match
+import Football.Match.Engine
 import Data.Foldable (traverse_)
 import Voronoi.Fortune (voronoiPolygons)
 import Voronoi.JCVoronoi
 import Data.Time.Clock.System (getSystemTime)
 import Data.Random.Normal (normalIO')
+import qualified Data.Map as Map
+import Football.Understanding.Space.Data (SpaceMap(SpaceMap))
 
 black :: SP.Color
 black = V4 0 0 0 255
 
 white :: SP.Color
 white = V4 255 255 255 255
+
+red :: SP.Color
+red = V4 255 0 0 255
+
+orange :: SP.Color
+orange = V4 255 165 0 255
+
+blue :: SP.Color
+blue = V4 0 0 255 255
+
+purple :: SP.Color
+purple = V4 255 0 255 255
+
+grey :: SP.Color
+grey = V4 155 155 155 255
 
 fps :: Int
 fps = 60
@@ -48,12 +65,15 @@ instance Has AppM MatchState where
 instance LiftSTM AppM where
   liftSTM = liftIO . atomically
 
-instance Engine AppM where
+instance Match AppM where
   gameBall = gameBallImpl
   allPlayers = allPlayersImpl
   kickBall = kickImpl
   canKick = canKickImpl
   update = updateImpl
+  -- team1VoronoiMap = team1VoronoiMapImpl
+  -- team2VoronoiMap = team2VoronoiMapImpl
+  spaceMap = allPlayersVoronoiMapImpl
 
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff
@@ -114,6 +134,16 @@ player3 = Player
 
 player4 :: Player
 player4 = Player 
+  { playerPositionVector = V3 4.0 35.0 0
+  , playerNumber = 4
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team1
+  }
+
+player1B :: Player
+player1B = Player 
   { playerPositionVector = V3 45.0 20.0 0
   , playerNumber = 1
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
@@ -122,8 +152,8 @@ player4 = Player
   , playerTeam = Team2
   }
 
-player5 :: Player
-player5 = Player 
+player2B :: Player
+player2B = Player 
   { playerPositionVector = V3 10.0 55.0 0
   , playerNumber = 2
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
@@ -132,8 +162,8 @@ player5 = Player
   , playerTeam = Team2
   }
 
-player6 :: Player
-player6 = Player 
+player3B :: Player
+player3B = Player 
   { playerPositionVector = V3 34.0 42.0 0
   , playerNumber = 3
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
@@ -142,6 +172,15 @@ player6 = Player
   , playerTeam = Team2
   }
 
+player4B :: Player
+player4B = Player 
+  { playerPositionVector = V3 24.0 31.0 0
+  , playerNumber = 4
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = 0.6, playerSpeedMax = 5 }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team2
+  }
 
 
 ball :: Ball
@@ -150,9 +189,12 @@ ball = Ball { ballPositionVector = V3 3.0 14.0 0, ballMotionVector = V3 0.0 0.0 
 
 loopFor :: S.Renderer -> SF.Manager -> IO ()
 loopFor r fpsm = do
-  pt <- newTVarIO [player, player2, player3, player4, player5, player6]
+  pt <- newTVarIO [player, player2, player3, player4, player1B, player2B, player3B, player4B]
   bt <- newTVarIO ball
-  let initialState = MatchState { matchStateBall = bt, matchStatePlayers = pt }
+  t1Voronoi <- newEmptyTMVarIO
+  t2Voronoi <- newEmptyTMVarIO
+  allVoronoi <- newEmptyTMVarIO
+  let initialState = MatchState { matchStateBall = bt, matchStatePlayers = pt, matchStateTeam1VoronoiMap = t1Voronoi, matchStateTeam2VoronoiMap = t2Voronoi, matchStateSpaceMap = allVoronoi }
   runReaderT (unAppM loop') initialState
   where
     loop' :: AppM ()
@@ -169,32 +211,24 @@ loopFor r fpsm = do
       traverse_ (liftIO . render r) players
       ball' <- gameBall
 
-      let playerPositionPoint p = 
-            let ppv = playerPositionVector p
-            in (ppv ^. _x, ppv ^. _y) 
-      let team1Players = filter (\p -> playerTeam p == Team1) players
-      let team2Players = filter (\p -> playerTeam p == Team2) players
-      let points = fmap playerPositionPoint players
-      let t1points = fmap playerPositionPoint team1Players
-      let t2points = fmap playerPositionPoint team2Players
-      let polys = voronoiPolygons ((0, 0),(105.0,68.0)) points
-
       --traverse_ (liftIO . render r) polys
 
       liftIO $ render r ball'
 
-      liftIO $ print "-------------------------------"
+      --liftIO $ print "-------------------------------"
       --vd <- liftIO $ jcVoronoi points
       --sites <- liftIO $ jcvSites vd
-      let sites = jcvSites2 points
-      let sites1 = jcvSites2 t1points
-      let sites2 = jcvSites2 t2points
+      --let sites = jcvSites2 points
+      -- sites1 <- team1VoronoiMap
+      -- sites2 <- team2VoronoiMap
+      (SpaceMap sitesAll) <- spaceMap
 
-      traverse_ (liftIO . render r) sites1
-      traverse_ (liftIO . render r) sites2
+      -- traverse_ (liftIO . render r . ColouredVPoly red)  sites1
+      -- traverse_ (liftIO . render r . ColouredVPoly blue) sites2
+      traverse_ (liftIO . render r) $ fmap snd $ Map.toList sitesAll
 
 
-      liftIO $ print sites
+      --liftIO $ print sites
 
       S.present r
 

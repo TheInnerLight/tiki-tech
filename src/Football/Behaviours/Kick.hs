@@ -7,12 +7,12 @@ import Football.Ball
 import Football.Player
 import Football.Behaviours.Generic
 import Data.List (sort)
-import Football.Engine
+import Football.Match
 import Control.Monad (when)
 import Core (GetSystemTime (systemTimeNow), Random (randomNormalMeanStd))
 import Data.Time.Clock.System (SystemTime(..))
 
-kickBallToLocation :: (Monad m, Engine m, GetSystemTime m) => (Double, Double) -> Player -> m Player
+kickBallToLocation :: (Monad m, Match m, GetSystemTime m) => (Double, Double) -> Player -> m Player
 kickBallToLocation location player = do
   player' <- runTowardsBall player
   ballInRange <- canKick player'
@@ -27,7 +27,7 @@ kickBallToLocation location player = do
       kickBall $ motionVectorForPassTo ball location
       pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + 300000000 } }
 
-controlBall :: (Monad m, Engine m, GetSystemTime m, Random m) => Player -> m Player
+controlBall :: (Monad m, Match m, GetSystemTime m, Random m) => Player -> m Player
 controlBall player = do
   player' <- runTowardsBall player
   ballInRange <- canKick player'

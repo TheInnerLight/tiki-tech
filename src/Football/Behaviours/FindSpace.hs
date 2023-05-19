@@ -13,52 +13,29 @@ import Football.Ball
 import Football.Player
 import Football.Behaviours.Generic
 import Data.List (sort, sortOn)
-import Football.Engine
+import Football.Match
 --import Voronoi.Fortune
 import Core
 import Voronoi.JCVoronoi
+import Football.Locate2D (Locate2D(locate2D))
+import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..))
+import qualified Data.Map as Map
 
-optimalNearbySpace :: Player -> [Player] -> [V3 Double]
-optimalNearbySpace player oppositionPlayers = 
-  let points = filter (\(x,y) -> x >= 0 && x <= 105 && y >=0 && y <= 68) $ fmap playerPositionPoint oppositionPlayers
-      polygons' = jcvSites2 points
-  in if length points > 2 then
-    let -- polygons = voronoiPolygons ((0,0),(105,68)) points
-        --centres = fmap (\(x,y) -> V3 x y 0) $ fmap polyPoint polygons'
-        polyDist poly =
-          let (cx, cy) =  polyPoint poly
-          in distance (playerPositionVector player) (V3 cx cy 0)
-        centreToVec :: JCVPoly -> V3 Double
-        centreToVec poly =
-          let (cx, cy) =  polyPoint poly
-          in V3 cx cy 0
-    in 
-      take 1 
+optimalNearbySpace :: (Monad m, Match m) => Player -> m [V3 Double]
+optimalNearbySpace player = do
+  (SpaceMap spaceMap') <- spaceMap
+  let polyDist poly =
+        let (cx, cy) = polyPoint poly
+        in distance (playerPositionVector player) (V3 cx cy 0)
+      centreToVec :: JCVPoly -> V3 Double
+      centreToVec poly =
+        let (cx, cy) =  polyPoint poly
+        in V3 cx cy 0
+  pure $ take 1 
         $ fmap centreToVec
         $ reverse
-        $ sortOn (\p ->  (voronoiPolygonArea p) / sqrt (polyDist p) ) 
-        $ polygons'
-    else []
-  where 
-    playerPositionPoint p = 
-      let ppv = playerPositionVector p
-      in (ppv ^. _x, ppv ^. _y) 
-
-
-
-findSpace :: (Monad m, Engine m, Log m) => Player -> m Player
-findSpace player = do
-  players <- allPlayers
-  let oppositionPlayers = filter (\p -> playerTeam p /= playerTeam player) players
-  let closestCentre = optimalNearbySpace player oppositionPlayers
-  case closestCentre of
-    c : _ -> do 
-      --logOutput polygons
-      runTowardsLocation (c ^. _x, c ^. _y) player
-    _ -> stop player
-  where 
-    playerPositionPoint p = 
-      let ppv = playerPositionVector p
-      in (ppv ^. _x, ppv ^. _y) 
+        -- $ sortOn polyDist
+        $ sortOn (\p ->  (voronoiPolygonArea p) / (polyDist p) ** 2.0 ) 
+        $ spacePolyJCV . snd <$> Map.toList spaceMap'
 
 

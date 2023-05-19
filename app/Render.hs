@@ -1,7 +1,7 @@
 {-# LANGUAGE InstanceSigs #-}
 module Render  
   ( Render(..)
-
+  , ColouredVPoly(..)
   ) where
 
 import qualified SDL as S
@@ -13,8 +13,9 @@ import Control.Lens ((^.))
 import Linear.V3 (_xy)
 import Voronoi.Fortune (VoronoiPolygon(..))
 import qualified Data.Vector.Storable as V
-import Voronoi.JCVoronoi (JCVPoly(..))
+import Voronoi.JCVoronoi (JCVPoly(..), JCVEdge (jcvEdgePoint1))
 import SDL.Primitive (Pos)
+import Football.Understanding.Space.Data (SpacePoly(..))
 
 white :: SP.Color
 white = V4 255 255 255 255
@@ -22,11 +23,17 @@ white = V4 255 255 255 255
 red :: SP.Color
 red = V4 255 0 0 255
 
+redT :: SP.Color
+redT = V4 255 0 0 20
+
 orange :: SP.Color
 orange = V4 255 165 0 255
 
 blue :: SP.Color
 blue = V4 0 0 255 255
+
+blueT :: SP.Color
+blueT = V4 0 0 255 20
 
 purple :: SP.Color
 purple = V4 255 0 255 255
@@ -69,16 +76,39 @@ instance Render VoronoiPolygon where
     SP.polygon r xPoints yPoints red
 
 
-instance Render JCVPoly where
-  render :: S.Renderer -> JCVPoly -> IO ()
-  render r vp = do
-    let xPoints = V.fromList . fmap ((*) 20 . round . fst) $ fmap fst $ polyEdges vp
-        yPoints = V.fromList . fmap ((*) 20 . round . snd) $ fmap fst $ polyEdges vp
+data ColouredVPoly = ColouredVPoly
+  { cvpColour :: SP.Color
+  , cvpPoly :: JCVPoly
+  }
+
+instance Render ColouredVPoly where
+  render :: S.Renderer -> ColouredVPoly -> IO ()
+  render r (ColouredVPoly colour vp) = do
+    let xPoints = V.fromList . fmap ((*) 20 . round . fst) $ fmap jcvEdgePoint1 $ polyEdges vp
+        yPoints = V.fromList . fmap ((*) 20 . round . snd) $ fmap jcvEdgePoint1 $ polyEdges vp
         xCentre = round $ (fst $ polyPoint vp) * 20
         yCentre = round $ (snd $ polyPoint vp) * 20
-    SP.fillCircle r (V2 xCentre yCentre) 2 red
-    SP.polygon r xPoints yPoints red
+    SP.fillCircle r (V2 xCentre yCentre) 2 colour
+    SP.polygon r xPoints yPoints colour
 
+instance Render SpacePoly where
+  render :: S.Renderer -> SpacePoly -> IO ()
+  render r (SpacePoly vp player) = do
+    let xPoints = V.fromList . fmap ((*) 20 . round . fst) $ fmap jcvEdgePoint1 $ polyEdges vp
+        yPoints = V.fromList . fmap ((*) 20 . round . snd) $ fmap jcvEdgePoint1 $ polyEdges vp
+        xCentre = round $ (fst $ polyPoint vp) * 20
+        yCentre = round $ (snd $ polyPoint vp) * 20
+        colourT = 
+          case playerTeam player of
+            Team1 -> redT
+            Team2 -> blueT 
+        colour = 
+          case playerTeam player of
+            Team1 -> red
+            Team2 -> blue
+      
+    SP.fillCircle r (V2 xCentre yCentre) 2 colour
+    SP.fillPolygon r xPoints yPoints colourT
 
 renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
 renderIntention r pos (KickIntention (x, y)) = do

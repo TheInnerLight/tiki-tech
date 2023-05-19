@@ -8,30 +8,34 @@ import Data.Proxy (Proxy(..))
 import Foreign (Ptr, newArray, peekArray, IntPtr, free, nullPtr, malloc)
 import Foreign.C (CInt)
 import GHC.IO (unsafePerformIO)
+import Linear (V3 (V3), cross)
+import Data.Foldable (find)
 
-foreign import ccall "generate_from_points" generate_from_points :: Int -> Ptr JCVRect -> Ptr JCVPoint -> IO (Ptr JCVDiagram)
-foreign import ccall "jcv_diagram_get_sites" jcv_diagram_get_sites :: Ptr JCVDiagram -> IO (Ptr JCVSite)
-foreign import ccall "jcv_diagram_free" jcv_diagram_free :: Ptr JCVDiagram -> IO ()
+foreign import ccall "generate_from_points" generate_from_points :: Int -> Ptr JCVRectI -> Ptr JCVPoint -> IO (Ptr JCVDiagramI)
+foreign import ccall "jcv_diagram_get_sites" jcv_diagram_get_sites :: Ptr JCVDiagramI -> IO (Ptr JCVSite)
+foreign import ccall "jcv_diagram_free" jcv_diagram_free :: Ptr JCVDiagramI -> IO ()
 
-data JCVoronoiDiagram = JCVoronoiDiagram (Ptr JCVDiagram)
+data JCVoronoiDiagram = JCVoronoiDiagram (Ptr JCVDiagramI)
 
 data JCVPoint = JCVPoint
   { jcvPointX :: Double
   , jcvPointY:: Double 
   } deriving Show
 
-data JCVRect = JCVRect
+data JCVRectI = JCVRectI
   { jcvRPoint1 :: JCVPoint
   , jcvRPoint2 :: JCVPoint
   }
 
-data JCVEdge = JCVEdge
-  { jcvNextEdge :: Ptr JCVEdge
-  , jcvEdgePoint1 :: JCVPoint
-  , jcvEdgePoint2 :: JCVPoint
+data JCVEdgeI = JCVEdgeI
+  { jcvNextEdge :: Ptr JCVEdgeI
+  , jcvEdgeISite1 :: Ptr JCVSite
+  , jcvEdgeISite2 :: Ptr JCVSite
+  , jcvEdgeIPoint1 :: JCVPoint
+  , jcvEdgeIPoint2 :: JCVPoint
   }
 
-data JCVDiagram = JCVDiagram
+data JCVDiagramI = JCVDiagramI
   { jcvInternal :: IntPtr
   , jcvDSites :: CInt
   , jcvDMinPoint :: JCVPoint
@@ -41,14 +45,20 @@ data JCVDiagram = JCVDiagram
 data JCVSite = JCVSite 
   { jcvSitePoint :: JCVPoint
   , jcvSiteIndex :: CInt
-  , jcvSiteEdges :: Ptr JCVEdge
+  , jcvSiteEdges :: Ptr JCVEdgeI
   } deriving Show
 
+data JCVEdge = JCVEdge
+  { jcvEdgePoint1 :: (Double, Double)
+  , jcvEdgePoint2 :: (Double, Double)
+  , jcvEdgeSiteIndex1 :: Int
+  , jcvEdgeSiteIndex2 :: Int
+  } deriving Show
 
 data JCVPoly = JCVPoly
   { polyPoint :: (Double, Double)
   , polyIndex :: Int
-  , polyEdges :: [((Double, Double),(Double, Double))]
+  , polyEdges :: [JCVEdge]
   } deriving Show
 
 instance Storable JCVPoint where
@@ -59,20 +69,22 @@ instance Storable JCVPoint where
     pokeByteOff ptr 0 x
     pokeByteOff ptr 8 y
 
-instance Storable JCVRect where
+instance Storable JCVRectI where
   alignment _ = 16
   sizeOf _ = 32
-  peek ptr = JCVRect <$> peekByteOff ptr 0 <*> peekByteOff ptr 16
-  poke ptr (JCVRect p1 p2) = do
+  peek ptr = JCVRectI <$> peekByteOff ptr 0 <*> peekByteOff ptr 16
+  poke ptr (JCVRectI p1 p2) = do
     pokeByteOff ptr 0 p1
     pokeByteOff ptr 16 p2
 
-instance Storable JCVEdge where
+instance Storable JCVEdgeI where
   alignment _ = 16
   sizeOf _ = 8 + 16 + 2 * 16 + 3 * 8
-  peek ptr = JCVEdge <$> peekByteOff ptr 0 <*> peekByteOff ptr 24 <*> peekByteOff ptr 40
-  poke ptr (JCVEdge ne e1 e2) = do
+  peek ptr = JCVEdgeI <$> peekByteOff ptr 0 <*> peekByteOff ptr 8 <*> peekByteOff ptr 16 <*> peekByteOff ptr 24 <*> peekByteOff ptr 40
+  poke ptr (JCVEdgeI ne s1 s2 e1 e2) = do
     pokeByteOff ptr 0 ne
+    pokeByteOff ptr 8 s1
+    pokeByteOff ptr 16 s2
     pokeByteOff ptr 24 e1
     pokeByteOff ptr 32 e2
 
@@ -85,11 +97,11 @@ instance Storable JCVSite where
     pokeByteOff ptr 16 i
     pokeByteOff ptr 20 e
 
-instance Storable JCVDiagram where
+instance Storable JCVDiagramI where
   alignment _ = 16
   sizeOf _ = 8 + 4 + 2*16
-  peek ptr = JCVDiagram <$> peekByteOff ptr 0 <*> peekByteOff ptr 8 <*> peekByteOff ptr 12 <*> peekByteOff ptr 28
-  poke ptr (JCVDiagram iPtr ns minP maxP) = do
+  peek ptr = JCVDiagramI <$> peekByteOff ptr 0 <*> peekByteOff ptr 8 <*> peekByteOff ptr 12 <*> peekByteOff ptr 28
+  poke ptr (JCVDiagramI iPtr ns minP maxP) = do
     pokeByteOff ptr 0 iPtr
     pokeByteOff ptr 8 ns
     pokeByteOff ptr 12 minP
@@ -99,7 +111,7 @@ instance Storable JCVDiagram where
 jcVoronoi :: [(Double, Double)] -> IO JCVoronoiDiagram
 jcVoronoi items = do
   rect <- malloc
-  poke rect $  JCVRect (JCVPoint 0 0) (JCVPoint 105 68)
+  poke rect $  JCVRectI (JCVPoint (-5) (-5)) (JCVPoint 110 73)
   let numItems = length items
   ptr <- newArray $ pointToJCVPoint <$> items
   jcvd <- JCVoronoiDiagram <$> generate_from_points numItems rect ptr
@@ -114,7 +126,6 @@ jcvSites :: JCVoronoiDiagram -> IO [JCVSite]
 jcvSites (JCVoronoiDiagram vPtr) = do
   sitePtr <- jcv_diagram_get_sites vPtr
   vd <- peek vPtr
-  print (fromIntegral $ jcvDSites vd)
   a <- peekArray (fromIntegral $ jcvDSites vd) sitePtr
   pure a
 
@@ -130,25 +141,28 @@ jcvSites2 items = unsafePerformIO $  do
   where 
     createPoly site = do
       edges <- siteToEdges site
-      let es = fmap (\(p1, p2) -> (p2p p1, p2p p2)) $ fmap e2e edges
+      let es = fmap e2e edges
       pure JCVPoly
-        { polyPoint =  (avg $ fmap (fst . fst) es, avg $ fmap (snd . fst) es)
+        { polyPoint =  (avg $ fmap (fst . jcvEdgePoint1) es, avg $ fmap (snd . jcvEdgePoint1) es)
         , polyIndex = fromIntegral $ jcvSiteIndex site
         , polyEdges = es
         }
-    e2e edge =
-      (jcvEdgePoint1 edge, jcvEdgePoint2 edge)
+    e2e edge = 
+      let pt1 = jcvEdgeIPoint1 edge
+          pt2 = jcvEdgeIPoint2 edge
+      in JCVEdge { jcvEdgePoint1 = (jcvPointX pt1, jcvPointY pt1), jcvEdgePoint2 = (jcvPointX pt2, jcvPointY pt2), jcvEdgeSiteIndex1 = 0, jcvEdgeSiteIndex2 = 0 }
+
     p2p point = (jcvPointX point, jcvPointY point)
     avg xs = sum xs / (fromIntegral $ length xs)
     
 
   
 
-siteToEdges :: JCVSite -> IO [JCVEdge]
+siteToEdges :: JCVSite -> IO [JCVEdgeI]
 siteToEdges jcvSite = do
   go [] (jcvSiteEdges jcvSite)
   where 
-    go :: [JCVEdge] -> Ptr JCVEdge -> IO [JCVEdge]
+    go :: [JCVEdgeI] -> Ptr JCVEdgeI -> IO [JCVEdgeI]
     go acc ptr | ptr /= nullPtr = do
       edge <- peek ptr
       go (edge : acc) (jcvNextEdge edge)
@@ -160,12 +174,26 @@ voronoiPolygonArea vp =
   sum $ fmap polygonSegmentArea $ polyEdges vp
   where
     (vcx, vcy) = polyPoint vp
-    polygonSegmentArea ((e1x, e1y),(e2x,e2y)) = 
-      let a = sqrt ((e1x - e2x) ** 2.0 + (e1y - e2y) **2.0)
+    polygonSegmentArea (JCVEdge pt1 pt2 _ _) = 
+      let (e1x, e1y) = pt1
+          (e2x, e2y) = pt2
+          a = sqrt ((e1x - e2x) ** 2.0 + (e1y - e2y) **2.0)
           b = sqrt ((vcx - e2x) ** 2.0 + (vcy - e2y) **2.0)
           c = sqrt ((vcx - e1x) ** 2.0 + (vcy - e1y) **2.0)
           s = 0.5*(a+b+c)
       in sqrt(s * (s-a)*(s-b)*(s-c))
 
+vectors :: JCVEdge -> (Double, Double) -> (V3 Double, V3 Double)
+vectors edge (px,py) = 
+  let (x1, y1) = jcvEdgePoint1 edge
+      (x2, y2) = jcvEdgePoint2 edge
+  in (V3 (x2-x1) (y2-y1) 0, V3 (px-x1) (py-y1) 0)     
 
+pointInPoly :: (Double, Double) -> JCVPoly -> Bool
+pointInPoly p poly = 
+  all (>= 0) normals
+  where normals = map (\ edge -> uncurry cross (vectors edge p)) (polyEdges poly)
+
+findPoly :: [JCVPoly] -> (Double, Double) -> Maybe JCVPoly
+findPoly polys point = find (pointInPoly point) polys
 

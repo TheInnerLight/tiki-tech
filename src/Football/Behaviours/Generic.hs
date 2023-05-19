@@ -2,10 +2,10 @@ module Football.Behaviours.Generic where
 
 import Football.Ball
 import Football.Player
-import Football.Engine
+import Football.Match
 import Linear (normalize, V3 (V3))
 
-runTowardsBall :: (Monad m, Engine m) => Player -> m Player
+runTowardsBall :: (Monad m, Match m) => Player -> m Player
 runTowardsBall player = do
   ball <- gameBall
   let ppv = playerPositionVector player
@@ -18,7 +18,7 @@ runTowardsBall player = do
       player' = player { playerMotionVector = motion' }
   pure player'
 
-runTowardsLocation :: (Monad m, Engine m) => (Double, Double) -> Player -> m Player
+runTowardsLocation :: (Monad m, Match m) => (Double, Double) -> Player -> m Player
 runTowardsLocation (x, y) player = do
   let ppv = playerPositionVector player
       targetV = V3 x y 0
@@ -30,7 +30,7 @@ runTowardsLocation (x, y) player = do
       player' = player { playerMotionVector = motion' }
   pure player'
 
-stop :: (Monad m, Engine m) => Player -> m Player
+stop :: (Monad m, Match m) => Player -> m Player
 stop player = do
   ball <- gameBall
   let maxSpeed = playerSpeedMax $ playerSpeed player

@@ -26,15 +26,3 @@ updateBall dt ball =
 
 
 
-
-
--- kickBall :: (Double, Double) -> Ball -> Ball
--- kickBall (targetX, targetY) ball = 
---   let (bx, by) = ballPosition ball
---       ballDirection = signorm $ V3 (targetX - bx) (targetY - by) 0
-
---   in ball { ballMotionVector = ballDirection * 20 }
-
-
-
-

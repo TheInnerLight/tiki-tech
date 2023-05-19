@@ -62,12 +62,15 @@ library
         MyLib
         Football.Player
         Football.Ball
-        Football.Engine
-        Football.Behaviours.General
+        Football.Match
+        Football.Match.Engine
         Football.Behaviours.FindSpace
         Football.Behaviours.Kick
         Football.Behaviours.Generic
         Football.Behaviours.Pass
+        Football.Locate2D
+        Football.Understanding.Space
+        Football.Understanding.Space.Data
         Voronoi.BreakpointTree
         Voronoi.Fortune
         Voronoi.JCVoronoi
@@ -118,6 +121,7 @@ executable football-sim
     -- Other library packages from which modules are imported.
     build-depends:
         base ^>=4.17.0.0,
+        containers,
         lens,
         linear,
         mtl,
