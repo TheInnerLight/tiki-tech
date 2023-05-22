@@ -5,16 +5,15 @@ import Control.Lens ((^.))
 import Linear (Metric(norm, signorm, dot, quadrance), normalize)
 import Football.Ball
 import Football.Player
-import Football.Behaviours.Generic
 import Data.List (sort)
 import Football.Match
-import Control.Monad (when)
+import Control.Monad (when, void)
 import Core (GetSystemTime (systemTimeNow), Random (randomNormalMeanStd))
 import Data.Time.Clock.System (SystemTime(..))
 
-kickBallToLocation :: (Monad m, Match m, GetSystemTime m) => (Double, Double) -> Player -> m Player
-kickBallToLocation location player = do
-  player' <- runTowardsBall player
+kickBallToLocation :: (Monad m, Match m, GetSystemTime m) => (Double, Double) -> (Double, Double) -> Player -> m Player
+kickBallToLocation iceptLoc location player = do
+  let player' = runTowardsLocation iceptLoc player
   ballInRange <- canKick player'
   if ballInRange then
     kickSuccess player'
@@ -24,12 +23,12 @@ kickBallToLocation location player = do
     kickSuccess player' = do
       ball <- gameBall
       time <- systemTimeNow
-      kickBall $ motionVectorForPassTo ball location
+      void $ kickBall player $ motionVectorForPassTo ball location
       pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + 300000000 } }
 
-controlBall :: (Monad m, Match m, GetSystemTime m, Random m) => Player -> m Player
-controlBall player = do
-  player' <- runTowardsBall player
+controlBall :: (Monad m, Match m, GetSystemTime m, Random m) => (Double, Double) -> Player -> m Player
+controlBall loc player = do
+  let player' = runTowardsLocation loc player
   ballInRange <- canKick player'
   if ballInRange then
     kickSuccess player'
@@ -39,16 +38,18 @@ controlBall player = do
     kickSuccess player' = do
       ball <- gameBall
       mult <- randomNormalMeanStd 1.0 0.2
-      kickBall $ (- ballMotionVector ball + playerMotionVector player') * pure mult
+      ball' <- kickBall player $ (- ballMotionVector ball + playerMotionVector player') * pure mult
       time <- systemTimeNow
-      pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + 50000000 } }
-
+      let cooldownTime = 0.1
+      let cooldownTS = floor $ cooldownTime * 1e9
+      let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
+      pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + cooldownTS }, playerDesiredLocation = eBallPos }
+  
 motionVectorForPassTo :: Ball -> (Double, Double) -> V3 Double
 motionVectorForPassTo ball (targetX, targetY) = 
-  ballDirection * pure (min 31 $ dist ** 0.35 * 4.5) - ballMotionVector ball
+  maxMag 31 $ ballDirection * pure (2.71 + 0.512 * dist - 4.27e-3 * dist ** 2.0 + 7.97e-5 * dist ** 3.0) - ballMotionVector ball
   where
     targetVector = V3 targetX targetY 0
-    ballDirection = normalize (targetVector - ballPositionVector ball - ballMotionVector ball)
+    ballDirection = normalize (targetVector - ballPositionVector ball)
     dist = norm (targetVector - ballPositionVector ball)
-  
 

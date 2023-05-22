@@ -11,10 +11,8 @@ import Control.Lens ((^.))
 import Linear (Metric(norm, signorm, dot, quadrance, distance))
 import Football.Ball
 import Football.Player
-import Football.Behaviours.Generic
 import Data.List (sort, sortOn)
 import Football.Match
---import Voronoi.Fortune
 import Core
 import Voronoi.JCVoronoi
 import Football.Locate2D (Locate2D(locate2D))
@@ -37,5 +35,4 @@ optimalNearbySpace player = do
         -- $ sortOn polyDist
         $ sortOn (\p ->  (voronoiPolygonArea p) / (polyDist p) ** 2.0 ) 
         $ spacePolyJCV . snd <$> Map.toList spaceMap'
-
 

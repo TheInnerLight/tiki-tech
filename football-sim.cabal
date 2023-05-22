@@ -66,13 +66,11 @@ library
         Football.Match.Engine
         Football.Behaviours.FindSpace
         Football.Behaviours.Kick
-        Football.Behaviours.Generic
         Football.Behaviours.Pass
         Football.Locate2D
+        Football.Understanding.DecisionFactors
         Football.Understanding.Space
         Football.Understanding.Space.Data
-        Voronoi.BreakpointTree
-        Voronoi.Fortune
         Voronoi.JCVoronoi
         Core
 
@@ -114,6 +112,7 @@ executable football-sim
     -- Modules included in this executable, other than Main.
     other-modules:
         Render
+        RkTests
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

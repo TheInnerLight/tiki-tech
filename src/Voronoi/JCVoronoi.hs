@@ -111,7 +111,7 @@ instance Storable JCVDiagramI where
 jcVoronoi :: [(Double, Double)] -> IO JCVoronoiDiagram
 jcVoronoi items = do
   rect <- malloc
-  poke rect $  JCVRectI (JCVPoint (-5) (-5)) (JCVPoint 110 73)
+  poke rect $  JCVRectI (JCVPoint (-10) (-10)) (JCVPoint 115 78)
   let numItems = length items
   ptr <- newArray $ pointToJCVPoint <$> items
   jcvd <- JCVoronoiDiagram <$> generate_from_points numItems rect ptr
@@ -143,19 +143,23 @@ jcvSites2 items = unsafePerformIO $  do
       edges <- siteToEdges site
       let es = fmap e2e edges
       pure JCVPoly
-        { polyPoint =  (avg $ fmap (fst . jcvEdgePoint1) es, avg $ fmap (snd . jcvEdgePoint1) es)
+        { polyPoint =  (clipPitchX $ avg $ fmap (fst . jcvEdgePoint1) es, clipPitchY $ avg $ fmap (snd . jcvEdgePoint1) es)
         , polyIndex = fromIntegral $ jcvSiteIndex site
         , polyEdges = es
         }
     e2e edge = 
       let pt1 = jcvEdgeIPoint1 edge
           pt2 = jcvEdgeIPoint2 edge
-      in JCVEdge { jcvEdgePoint1 = (jcvPointX pt1, jcvPointY pt1), jcvEdgePoint2 = (jcvPointX pt2, jcvPointY pt2), jcvEdgeSiteIndex1 = 0, jcvEdgeSiteIndex2 = 0 }
-
-    p2p point = (jcvPointX point, jcvPointY point)
+          s1 = unsafePerformIO $ peek $ jcvEdgeISite1 edge
+          s2 = unsafePerformIO $ peek $ jcvEdgeISite1 edge
+      in JCVEdge { jcvEdgePoint1 = (jcvPointX pt1, jcvPointY pt1), jcvEdgePoint2 = (jcvPointX pt2, jcvPointY pt2), jcvEdgeSiteIndex1 = fromIntegral $ jcvSiteIndex s1, jcvEdgeSiteIndex2 = fromIntegral $ jcvSiteIndex s2 }
     avg xs = sum xs / (fromIntegral $ length xs)
     
+clipPitchX :: (Ord a, Num a) => a -> a
+clipPitchX x = max 0 $ min 105 x
 
+clipPitchY :: (Ord a, Num a) => a -> a
+clipPitchY y = max 0 $ min 68 y
   
 
 siteToEdges :: JCVSite -> IO [JCVEdgeI]
@@ -183,17 +187,72 @@ voronoiPolygonArea vp =
           s = 0.5*(a+b+c)
       in sqrt(s * (s-a)*(s-b)*(s-c))
 
-vectors :: JCVEdge -> (Double, Double) -> (V3 Double, V3 Double)
-vectors edge (px,py) = 
-  let (x1, y1) = jcvEdgePoint1 edge
-      (x2, y2) = jcvEdgePoint2 edge
-  in (V3 (x2-x1) (y2-y1) 0, V3 (px-x1) (py-y1) 0)     
+
+lineEdgeIntersection ::  (Double, Double) -> JCVEdge -> Bool
+lineEdgeIntersection  (x3, y3) edge =  
+    let (x1, y1) = jcvEdgePoint1 edge
+        (x2, y2) = jcvEdgePoint2 edge
+        (x4, y4) = (-100, -100)
+        t =  ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4))
+        u =  ((x1-x3)*(y1-y2) - (y1-y3)*(x1-x2))
+        d =  (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
+        ud = u*d
+        td = t*d
+    --print (t, u, t*d, u*d, d)
+     in case signum d of
+      1  -> t >= 0.0 && t <= d && u >= 0.0 && u <= d
+      -1 -> t <= 0.0 && t >= d && u <= 0.0 && u >= d
+      _  -> True
+    --pure $ d /= 0.0 && t >= 0.0 && t <= 1.0 && u >= 0.0 && u <= 1.0
+
+(=~=) :: (Ord a, Fractional a, Num a) => a -> a -> Bool
+(=~=) x y = abs (x - y) < 1e-7
+
+lineEdgeIntersection2 ::  (Double, Double) -> JCVEdge -> Bool
+lineEdgeIntersection2  (x3, y3) edge =  
+    let (x1, y1) = jcvEdgePoint1 edge
+        (x2, y2) = jcvEdgePoint2 edge
+        d = (y1 - y2)
+    in 
+      if x2 =~= x3 && y2 =~= y3 then 
+        True
+      else
+        if y2 =~= y1 && y3 =~= y1 then
+          if x1 <= x3 && x3 <= x2 then True
+          else if x2 <= x3 && x3 <= x1 then True
+          else False
+        else if(y1 < y3 && y2 >= y3 || y2 < y3 && y1 >= y3) then
+          case signum d of
+            -1 -> x2 * d + (y3-y2) * (x1 - x2) > x3 * d
+            0  -> True
+            _ ->  x2 * d + (y3-y2) * (x1 - x2) < x3 * d
+        else 
+          False
+
+      
+      
+
+-- vectors :: JCVEdge -> (Double, Double) -> (V3 Double, V3 Double)
+-- vectors edge (px,py) = 
+--   let (x1, y1) = jcvEdgePoint1 edge
+--       (x2, y2) = jcvEdgePoint2 edge
+--   in (V3 (x2-x1) (y2-y1) 0, V3 (px-x1) (py-y1) 0)     
+
+-- pointInPoly :: (Double, Double) -> JCVPoly -> Bool
+-- pointInPoly p poly = 
+--   all (>= 0) normals
+--   where normals = map (\ edge -> uncurry cross (vectors edge p)) (polyEdges poly)
+
+-- findPoly :: [JCVPoly] -> (Double, Double) -> Maybe JCVPoly
+-- findPoly polys point = find (pointInPoly point) polys
+
 
 pointInPoly :: (Double, Double) -> JCVPoly -> Bool
 pointInPoly p poly = 
-  all (>= 0) normals
-  where normals = map (\ edge -> uncurry cross (vectors edge p)) (polyEdges poly)
+  odd $ length $ filter (lineEdgeIntersection2 p) (polyEdges poly)
 
 findPoly :: [JCVPoly] -> (Double, Double) -> Maybe JCVPoly
-findPoly polys point = find (pointInPoly point) polys
+findPoly polys point = 
+  find (pointInPoly point) polys
+
 

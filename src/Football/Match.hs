@@ -19,8 +19,9 @@ import qualified Data.Map as Map
 
 class Match m where
   gameBall :: m Ball
+  lastTouchOfBall :: m (Maybe Player)
   allPlayers :: m [Player]
-  kickBall :: V3 Double -> m ()
+  kickBall :: Player -> V3 Double -> m Ball
   canKick :: Player -> m Bool
   update :: Int -> m ()
   spaceMap :: m SpaceMap
@@ -46,21 +47,15 @@ teammates player = filter (\p -> playerNumber p /= playerNumber player) <$> team
 spaceMapForTeam :: (Functor m, Match m, HasTeam t) => t -> m [SpacePoly]
 spaceMapForTeam t = mapper <$> spaceMap
   where
-    mapper (SpaceMap m) = filter(\p -> getTeam (spacePolyPlayer p) ==  getTeam t ) $ snd <$> Map.toList m
+    mapper (SpaceMap m) = filter(\p -> getTeam (spacePolyPlayer p) == getTeam t ) $ snd <$> Map.toList m
 
 spaceMapForOpposition :: (Functor m, Match m, HasTeam t) => t -> m [SpacePoly]
 spaceMapForOpposition t = mapper <$> spaceMap
   where
-    mapper (SpaceMap m) = filter(\p -> getTeam (spacePolyPlayer p) /=  getTeam t ) $ snd <$> Map.toList m
+    mapper (SpaceMap m) = filter(\p -> getTeam (spacePolyPlayer p) /= getTeam t ) $ snd <$> Map.toList m
 
 
--- voronoiMapForTeam :: (Engine m) => Team -> m [JCVPoly]
--- voronoiMapForTeam Team1 = team1VoronoiMap
--- voronoiMapForTeam Team2 = team2VoronoiMap
-
--- voronoiMapForOpposition :: (Engine m) => Player -> m [JCVPoly]
--- voronoiMapForOpposition p | playerTeam p == Team1 = team2VoronoiMap
--- voronoiMapForOpposition p                         = team1VoronoiMap
-
+clampPitch :: (Applicative m, Match m) => (Double, Double) -> m (Double, Double)
+clampPitch (x, y) = pure (max 0 $ min 105 x, max 0 $ min 68 y)
 
   
