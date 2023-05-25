@@ -9,9 +9,8 @@ ballDistanceTimeUntil2mps :: Ball -> (Double, Double)
 ballDistanceTimeUntil2mps ball =
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
-      droppity (t', (bpv', bmv')) = unsafePerformIO $ do
-        --print (t', bpv', bmv')
-        pure $ norm bmv' >= 2.0
+      droppity (t', (bpv', bmv')) =
+        norm bmv' >= 5.0
       (t, (fbpv, fbmv)) = head $ dropWhile droppity $ rungeKutte (bpv, bmv) 0.1 ballMotionEq
   in (distance fbpv bpv, t)
 

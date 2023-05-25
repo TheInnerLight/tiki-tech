@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
@@ -18,18 +19,21 @@ import Football.Ball
 import Core
 import Control.Monad (void)
 import Control.Lens ((^.))
-import Control.Monad.Reader (ReaderT (runReaderT), MonadReader (ask))
+
 import Control.Monad.IO.Class
 import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO, newEmptyTMVarIO)
 import Football.Match
 import Football.Match.Engine
 import Data.Foldable (traverse_)
 import Voronoi.JCVoronoi
-import Data.Time.Clock.System (getSystemTime)
-import Data.Random.Normal (normalIO')
+
 import qualified Data.Map as Map
 import Football.Understanding.Space.Data (SpaceMap(SpaceMap))
 import RkTests (trySomeBalls)
+import App
+import Data.Time.Clock.System (getSystemTime, SystemTime (systemSeconds, systemNanoseconds))
+import Control.Concurrent (threadDelay, forkIO)
+import Control.Monad.Reader.Class (MonadReader(ask))
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -55,37 +59,6 @@ grey = V4 155 155 155 255
 fps :: Int
 fps = 30
 
-newtype AppM a = 
-  AppM {unAppM :: ReaderT MatchState IO a}
-  deriving (Functor, Applicative, Monad, MonadIO)
-
-instance Has AppM MatchState where
-  has = AppM ask
-
-instance LiftSTM AppM where
-  liftSTM = liftIO . atomically
-
-instance Match AppM where
-  gameBall = gameBallImpl
-  lastTouchOfBall = lastTouchOfBallImpl
-  allPlayers = allPlayersImpl
-  kickBall = kickImpl
-  canKick = canKickImpl
-  update = updateImpl
-  -- team1VoronoiMap = team1VoronoiMapImpl
-  -- team2VoronoiMap = team2VoronoiMapImpl
-  spaceMap = allPlayersVoronoiMapImpl
-  
-
-instance Log AppM where
-  logOutput stuff = liftIO $ print stuff
-
-instance GetSystemTime AppM where
-  systemTimeNow = liftIO getSystemTime
-
-instance Random AppM where
-  randomNormalMeanStd :: Double -> Double -> AppM Double
-  randomNormalMeanStd mean std = liftIO $ normalIO' (mean, std)
 
 main :: IO ()
 main = do
@@ -114,6 +87,7 @@ player = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player2 :: Player
@@ -124,6 +98,7 @@ player2 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player3 :: Player
@@ -134,6 +109,7 @@ player3 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player4 :: Player
@@ -144,6 +120,7 @@ player4 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player5 :: Player
@@ -154,6 +131,7 @@ player5 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player6 :: Player
@@ -164,6 +142,7 @@ player6 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player7 :: Player
@@ -174,6 +153,7 @@ player7 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player8 :: Player
@@ -184,6 +164,7 @@ player8 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player9 :: Player
@@ -194,6 +175,7 @@ player9 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player10 :: Player
@@ -204,6 +186,7 @@ player10 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player11 :: Player
@@ -214,6 +197,7 @@ player11 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player1B :: Player
@@ -224,6 +208,7 @@ player1B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player2B :: Player
@@ -234,6 +219,7 @@ player2B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player3B :: Player
@@ -244,6 +230,7 @@ player3B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player4B :: Player
@@ -254,6 +241,7 @@ player4B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player5B :: Player
@@ -264,6 +252,7 @@ player5B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player6B :: Player
@@ -274,6 +263,7 @@ player6B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player7B :: Player
@@ -284,6 +274,7 @@ player7B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player8B :: Player
@@ -294,6 +285,7 @@ player8B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player9B :: Player
@@ -304,6 +296,7 @@ player9B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player10B :: Player
@@ -314,6 +307,7 @@ player10B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 player11B :: Player
@@ -324,12 +318,27 @@ player11B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
+  , playerDesiredLocation = V3 0 0 0
   }
 
 
 
 ball :: Ball
-ball = Ball { ballPositionVector = V3 3.0 14.0 0, ballMotionVector = V3 0.0 0.0 0.0 }
+ball = Ball { ballPositionVector = V3 3.0 34.0 0, ballMotionVector = V3 0.0 0.0 0.0 }
+
+processLoop :: Int -> AppM ()
+processLoop desiredFps = do
+  t1 <- liftIO getSystemTime
+  let (n1 :: Integer) = fromIntegral (systemSeconds t1 * 1000000000) + fromIntegral (systemNanoseconds t1)
+  update desiredFps
+  t2 <- liftIO getSystemTime
+  let (n2 :: Integer) = fromIntegral (systemSeconds t2 * 1000000000) + fromIntegral (systemNanoseconds t2)
+      microDiff = fromIntegral (n2-n1) `div` 1000
+      eDiff = max 0 (1000000 `div` fps - microDiff)
+
+  liftIO $ threadDelay eDiff
+  processLoop desiredFps
+
 
 
 loopFor :: S.Renderer -> SF.Manager -> IO ()
@@ -349,7 +358,8 @@ loopFor r fpsm = do
           , matchStateSpaceMap = allVoronoi
           , matchStateLastPlayerTouchedBall = lastPlayerTouchedBall
           }
-  runReaderT (unAppM loop') initialState
+  _ <- forkIO $ runAppM (processLoop 30) initialState
+  runAppM loop' initialState
   where
     loop' :: AppM ()
     loop' = do
@@ -358,7 +368,7 @@ loopFor r fpsm = do
       S.rendererDrawColor r $= black
       S.clear r
 
-      update fps
+      --update fps
 
       players <- allPlayers
       --traverse_ updateIntention players

@@ -17,8 +17,8 @@ import Football.Match
 import Football.Behaviours.Kick
 import Data.List (sortOn, foldl', find)
 import Data.Maybe (isJust)
-import Football.Behaviours.FindSpace (optimalNearbySpace)
-import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passSafetyCoeff), PassTarget (PlayerTarget, SpaceTarget))
+import Football.Behaviours.FindSpace (optimalNearbySpace2, nearestSpace)
+import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passSafetyCoeff, passDesirabilityCoeff), PassTarget (PlayerTarget, SpaceTarget))
 import Voronoi.JCVoronoi (JCVPoly, jcvSites2)
 import Control.Concurrent.STM (readTMVar, writeTMVar)
 import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
@@ -26,6 +26,7 @@ import Football.Understanding.Space (createSpaceMap)
 import Football.Understanding.Space.Data (SpaceMap)
 import Football.Understanding.DecisionFactors
 import Data.Foldable (foldlM)
+import Football.Behaviours.Marking (playerMarkClosestOppositionPlayer, positionalOrientedZonalMark)
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
@@ -35,6 +36,13 @@ data MatchState = MatchState
   , matchStateSpaceMap :: TMVar SpaceMap
   , matchStateLastPlayerTouchedBall :: TMVar Player
   }
+
+
+attackingDirectionImpl :: (Monad m, Has m MatchState, LiftSTM m) => Team -> m AttackingDirection
+attackingDirectionImpl team =
+  case team of
+    Team1 -> pure AttackingLeftToRight
+    Team2 -> pure AttackingRightToLeft
 
 kickImpl :: (Monad m, Has m MatchState, LiftSTM m) => Player -> V3 Double -> m Ball
 kickImpl player motionVector' = do
@@ -63,31 +71,23 @@ enactIntentions = do
   where 
     enactIntention player =
       case playerIntention player of
+        DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc player
         KickIntention iceptloc kloc -> kickBallToLocation iceptloc kloc player
         MoveIntoSpace loc -> pure $ runTowardsLocation loc player
         ControlBallIntention loc -> controlBall loc player
         IntentionCooldown _ -> pure player
         DoNothing -> pure $ stopMoving player
       
-canKickImpl :: (Monad m, Has m MatchState, LiftSTM m) => Player -> m Bool
-canKickImpl player = do
-    (state :: MatchState) <- has
-    let stBall = matchStateBall state
-    liftSTM $ do
-      ball <- readTVar stBall
-      let dist = norm (playerPositionVector player - ballPositionVector ball)
-      pure (dist < 0.5) 
-
 updateImpl :: (Monad m, Has m MatchState, LiftSTM m, Match m, Log m, GetSystemTime m, Random m) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
   team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team1
   team2Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team2
-  spaceMap <- createSpaceMap
+  spaceMap' <- createSpaceMap
   liftSTM $ do
     writeTMVar (matchStateTeam1VoronoiMap state) team1Voronoi
     writeTMVar (matchStateTeam2VoronoiMap state) team2Voronoi
-    writeTMVar (matchStateSpaceMap state) spaceMap
+    writeTMVar (matchStateSpaceMap state) spaceMap'
   ensureBallInPlay
   decideIntentions
   enactIntentions
@@ -129,25 +129,6 @@ decideIntentions = do
     players' <- traverse updateIntention players
     liftSTM $ writeTVar (matchStatePlayers state) players'
   where
-    folder _ acc (ClosestPlayerToBall loc t)   = do
-      targetLoc <- clampPitch loc
-      pure $ ControlBallIntention targetLoc : acc
-    folder player acc (TeammateInPossession _) = do
-      nearbySpace <- optimalNearbySpace player
-      targetLoc <- clampPitch $ locate2D $ head nearbySpace
-      pure $ MoveIntoSpace targetLoc : acc
-    folder player acc HasControlOfBall = do
-      ball <- gameBall
-      safePassingOptions <- safestPassingOptions player
-      case find (\p -> passSafetyCoeff p >= 0.7) safePassingOptions of
-        Just pass -> 
-          case passTarget pass of
-            PlayerTarget targetPlayer ->
-              let tppv = playerPositionVector targetPlayer + 0.3 * (playerMotionVector targetPlayer)
-              in pure $ KickIntention (locate2D ball) (tppv ^. _x, tppv ^. _y) : acc
-            SpaceTarget targetLoc ->
-              pure $ KickIntention (locate2D ball) targetLoc : acc
-        Nothing -> pure acc
     updateIntention player = do
       time <- systemTimeNow
       case playerIntention player of
@@ -155,32 +136,63 @@ decideIntentions = do
         _ -> decideIntention player
     decideIntention player = do
       decisionFactors <- calculateDecisionFactors player
-      newIntention <- head <$> foldlM (folder player) [DoNothing] decisionFactors
-      -- ball <- gameBall
-      -- teamPlayers' <- teammates player
-      -- safePassingOptions <- safestPassingOptions player
-      -- nearbySpace <- optimalNearbySpace player
-      -- let (iceptLoc3D, iceptTime) = interceptionInfoPlayerBallRK player ball
-      -- let iceptLoc = locate2D iceptLoc3D
-      -- let closerPlayers = interceptionTimePlayersBallRK teamPlayers' ball < iceptTime -- filter (\p -> interceptionTimePlayerBallRK p ball < iceptTime) $ teamPlayers'
-      --     canReach = iceptTime < 8
-          
-      --     relBallSpeed = norm (ballMotionVector ball - playerMotionVector player)
-      --     newIntention = case (closerPlayers, safePassingOptions) of
-      --         (True, _) | not (null nearbySpace) -> 
-      --           MoveIntoSpace $ locate2D $ head nearbySpace
-      --         (_, passOpt : _) | canReach && relBallSpeed <= 5 && passSafetyCoeff passOpt >= 0.7  ->
-      --           case passTarget passOpt of
-      --             PlayerTarget targetPlayer ->
-      --               let tppv = playerPositionVector targetPlayer + 0.3*(playerMotionVector targetPlayer)
-      --               in KickIntention iceptLoc (tppv ^. _x, tppv ^. _y)
-      --             SpaceTarget targetLoc ->
-      --               KickIntention iceptLoc targetLoc
-      --         _ | canReach ->
-      --           ControlBallIntention iceptLoc
-      --         _ -> 
-      --           DoNothing
-      --logOutput $ player { playerIntention = newIntention }
+      newIntention <- case decisionFactors of
+        DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
+          ball <- gameBall
+          safePassingOptions <- safestPassingOptions player
+          case find (\p -> passSafetyCoeff p >= 0.6) safePassingOptions of
+            Just pass -> 
+              case passTarget pass of
+                PlayerTarget targetPlayer ->
+                  let tppv = playerPositionVector targetPlayer + 0.3 * (playerMotionVector targetPlayer)
+                  in pure $ KickIntention (locate2D ball) (tppv ^. _x, tppv ^. _y)
+                SpaceTarget targetLoc ->
+                  pure $ KickIntention (locate2D ball) targetLoc
+            Nothing -> do
+              ns <- nearestSpace player
+              pure $ DribbleIntention (locate2D ball) ns
+        DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = False } -> do
+          ball <- gameBall
+          safePassingOptions <- safestPassingOptions player
+          case find (\p -> passSafetyCoeff p >= 0.85 && passDesirabilityCoeff p > 0) safePassingOptions of
+            Just pass -> 
+              case passTarget pass of
+                PlayerTarget targetPlayer ->
+                  let tppv = playerPositionVector targetPlayer + 0.3 * (playerMotionVector targetPlayer)
+                  in pure $ KickIntention (locate2D ball) (tppv ^. _x, tppv ^. _y)
+                SpaceTarget targetLoc ->
+                  pure $ KickIntention (locate2D ball) targetLoc
+            Nothing -> do
+              ns <- nearestSpace player
+              pure $ DribbleIntention (locate2D ball) ns
+        DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc _), dfHasControlOfBall = False, dfOppositionInPossession = Nothing } -> do
+          targetLoc <- clampPitch loc
+          pure $ ControlBallIntention targetLoc
+        DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False, dfOppositionInPossession = Just _  } | t <= 3.0 -> do
+          targetLoc <- clampPitch loc
+          pure $ ControlBallIntention targetLoc
+        DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfOppositionInPossession = Just (OppositionInPossession _)  } -> do
+          loc <- positionalOrientedZonalMark player
+          pure $ ControlBallIntention loc
+        DecisionFactors { dfTeammateInPossession = Just _} -> do
+          nearbySpace <- optimalNearbySpace2 player
+          targetLoc <- clampPitch nearbySpace
+          pure $ MoveIntoSpace targetLoc
+        DecisionFactors { dfHasControlOfBall = True} -> do
+          ball <- gameBall
+          safePassingOptions <- safestPassingOptions player
+          case find (\p -> passSafetyCoeff p >= 0.85) safePassingOptions of
+            Just pass -> 
+              case passTarget pass of
+                PlayerTarget targetPlayer ->
+                  let tppv = playerPositionVector targetPlayer + 0.3 * (playerMotionVector targetPlayer)
+                  in pure $ KickIntention (locate2D ball) (tppv ^. _x, tppv ^. _y)
+                SpaceTarget targetLoc ->
+                  pure $ KickIntention (locate2D ball) targetLoc
+            Nothing -> do
+              ns <- nearestSpace player
+              pure $ DribbleIntention (locate2D ball) ns
+        _  -> pure DoNothing
       pure player { playerIntention = newIntention }
     
 

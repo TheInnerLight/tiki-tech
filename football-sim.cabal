@@ -64,11 +64,16 @@ library
         Football.Ball
         Football.Match
         Football.Match.Engine
+        Football.Behaviours.Marking
         Football.Behaviours.FindSpace
+        Football.Behaviours.Press
         Football.Behaviours.Kick
         Football.Behaviours.Pass
         Football.Locate2D
+        Football.Pitch
         Football.Understanding.DecisionFactors
+        Football.Understanding.ExpectedGoals
+        Football.Understanding.Shape
         Football.Understanding.Space
         Football.Understanding.Space.Data
         Voronoi.JCVoronoi
@@ -92,6 +97,7 @@ library
         normaldistribution,
         psqueues,
         random,
+        statistics,
         stm,
         time,
         vector
@@ -111,6 +117,7 @@ executable football-sim
 
     -- Modules included in this executable, other than Main.
     other-modules:
+        App
         Render
         RkTests
 
@@ -140,6 +147,8 @@ executable football-sim
     -- Base language which the package is written in.
     default-language: Haskell2010
 
+    ghc-options: -threaded -rtsopts
+
 test-suite football-sim-test
     -- Import common warning flags.
     import:           warnings
@@ -148,7 +157,8 @@ test-suite football-sim-test
     default-language: Haskell2010
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules:
+      Football.Understanding.SpaceSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -165,4 +175,6 @@ test-suite football-sim-test
     -- Test dependencies.
     build-depends:
         base ^>=4.17.0.0,
-        football-sim
+        football-sim,
+        tasty,
+        tasty-hunit

@@ -13,8 +13,13 @@ data Team
   | Team2
   deriving (Eq, Ord, Show)
 
+oppositionTeam :: Team -> Team
+oppositionTeam Team1 = Team2
+oppositionTeam Team2 = Team1
+
 data PlayerIntention
   = KickIntention (Double, Double) (Double, Double)
+  | DribbleIntention (Double, Double) (Double, Double)
   | MoveIntoSpace (Double, Double)
   | ControlBallIntention (Double, Double)
   | IntentionCooldown SystemTime
@@ -63,10 +68,10 @@ distanceToTargetAfter :: V3 Double -> Double -> Player -> Double
 distanceToTargetAfter target t p =
   let 
       start = playerPositionVector p
-      -- vector difference between x(t) and A(t)
-      st = target - start - pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
       ms = playerSpeedMax (playerSpeed p)
       pa = playerSpeedAcceleration (playerSpeed p)
+      -- vector difference between x(t) and A(t)
+      st = target - start - pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
       -- radius B(t)
       rt = (ms*(t - (1 - exp(-pa * t))/pa))
   in norm st - rt
@@ -79,7 +84,7 @@ interceptionInfoPlayerBallRK player ball =
   let ppv = playerPositionVector player
       bpv = ballPositionVector ball
       bmv = ballMotionVector ball
-      droppity (t', (bpv', bmv')) = t' <= 40.0 && (distanceToTargetAfter bpv' t' player > 0.0)
+      droppity (t', (bpv', bmv')) = t' <= 40.0 && (distanceToTargetAfter bpv' t' player > 0.5)
       (t, (fbpv, fbmv)) = head $ dropWhile droppity $ rungeKutte (bpv, bmv) 0.03 ballMotionEq
   in (fbpv, t)
 
@@ -90,7 +95,7 @@ interceptionInfoPlayersBallRK :: [Player] -> Ball -> (V3 Double, Double)
 interceptionInfoPlayersBallRK players ball =
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
-      droppity (t', (bpv', bmv')) = t' <= 40.0 && all (\p -> distanceToTargetAfter bpv' t' p > 0.0) players
+      droppity (t', (bpv', bmv')) = t' <= 40.0 && all (\p -> distanceToTargetAfter bpv' t' p > 0.5) players
       (t, (fbpv, fbmv)) = head $ dropWhile droppity $ rungeKutte (bpv, bmv) 0.03 ballMotionEq
   in (fbpv, t)
 

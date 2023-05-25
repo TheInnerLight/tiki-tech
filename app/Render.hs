@@ -17,6 +17,7 @@ import SDL.Primitive (Pos)
 import Football.Understanding.Space.Data (SpacePoly(..))
 import Foreign.C (CInt)
 import qualified Data.Vector as VE
+import Football.Player (PlayerIntention(DribbleIntention))
 
 white :: SP.Color
 white = V4 255 255 255 255
@@ -32,6 +33,9 @@ orange = V4 255 165 0 255
 
 blue :: SP.Color
 blue = V4 0 0 255 255
+
+cyan :: SP.Color
+cyan = V4 0 255 255 255
 
 blueT :: SP.Color
 blueT = V4 0 0 255 20
@@ -157,6 +161,11 @@ renderIntention r pos (KickIntention ip p) = do
   let kickLoc = coordinateTransPV p
   SP.line r iceptLoc pos pink
   SP.line r kickLoc iceptLoc purple
+renderIntention r pos (DribbleIntention ip p) = do
+  let iceptLoc = coordinateTransPV ip
+  let kickLoc = coordinateTransPV p
+  SP.line r iceptLoc pos pink
+  SP.line r kickLoc pos cyan
 renderIntention r pos (MoveIntoSpace p) = do
   let spaceLoc = coordinateTransPV p
   SP.line r spaceLoc pos orange

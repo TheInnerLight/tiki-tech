@@ -15,6 +15,9 @@ instance Locate2D Player where
     let ppv = playerPositionVector p
     in (ppv ^. _x, ppv ^. _y) 
 
+instance Locate2D (Double, Double) where
+  locate2D xy = xy
+
 instance Locate2D Ball where
   locate2D p = 
     let bpv = ballPositionVector p
