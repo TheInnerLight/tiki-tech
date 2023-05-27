@@ -97,25 +97,3 @@ calculateDecisionFactors player = do
     , dfInCompressedSpace = comp
     , dfIsUnderPressure = unp
     }
-  
-
---   -- teamPlayers' <- teammates player
---   -- teammatesInKickingRange <- filterM canKick teamPlayers'
---   -- let teammateInPossession = find (\p -> norm (playerMotionVector p - ballMotionVector ball) < 1.0 ) teammatesInKickingRange
---   -- maybe (pure []) (\p -> pure [TeammateInPossession p]) teammateInPossession
-
--- checkInPossession :: (Match m, Monad m) => Player -> m [DecisionFactors]
--- checkInPossession player = do
---   ball <- gameBall
---   canKick' <- canKick player
---   if (canKick' && norm (playerMotionVector player - ballMotionVector ball) < 1) then
---     pure [HasControlOfBall]
---   else 
---     pure []
-
--- calculateDecisionFactors :: (Match m, Monad m) => Player -> m [DecisionFactors]
--- calculateDecisionFactors player = do
-  --(\l1 l2 l3 -> l2 ++ l1 ++ l3) <$> checkClosestPlayer player <*> checkTeammateInPossession player <*> checkInPossession player
-
-
-

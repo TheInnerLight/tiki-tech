@@ -56,9 +56,10 @@ offsideLine :: (Match m, Monad m) => Team -> m Double
 offsideLine team  = do
   teamPlayers' <- teamPlayers $ otherTeam team
   attackingDirection' <- attackingDirection team
+  (ballX, _) <- locate2D <$> gameBall
   pure $ case attackingDirection' of
-       AttackingLeftToRight -> min 105 $ max 52.5 $ xPos (sortOn (Data.Ord.Down . xPos) teamPlayers' !! 1)
-       AttackingRightToLeft -> min 52.5 $ max 0 $ xPos (sortOn xPos teamPlayers' !! 1)
+       AttackingLeftToRight -> min 105   $ max ballX $ max 52.5 $ xPos (sortOn (Data.Ord.Down . xPos) teamPlayers' !! 1)
+       AttackingRightToLeft -> min ballX $ min 52.5  $ max 0    $ xPos (sortOn xPos teamPlayers' !! 1)
   where 
     otherTeam Team1 = Team2
     otherTeam Team2 = Team1

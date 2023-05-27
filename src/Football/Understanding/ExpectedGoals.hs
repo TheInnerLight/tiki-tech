@@ -4,7 +4,6 @@ import Football.Match
 import Football.Locate2D (Locate2D (locate2D))
 import Football.Player (Team)
 
-
 xgValue :: Double -> Double
 xgValue distance =
     min 0.99 $ 1.123*exp(-0.203*distance)+0.023

@@ -18,7 +18,7 @@ oppositionTeam Team1 = Team2
 oppositionTeam Team2 = Team1
 
 data PlayerIntention
-  = KickIntention (Double, Double) (Double, Double)
+  = KickIntention (Double, Double) (V3 Double)
   | DribbleIntention (Double, Double) (Double, Double)
   | MoveIntoSpace (Double, Double)
   | ControlBallIntention (Double, Double)
@@ -81,8 +81,7 @@ interceptionTimePlayerBallRK player ball = snd $ interceptionInfoPlayerBallRK pl
 
 interceptionInfoPlayerBallRK :: Player -> Ball -> (V3 Double, Double)
 interceptionInfoPlayerBallRK player ball =
-  let ppv = playerPositionVector player
-      bpv = ballPositionVector ball
+  let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
       droppity (t', (bpv', bmv')) = t' <= 40.0 && (distanceToTargetAfter bpv' t' player > 0.5)
       (t, (fbpv, fbmv)) = head $ dropWhile droppity $ rungeKutte (bpv, bmv) 0.03 ballMotionEq

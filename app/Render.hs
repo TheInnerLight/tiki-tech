@@ -34,6 +34,9 @@ orange = V4 255 165 0 255
 blue :: SP.Color
 blue = V4 0 0 255 255
 
+green :: SP.Color
+green = V4 9 50 9 255
+
 cyan :: SP.Color
 cyan = V4 0 255 255 255
 
@@ -92,6 +95,7 @@ instance Render Ball where
 instance Render SpacePoly where
   render :: S.Renderer -> SpacePoly -> IO ()
   render r (SpacePoly vp player) = do
+--    pure ()
     let 
         (xPoints, yPoints) = unzip . fmap (coordinateTransP . jcvEdgePoint1) $ polyEdges vp
         (xCentre, yCentre) = coordinateTransP  $ polyPoint vp
@@ -136,6 +140,7 @@ instance Render Pitch where
     let cornerTR = coordinateTransPV (105, 0)
     let cornerBL = coordinateTransPV (0, 68)
     let cornerBR = coordinateTransPV (105, 68)
+    SP.fillRectangle r pMin pMax green
     SP.rectangle r pMin pMax white
     SP.line r halfwayMin halfwayMax white
     SP.fillCircle r centreSpot (floor $ scaleFactor * 0.22) white
@@ -155,12 +160,12 @@ instance Render Pitch where
     SP.arc r cornerBL (floor $ scaleFactor * 1) (-90) 0  white
     SP.arc r cornerBR (floor $ scaleFactor * 1) (-180) (-90)  white
 
+--renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
+--renderIntention r pos i = pure ()
 renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
 renderIntention r pos (KickIntention ip p) = do
   let iceptLoc = coordinateTransPV ip
-  let kickLoc = coordinateTransPV p
   SP.line r iceptLoc pos pink
-  SP.line r kickLoc iceptLoc purple
 renderIntention r pos (DribbleIntention ip p) = do
   let iceptLoc = coordinateTransPV ip
   let kickLoc = coordinateTransPV p

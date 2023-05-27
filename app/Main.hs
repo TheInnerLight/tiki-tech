@@ -369,6 +369,7 @@ loopFor r fpsm = do
       S.clear r
 
       --update fps
+      liftIO $ render r Pitch
 
       players <- allPlayers
       --traverse_ updateIntention players
@@ -377,7 +378,7 @@ loopFor r fpsm = do
 
       --traverse_ (liftIO . render r) polys
 
-      liftIO $ render r Pitch
+      
 
       liftIO $ render r ball'
 

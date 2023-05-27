@@ -78,8 +78,8 @@ findPolySpaces player = do
   pure $ (\(_, poly) -> polyToBlock poly) <$> Map.toList spaceMap''
   
 
-optimalNearbySpace2 :: (Monad m, Match m, Log m) => Player -> m (Double, Double)
-optimalNearbySpace2 player = do
+optimalNearbySpace :: (Monad m, Match m, Log m) => Player -> m (Double, Double)
+optimalNearbySpace player = do
     polySpaces <- findPolySpaces player
     polyEdges' <- findEdgeSpaces
     let allSpaces  = polySpaces ++ polyEdges'
@@ -112,39 +112,8 @@ nearestSpace player = do
   case (find (\p -> spacePolyPlayer p == player) spaceMap') of
     Just p -> pure $ polyPoint $ spacePolyJCV p
 
--- optimalNearbySpace :: (Monad m, Match m) => Player -> m [V3 Double]
--- optimalNearbySpace player = do
---   (SpaceMap spaceMap') <- spaceMap
---   (pCentreX, pCentreY) <- centreOfPlay
---   offsideLineX <- offsideLine (playerTeam player)
---   let polyDist poly =
---         let (cx, cy) = polyPoint poly
---         in distance (playerPositionVector player) (V3 cx cy 0)
---       centreToVec :: JCVPoly -> V3 Double
---       centreToVec poly =
---         let (cx, cy) =  polyPoint poly
---         in V3 cx cy 0
---   attackingDirection' <- attackingDirection (playerTeam player)
-
---   let fffff p =
---         let (x, y) = polyPoint p
---         in case attackingDirection' of
---           AttackingLeftToRight -> x >= pCentreX - 40 && x <= offsideLineX && y >= 5 && y <= 63
---           AttackingRightToLeft -> x >= offsideLineX && x <= pCentreX + 40 && y >= 5 && y <= 63
-
---   pure $ take 1 
---         $ fmap centreToVec
---         $ reverse
---         -- $ sortOn polyDist
---         $ sortOn (\p ->  (voronoiPolygonArea p) / (polyDist p) ** 0.7 ) 
---         $ filter  (\p -> fffff p )
---         $ spacePolyJCV . snd <$> Map.toList spaceMap'
-    
-
 findClosestOpposition :: (Monad m, Match m) => Player ->  m Player
 findClosestOpposition player = do
   opp <- oppositionPlayers (playerTeam player)
   pure $ head $ sortOn (\o -> distance (playerPositionVector o) (playerPositionVector player) ) opp
   
-         
-

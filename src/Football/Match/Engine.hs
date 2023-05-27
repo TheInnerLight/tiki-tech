@@ -17,7 +17,7 @@ import Football.Match
 import Football.Behaviours.Kick
 import Data.List (sortOn, foldl', find)
 import Data.Maybe (isJust)
-import Football.Behaviours.FindSpace (optimalNearbySpace2, nearestSpace)
+import Football.Behaviours.FindSpace (optimalNearbySpace, nearestSpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passSafetyCoeff, passDesirabilityCoeff), PassTarget (PlayerTarget, SpaceTarget))
 import Voronoi.JCVoronoi (JCVPoly, jcvSites2)
 import Control.Concurrent.STM (readTMVar, writeTMVar)
@@ -27,6 +27,7 @@ import Football.Understanding.Space.Data (SpaceMap)
 import Football.Understanding.DecisionFactors
 import Data.Foldable (foldlM)
 import Football.Behaviours.Marking (playerMarkClosestOppositionPlayer, positionalOrientedZonalMark)
+import Football.Intentions.OnTheBall (determineOnTheBallIntention, OnTheBallCriteria (OnTheBallCriteria))
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
@@ -72,7 +73,7 @@ enactIntentions = do
     enactIntention player =
       case playerIntention player of
         DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc player
-        KickIntention iceptloc kloc -> kickBallToLocation iceptloc kloc player
+        KickIntention iceptloc mot -> kickBallWith iceptloc mot player
         MoveIntoSpace loc -> pure $ runTowardsLocation loc player
         ControlBallIntention loc -> controlBall loc player
         IntentionCooldown _ -> pure player
@@ -138,33 +139,9 @@ decideIntentions = do
       decisionFactors <- calculateDecisionFactors player
       newIntention <- case decisionFactors of
         DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
-          ball <- gameBall
-          safePassingOptions <- safestPassingOptions player
-          case find (\p -> passSafetyCoeff p >= 0.6) safePassingOptions of
-            Just pass -> 
-              case passTarget pass of
-                PlayerTarget targetPlayer ->
-                  let tppv = playerPositionVector targetPlayer + 0.3 * (playerMotionVector targetPlayer)
-                  in pure $ KickIntention (locate2D ball) (tppv ^. _x, tppv ^. _y)
-                SpaceTarget targetLoc ->
-                  pure $ KickIntention (locate2D ball) targetLoc
-            Nothing -> do
-              ns <- nearestSpace player
-              pure $ DribbleIntention (locate2D ball) ns
+          determineOnTheBallIntention (OnTheBallCriteria (Just 0.6) Nothing) player
         DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = False } -> do
-          ball <- gameBall
-          safePassingOptions <- safestPassingOptions player
-          case find (\p -> passSafetyCoeff p >= 0.85 && passDesirabilityCoeff p > 0) safePassingOptions of
-            Just pass -> 
-              case passTarget pass of
-                PlayerTarget targetPlayer ->
-                  let tppv = playerPositionVector targetPlayer + 0.3 * (playerMotionVector targetPlayer)
-                  in pure $ KickIntention (locate2D ball) (tppv ^. _x, tppv ^. _y)
-                SpaceTarget targetLoc ->
-                  pure $ KickIntention (locate2D ball) targetLoc
-            Nothing -> do
-              ns <- nearestSpace player
-              pure $ DribbleIntention (locate2D ball) ns
+          determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) (Just 0)) player
         DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc _), dfHasControlOfBall = False, dfOppositionInPossession = Nothing } -> do
           targetLoc <- clampPitch loc
           pure $ ControlBallIntention targetLoc
@@ -175,23 +152,11 @@ decideIntentions = do
           loc <- positionalOrientedZonalMark player
           pure $ ControlBallIntention loc
         DecisionFactors { dfTeammateInPossession = Just _} -> do
-          nearbySpace <- optimalNearbySpace2 player
+          nearbySpace <- optimalNearbySpace player
           targetLoc <- clampPitch nearbySpace
           pure $ MoveIntoSpace targetLoc
         DecisionFactors { dfHasControlOfBall = True} -> do
-          ball <- gameBall
-          safePassingOptions <- safestPassingOptions player
-          case find (\p -> passSafetyCoeff p >= 0.85) safePassingOptions of
-            Just pass -> 
-              case passTarget pass of
-                PlayerTarget targetPlayer ->
-                  let tppv = playerPositionVector targetPlayer + 0.3 * (playerMotionVector targetPlayer)
-                  in pure $ KickIntention (locate2D ball) (tppv ^. _x, tppv ^. _y)
-                SpaceTarget targetLoc ->
-                  pure $ KickIntention (locate2D ball) targetLoc
-            Nothing -> do
-              ns <- nearestSpace player
-              pure $ DribbleIntention (locate2D ball) ns
+          determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
         _  -> pure DoNothing
       pure player { playerIntention = newIntention }
     

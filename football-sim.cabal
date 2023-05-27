@@ -69,6 +69,7 @@ library
         Football.Behaviours.Press
         Football.Behaviours.Kick
         Football.Behaviours.Pass
+        Football.Intentions.OnTheBall
         Football.Locate2D
         Football.Pitch
         Football.Understanding.DecisionFactors
@@ -158,6 +159,7 @@ test-suite football-sim-test
 
     -- Modules included in this executable, other than Main.
     other-modules:
+      Football.Behaviours.PassSpec
       Football.Understanding.SpaceSpec
 
     -- LANGUAGE extensions used by modules in this package.
@@ -176,5 +178,7 @@ test-suite football-sim-test
     build-depends:
         base ^>=4.17.0.0,
         football-sim,
+        linear,
+        mtl,
         tasty,
         tasty-hunit

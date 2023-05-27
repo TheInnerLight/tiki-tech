@@ -11,8 +11,8 @@ import Control.Monad (when, void)
 import Core (GetSystemTime (systemTimeNow), Random (randomNormalMeanStd))
 import Data.Time.Clock.System (SystemTime(..))
 
-kickBallToLocation :: (Monad m, Match m, GetSystemTime m) => (Double, Double) -> (Double, Double) -> Player -> m Player
-kickBallToLocation iceptLoc location player = do
+kickBallWith :: (Monad m, Match m, GetSystemTime m) => (Double, Double) -> V3 Double -> Player -> m Player
+kickBallWith iceptLoc desiredBallMotion player = do
   let player' = runTowardsLocation iceptLoc player
   ballInRange <- canKick player'
   if ballInRange then
@@ -21,9 +21,8 @@ kickBallToLocation iceptLoc location player = do
     pure player'
   where
     kickSuccess player' = do
-      ball <- gameBall
       time <- systemTimeNow
-      void $ kickBall player $ motionVectorForPassTo ball location
+      void $ kickBall player desiredBallMotion
       pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + 300000000 } }
 
 dribbleToLocation :: (Monad m, Match m, GetSystemTime m) => (Double, Double) -> (Double, Double) -> Player -> m Player
@@ -85,6 +84,14 @@ motionVectorForPassToWeak ball (targetX, targetY) =
 motionVectorForPassTo :: Ball -> (Double, Double) -> V3 Double
 motionVectorForPassTo ball (targetX, targetY) = 
   maxMag 31 $ ballDirection * pure (10.15 + 0.434 * dist - 1.43e-3 * dist ** 2.0 + 5.9e-5 * dist ** 3.0) - ballMotionVector ball
+  where
+    targetVector = V3 targetX targetY 0
+    ballDirection = normalize (targetVector - ballPositionVector ball)
+    dist = norm (targetVector - ballPositionVector ball)
+
+motionVectorForPassToArrivalSpeed :: Double -> Ball -> (Double, Double) -> V3 Double
+motionVectorForPassToArrivalSpeed arrivalSpeed ball (targetX, targetY) = 
+  maxMag 31 $ ballDirection * pure (arrivalSpeed + 0.15 + 0.434 * dist - 1.43e-3 * dist ** 2.0 + 5.9e-5 * dist ** 3.0) - ballMotionVector ball
   where
     targetVector = V3 targetX targetY 0
     ballDirection = normalize (targetVector - ballPositionVector ball)
