@@ -1,4 +1,4 @@
-# Revision history for football-sim
+# Revision history for tiki-techa
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
