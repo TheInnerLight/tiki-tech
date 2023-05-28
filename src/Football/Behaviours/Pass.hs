@@ -15,6 +15,8 @@ import Football.Behaviours.Kick (motionVectorForPassTo, motionVectorForPassToArr
 import Football.Understanding.Space (offsideLine, isOnside)
 import Control.Monad (filterM)
 import Football.Understanding.ExpectedGoals (locationXG)
+import Football.Pitch (Pitch(Pitch))
+import Football.Understanding.Interception (interceptionTimePlayerBallRK, interceptionTimePlayersBallRK)
 
 data PassTarget
   = PlayerTarget Player
@@ -38,6 +40,7 @@ data PassDesirability = PassDesirability
 
 toFeetPassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
 toFeetPassingOptions player = do
+  pitch' <- pitch
   teamPlayers' <- teammates player
   ball <- gameBall
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
@@ -46,8 +49,8 @@ toFeetPassingOptions player = do
   let calcToFeetDesirability p1 = do
         let ball' = ball { ballMotionVector = motionVectorForPassTo ball $ locate2D p1 }
             --trd = interceptionTimePlayersBallRK teamPlayers' ball'
-            trd = interceptionTimePlayerBallRK p1 ball'
-            oid = interceptionTimePlayersBallRK oppositionPlayers' ball'
+            trd = interceptionTimePlayerBallRK pitch' p1 ball'
+            oid = interceptionTimePlayersBallRK pitch' oppositionPlayers' ball'
             z1 = (oid - trd) / sqrt 2
             a = 4.68
             b = 0.48
@@ -65,10 +68,12 @@ toFeetPassingOptions player = do
           , passDesirabilityCoeff = (newXG - originalXG) * safety - (newOppXG - originalOppXG) * (1-safety)
           }
   onsidePlayers <- filterM (isOnside (playerTeam player)) teamPlayers'
-  traverse calcToFeetDesirability onsidePlayers
+  toFeetDesirability <- traverse calcToFeetDesirability onsidePlayers
+  pure $ filter (\s -> passTeammateReceptionDistance s < 4.0) toFeetDesirability
 
 throughBallPassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
 throughBallPassingOptions player = do
+  pitch' <- pitch
   teamPlayers' <- teammates player
   ball <- gameBall
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
@@ -83,8 +88,8 @@ throughBallPassingOptions player = do
         let playerLocIn2S = playerPositionVector p1 + playerMotionVector p1 * 2
             ball' = ball { ballMotionVector = motionVectorForPassToArrivalSpeed (norm $ playerMotionVector p1) ball $ locate2D playerLocIn2S }
             --trd = interceptionTimePlayersBallRK teamPlayers' ball'
-            trd = interceptionTimePlayerBallRK p1 ball'
-            oid = interceptionTimePlayersBallRK oppositionPlayers' ball'
+            trd = interceptionTimePlayerBallRK pitch' p1 ball'
+            oid = interceptionTimePlayersBallRK pitch' oppositionPlayers' ball'
             z1 = (oid - trd) / sqrt 2
             a = 4.68
             b = 0.48
@@ -104,11 +109,11 @@ throughBallPassingOptions player = do
   onsidePlayers <- filterM (isOnside (playerTeam player)) $ filter (/= player) teamPlayers'
   let forwardRunningPlayers = filter (\p -> dot attackingRunVector (playerMotionVector p) > 4) onsidePlayers
   throughballDesirability <- traverse calcThroughBallDesirability forwardRunningPlayers
-  pure $ filter (\s -> passTeammateReceptionDistance s < 3.0) throughballDesirability
+  pure $ filter (\s -> passTeammateReceptionDistance s < 4.0) throughballDesirability
 
 toSpacePassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
 toSpacePassingOptions player = do
-  teamPlayers' <- teammates player
+  pitch' <- pitch
   ball <- gameBall
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   originalXG <- locationXG (playerTeam player) player
@@ -117,9 +122,9 @@ toSpacePassingOptions player = do
   let calcToSpaceDesirability v1 = do
         let (centreX, centreY) = polyPoint $ spacePolyJCV v1
             ball' = ball { ballMotionVector = motionVectorForPassTo ball (centreX, centreY) }
-            trd = interceptionTimePlayerBallRK (spacePolyPlayer v1) ball'
+            trd = interceptionTimePlayerBallRK pitch' (spacePolyPlayer v1) ball'
             --trd = interceptionTimePlayersBallRK teamPlayers' ball'
-            oid = interceptionTimePlayersBallRK oppositionPlayers' ball'
+            oid = interceptionTimePlayersBallRK pitch' oppositionPlayers' ball'
             z1 = (oid - trd) / sqrt 2
             a = 4.68
             b = 0.48
@@ -140,12 +145,11 @@ toSpacePassingOptions player = do
   spaceDesirability <- traverse calcToSpaceDesirability onsidePolygons
   pure $ filter (\s -> passTeammateReceptionDistance s < 4.0) spaceDesirability
 
-
 safestPassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
 safestPassingOptions player = do
   toFeetPassOptions <- toFeetPassingOptions player
   toSpacePassOptions <- toSpacePassingOptions player
   throughBallOptions <- throughBallPassingOptions player
-  pure $ sortOn (Data.Ord.Down . passDesirabilityCoeff) (toFeetPassOptions ++ toSpacePassOptions) -- ++ throughBallOptions
+  pure $ sortOn (Data.Ord.Down . passDesirabilityCoeff) (toFeetPassOptions ++ toSpacePassOptions ++ throughBallOptions) 
 
 

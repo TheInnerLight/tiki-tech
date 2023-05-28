@@ -4,7 +4,7 @@
 
 module Football.Understanding.DecisionFactors where
 
-import Football.Player (Player (playerPositionVector, playerMotionVector, playerTeam, playerNumber), interceptionInfoPlayerBallRK, interceptionTimePlayersBallRK)
+import Football.Player (Player (playerPositionVector, playerMotionVector, playerTeam, playerNumber))
 import Football.Match
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Ball (Ball(..))
@@ -18,6 +18,8 @@ import Football.Understanding.Space.Data (SpaceMap(SpaceMap), SpacePoly (spacePo
 import qualified Data.Foldable as Map
 import Voronoi.JCVoronoi (voronoiPolygonArea)
 import Football.Behaviours.FindSpace (findClosestOpposition)
+import Football.Understanding.Interception (interceptionInfoPlayerBallRK, interceptionTimePlayersBallRK)
+import Football.Pitch (Pitch(Pitch))
 
 data DecisionFactors = DecisionFactors
   { dfClosestPlayerToBall :: Maybe ClosestPlayerToBall
@@ -41,9 +43,10 @@ checkClosestPlayer :: (Match m, Monad m) => Player -> m (Maybe ClosestPlayerToBa
 checkClosestPlayer player = do
   ball <- gameBall
   teamPlayers' <- teammates player
-  let (iceptLoc3D, iceptTime) = interceptionInfoPlayerBallRK player ball
+  pitch' <- pitch
+  let (iceptLoc3D, iceptTime) = interceptionInfoPlayerBallRK pitch' player ball
   let iceptLoc = locate2D iceptLoc3D
-  let noCloserPlayers = interceptionTimePlayersBallRK teamPlayers' ball >= iceptTime
+  let noCloserPlayers = interceptionTimePlayersBallRK pitch' teamPlayers' ball >= iceptTime
   if noCloserPlayers then
     pure $ Just $ ClosestPlayerToBall iceptLoc iceptTime
   else

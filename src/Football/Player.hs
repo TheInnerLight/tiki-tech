@@ -76,28 +76,6 @@ distanceToTargetAfter target t p =
       rt = (ms*(t - (1 - exp(-pa * t))/pa))
   in norm st - rt
 
-interceptionTimePlayerBallRK :: Player -> Ball -> Double
-interceptionTimePlayerBallRK player ball = snd $ interceptionInfoPlayerBallRK player ball
-
-interceptionInfoPlayerBallRK :: Player -> Ball -> (V3 Double, Double)
-interceptionInfoPlayerBallRK player ball =
-  let bpv = ballPositionVector ball
-      bmv = ballMotionVector ball
-      droppity (t', (bpv', bmv')) = t' <= 40.0 && (distanceToTargetAfter bpv' t' player > 0.5)
-      (t, (fbpv, fbmv)) = head $ dropWhile droppity $ rungeKutte (bpv, bmv) 0.03 ballMotionEq
-  in (fbpv, t)
-
-interceptionTimePlayersBallRK :: [Player] -> Ball -> Double
-interceptionTimePlayersBallRK players ball = snd $ interceptionInfoPlayersBallRK players ball
-
-interceptionInfoPlayersBallRK :: [Player] -> Ball -> (V3 Double, Double)
-interceptionInfoPlayersBallRK players ball =
-  let bpv = ballPositionVector ball
-      bmv = ballMotionVector ball
-      droppity (t', (bpv', bmv')) = t' <= 40.0 && all (\p -> distanceToTargetAfter bpv' t' p > 0.5) players
-      (t, (fbpv, fbmv)) = head $ dropWhile droppity $ rungeKutte (bpv, bmv) 0.03 ballMotionEq
-  in (fbpv, t)
-
 runTowardsLocation :: (Double, Double) -> Player -> Player
 runTowardsLocation (x, y) player =
   let targetV = V3 x y 0

@@ -12,6 +12,7 @@ import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), Horizont
 import qualified Data.Vector as Vec
 import Statistics.Quantile (median, medianUnbiased)
 import Data.Ord (comparing, Down(..))
+import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
 
 createSpaceMap :: (Match m, Monad m) => m SpaceMap
 createSpaceMap = do
@@ -54,12 +55,13 @@ centreOfPlay = do
 
 offsideLine :: (Match m, Monad m) => Team -> m Double
 offsideLine team  = do
+  pitch' <- pitch
   teamPlayers' <- teamPlayers $ otherTeam team
   attackingDirection' <- attackingDirection team
   (ballX, _) <- locate2D <$> gameBall
   pure $ case attackingDirection' of
-       AttackingLeftToRight -> min 105   $ max ballX $ max 52.5 $ xPos (sortOn (Data.Ord.Down . xPos) teamPlayers' !! 1)
-       AttackingRightToLeft -> min ballX $ min 52.5  $ max 0    $ xPos (sortOn xPos teamPlayers' !! 1)
+       AttackingLeftToRight -> min (pitchLength pitch')  $ max ballX                      $ max (pitchHalfwayLineX pitch') $ xPos (sortOn (Data.Ord.Down . xPos) teamPlayers' !! 1)
+       AttackingRightToLeft -> min ballX                 $ min (pitchHalfwayLineX pitch') $ max 0                          $ xPos (sortOn xPos teamPlayers' !! 1                  ) 
   where 
     otherTeam Team1 = Team2
     otherTeam Team2 = Team1

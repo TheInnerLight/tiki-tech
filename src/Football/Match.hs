@@ -15,6 +15,7 @@ import Control.Monad (when)
 import Voronoi.JCVoronoi (JCVPoly)
 import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (spacePolyPlayer))
 import qualified Data.Map as Map
+import Football.Pitch (Pitch)
 
 data AttackingDirection 
   = AttackingLeftToRight
@@ -28,6 +29,7 @@ class Match m where
   kickBall :: Player -> V3 Double -> m Ball
   update :: Int -> m ()
   spaceMap :: m SpaceMap
+  pitch :: m Pitch
     
 class HasTeam a where
   getTeam :: a -> Team

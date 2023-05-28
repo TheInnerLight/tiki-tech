@@ -12,12 +12,13 @@ import Football.Ball
 import Control.Lens ((^.))
 import Linear.V3 (_xy)
 import qualified Data.Vector.Storable as V
-import Voronoi.JCVoronoi (JCVPoly(..), JCVEdge (jcvEdgePoint1))
+import Voronoi.JCVoronoi (JCVPoly(..), JCVEdge (jcvEdgePoint1), voronoiPolygonArea)
 import SDL.Primitive (Pos)
 import Football.Understanding.Space.Data (SpacePoly(..))
 import Foreign.C (CInt)
 import qualified Data.Vector as VE
 import Football.Player (PlayerIntention(DribbleIntention))
+import Football.Pitch (Pitch(..))
 
 white :: SP.Color
 white = V4 255 255 255 255
@@ -28,11 +29,23 @@ red = V4 255 0 0 255
 redT :: SP.Color
 redT = V4 255 0 0 20
 
+darkRed :: SP.Color
+darkRed = V4 100 0 0 255
+
+darkRedT :: SP.Color
+darkRedT = V4 100 0 0 20
+
 orange :: SP.Color
 orange = V4 255 165 0 255
 
 blue :: SP.Color
 blue = V4 0 0 255 255
+
+darkBlue :: SP.Color
+darkBlue = V4 0 0 100 255
+
+darkBlueT :: SP.Color
+darkBlueT = V4 0 0 100 20
 
 green :: SP.Color
 green = V4 9 50 9 255
@@ -101,45 +114,46 @@ instance Render SpacePoly where
         (xCentre, yCentre) = coordinateTransP  $ polyPoint vp
         colourT = 
           case playerTeam player of
+            Team1 | voronoiPolygonArea vp <= 25 -> darkRedT
             Team1 -> redT
-            Team2 -> blueT 
+            Team2 | voronoiPolygonArea vp <= 25 -> darkBlueT
+            Team2 -> blueT
         colour = 
           case playerTeam player of
+            Team1 | voronoiPolygonArea vp <= 25 -> darkRed
             Team1 -> red
+            Team2 | voronoiPolygonArea vp <= 25 -> darkBlue
             Team2 -> blue
       
     SP.fillCircle r (V2 xCentre yCentre) 2 colour
     SP.fillPolygon r (V.fromList xPoints) (V.fromList yPoints) colourT
     SP.polygon r (V.fromList xPoints) (V.fromList yPoints) colour
 
-data Pitch = Pitch
-
 instance Render Pitch where
-  render r Pitch = do
-    let pMin = coordinateTransPV (0, 0)
-    let pMax = coordinateTransPV (105, 68)
-    let halfwayMin = coordinateTransPV (52.5, 0)
-    let halfwayMax = coordinateTransPV (52.5, 68)
-    let centreSpot = coordinateTransPV (52.5, 34)
-    let goal1Min = coordinateTransPV (-2.4, 34-7.32/2)
-    let goal1Max = coordinateTransPV (0, 34+7.32/2)
-
-    let goalArea1Min = coordinateTransPV (0, 34-7.32/2-5.5)
-    let goalArea1Max = coordinateTransPV (5.5, 34+7.32/2+5.5)
-    let penaltyArea1Min = coordinateTransPV (0, 34-7.32/2-5.5-11)
-    let penaltyArea1Max = coordinateTransPV (5.5+11, 34+7.32/2+5.5+11)
-    let penalltySpot1 = coordinateTransPV (11, 34)
-    let goal2Min = coordinateTransPV (107.4, 34-7.32/2)
-    let goal2Max = coordinateTransPV (105, 34+7.32/2)
-    let goalArea2Min = coordinateTransPV (105-5.5, 34-7.32/2-5.5)
-    let goalArea2Max = coordinateTransPV (105, 34+7.32/2+5.5)
-    let penaltyArea2Min = coordinateTransPV (105-5.5-11, 34-7.32/2-5.5-11)
-    let penaltyArea2Max = coordinateTransPV (105, 34+7.32/2+5.5+11)
-    let penalltySpot2 = coordinateTransPV (105-11, 34)
-    let cornerTL = coordinateTransPV (0, 0)
-    let cornerTR = coordinateTransPV (105, 0)
-    let cornerBL = coordinateTransPV (0, 68)
-    let cornerBR = coordinateTransPV (105, 68)
+  render r (Pitch length width) = do
+    let pMin = coordinateTransPV            (0, 0)
+    let pMax = coordinateTransPV            (length,        width)
+    let halfwayMin = coordinateTransPV      (length/2,      0)
+    let halfwayMax = coordinateTransPV      (length/2,      width)
+    let centreSpot = coordinateTransPV      (length/2,      width/2)
+    let goal1Min = coordinateTransPV        (-2.4,          width/2-7.32/2)
+    let goal1Max = coordinateTransPV        (0,             width/2+7.32/2)
+    let goalArea1Min = coordinateTransPV    (0,             width/2-7.32/2-5.5)
+    let goalArea1Max = coordinateTransPV    (5.5,           width/2+7.32/2+5.5)
+    let penaltyArea1Min = coordinateTransPV (0,             width/2-7.32/2-5.5-11)
+    let penaltyArea1Max = coordinateTransPV (5.5+11,        width/2+7.32/2+5.5+11)
+    let penalltySpot1 = coordinateTransPV   (11,            width/2)
+    let goal2Min = coordinateTransPV        (length+2.4,    width/2-7.32/2)
+    let goal2Max = coordinateTransPV        (length,        width/2+7.32/2)
+    let goalArea2Min = coordinateTransPV    (length-5.5,    width/2-7.32/2-5.5)
+    let goalArea2Max = coordinateTransPV    (length,        width/2+7.32/2+5.5)
+    let penaltyArea2Min = coordinateTransPV (length-5.5-11, width/2-7.32/2-5.5-11)
+    let penaltyArea2Max = coordinateTransPV (length,        width/2+7.32/2+5.5+11)
+    let penalltySpot2 = coordinateTransPV   (length-11,     width/2)
+    let cornerTL = coordinateTransPV        (0,             0)
+    let cornerTR = coordinateTransPV        (length,        0)
+    let cornerBL = coordinateTransPV        (0,             width)
+    let cornerBR = coordinateTransPV        (length,        width)
     SP.fillRectangle r pMin pMax green
     SP.rectangle r pMin pMax white
     SP.line r halfwayMin halfwayMax white

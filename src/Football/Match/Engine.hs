@@ -28,6 +28,8 @@ import Football.Understanding.DecisionFactors
 import Data.Foldable (foldlM)
 import Football.Behaviours.Marking (playerMarkClosestOppositionPlayer, positionalOrientedZonalMark)
 import Football.Intentions.OnTheBall (determineOnTheBallIntention, OnTheBallCriteria (OnTheBallCriteria))
+import Football.Understanding.ExpectedGoals (locationXG)
+import Football.Pitch (Pitch)
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
@@ -36,8 +38,11 @@ data MatchState = MatchState
   , matchStateTeam2VoronoiMap :: TMVar [JCVPoly]
   , matchStateSpaceMap :: TMVar SpaceMap
   , matchStateLastPlayerTouchedBall :: TMVar Player
+  , matchPitch :: Pitch
   }
 
+pitchImpl :: (Monad m, Has m MatchState) => m Pitch
+pitchImpl = matchPitch <$> has
 
 attackingDirectionImpl :: (Monad m, Has m MatchState, LiftSTM m) => Team -> m AttackingDirection
 attackingDirectionImpl team =
@@ -139,13 +144,13 @@ decideIntentions = do
       decisionFactors <- calculateDecisionFactors player
       newIntention <- case decisionFactors of
         DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
-          determineOnTheBallIntention (OnTheBallCriteria (Just 0.6) Nothing) player
+          determineOnTheBallIntention (OnTheBallCriteria (Just 0.65) Nothing) player
         DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = False } -> do
           determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) (Just 0)) player
         DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc _), dfHasControlOfBall = False, dfOppositionInPossession = Nothing } -> do
           targetLoc <- clampPitch loc
           pure $ ControlBallIntention targetLoc
-        DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False, dfOppositionInPossession = Just _  } | t <= 3.0 -> do
+        DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False, dfOppositionInPossession = Just _  } -> do
           targetLoc <- clampPitch loc
           pure $ ControlBallIntention targetLoc
         DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfOppositionInPossession = Just (OppositionInPossession _)  } -> do
@@ -156,7 +161,21 @@ decideIntentions = do
           targetLoc <- clampPitch nearbySpace
           pure $ MoveIntoSpace targetLoc
         DecisionFactors { dfHasControlOfBall = True} -> do
-          determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
+          ball <- gameBall
+          attackingDirection' <- attackingDirection (playerTeam player)
+          let dribbleLoc = 
+                case attackingDirection' of
+                  AttackingLeftToRight -> playerPositionVector player + V3 2.5 0 0
+                  AttackingRightToLeft -> playerPositionVector player - V3 2.5 0 0
+          currXG <- locationXG (playerTeam player) player
+          dibbleXG <- locationXG (playerTeam player) dribbleLoc
+          let dribbleXGAdded = dibbleXG - currXG
+          obi <- determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) (Just dribbleXGAdded)) player
+          pure $ case obi of
+            DribbleIntention _ _ -> DribbleIntention (locate2D ball) (locate2D dribbleLoc)
+            x                    -> x
+          --pure $ DribbleIntention (locate2D ball) (locate2D dribbleLoc)
+          --determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
         _  -> pure DoNothing
       pure player { playerIntention = newIntention }
     

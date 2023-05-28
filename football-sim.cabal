@@ -74,6 +74,7 @@ library
         Football.Pitch
         Football.Understanding.DecisionFactors
         Football.Understanding.ExpectedGoals
+        Football.Understanding.Interception
         Football.Understanding.Shape
         Football.Understanding.Space
         Football.Understanding.Space.Data

@@ -25,6 +25,8 @@ determineOnTheBallIntention otbc player = do
       case passTarget pass of
         PlayerTarget _ ->
           pure $ KickIntention (locate2D ball) (passBallVector pass)
+        AheadOfTarget _ ->
+          pure $ KickIntention (locate2D ball) (passBallVector pass)
         SpaceTarget _ ->
           pure $ KickIntention (locate2D ball) (passBallVector pass)
     Nothing -> do

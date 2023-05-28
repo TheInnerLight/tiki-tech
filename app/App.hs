@@ -31,6 +31,7 @@ instance Match AppM where
   kickBall = kickImpl
   update = updateImpl
   spaceMap = allPlayersVoronoiMapImpl
+  pitch = pitchImpl
 
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff

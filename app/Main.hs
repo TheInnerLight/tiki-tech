@@ -24,6 +24,7 @@ import Control.Monad.IO.Class
 import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO, newEmptyTMVarIO)
 import Football.Match
 import Football.Match.Engine
+import Football.Pitch (Pitch(..))
 import Data.Foldable (traverse_)
 import Voronoi.JCVoronoi
 
@@ -357,6 +358,7 @@ loopFor r fpsm = do
           , matchStateTeam2VoronoiMap = t2Voronoi
           , matchStateSpaceMap = allVoronoi
           , matchStateLastPlayerTouchedBall = lastPlayerTouchedBall
+          , matchPitch = Pitch 105 68
           }
   _ <- forkIO $ runAppM (processLoop 30) initialState
   runAppM loop' initialState
@@ -368,39 +370,25 @@ loopFor r fpsm = do
       S.rendererDrawColor r $= black
       S.clear r
 
-      --update fps
-      liftIO $ render r Pitch
+      -- draw the pitch
+      pitch' <- pitch
+      liftIO $ render r pitch'
 
+      -- draw the players
       players <- allPlayers
-      --traverse_ updateIntention players
       traverse_ (liftIO . render r) players
+
+      -- draw the ball
       ball' <- gameBall
-
-      --traverse_ (liftIO . render r) polys
-
-      
-
       liftIO $ render r ball'
 
-      --liftIO $ print "-------------------------------"
-      --vd <- liftIO $ jcVoronoi points
-      --sites <- liftIO $ jcvSites vd
-      --let sites = jcvSites2 points
-      -- sites1 <- team1VoronoiMap
-      -- sites2 <- team2VoronoiMap
+      -- draw space polygons
       (SpaceMap sitesAll) <- spaceMap
-
-      -- traverse_ (liftIO . render r . ColouredVPoly red)  sites1
-      -- traverse_ (liftIO . render r . ColouredVPoly blue) sites2
       traverse_ (liftIO . render r) $ fmap snd $ Map.toList sitesAll
 
 
-      --liftIO $ print sites
-
       S.present r
-
       SF.delay_ fpsm
-
       loop'
 
 
