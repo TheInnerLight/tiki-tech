@@ -20,8 +20,8 @@ newtype AppM a =
 instance Has AppM MatchState where
   has = AppM ask
 
-instance LiftSTM AppM where
-  liftSTM = liftIO . atomically
+instance Atomise AppM where
+  atomise = liftIO . atomically
 
 instance Match AppM where
   attackingDirection = attackingDirectionImpl
@@ -32,6 +32,8 @@ instance Match AppM where
   update = updateImpl
   spaceMap = allPlayersVoronoiMapImpl
   pitch = pitchImpl
+  goals = goalsImpl
+  recordGoal = recordGoalImpl
 
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff
@@ -43,5 +45,6 @@ instance Random AppM where
   randomNormalMeanStd :: Double -> Double -> AppM Double
   randomNormalMeanStd mean std = liftIO $ normalIO' (mean, std)
 
+runAppM :: AppM a -> MatchState -> IO a
 runAppM = runReaderT . unAppM
 

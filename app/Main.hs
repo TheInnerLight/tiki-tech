@@ -9,9 +9,11 @@ module Main where
 import Foreign.C.Types (CInt)
 import qualified MyLib (someFunc)
 import qualified SDL as S
+import qualified SDL.Font as SDLFont
 import qualified SDL.Framerate as SF
 import qualified SDL.Primitive as SP
-import SDL.Vect             (V2(..), V3(..), V4(..), _x, _y, _z)
+import qualified SDL.Video.Renderer as SVR
+import SDL.Vect             (V2(..), V3(..), V4(..), _x, _y, _z, Point(..))
 import SDL                  (($=))
 import Football.Player
 import Render
@@ -25,6 +27,7 @@ import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO, newEm
 import Football.Match
 import Football.Match.Engine
 import Football.Pitch (Pitch(..))
+import Football.Types
 import Data.Foldable (traverse_)
 import Voronoi.JCVoronoi
 
@@ -35,6 +38,7 @@ import App
 import Data.Time.Clock.System (getSystemTime, SystemTime (systemSeconds, systemNanoseconds))
 import Control.Concurrent (threadDelay, forkIO)
 import Control.Monad.Reader.Class (MonadReader(ask))
+import Data.Text as T
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -65,11 +69,16 @@ main :: IO ()
 main = do
   trySomeBalls
   S.initialize [S.InitVideo]
+  SDLFont.initialize
+  font <- SDLFont.load "Roboto-Regular.ttf" 18
+  h2font <- SDLFont.load "Roboto-Regular.ttf" 32
   w <- S.createWindow "sdl2-gfx-example" S.defaultWindow { S.windowInitialSize = V2 screenWidth screenHeight }
   r <- S.createRenderer w (-1) S.defaultRenderer
   S.showWindow w
+
+  let fonts = Fonts {fontsH2 = h2font, fontsDefault = font}
   
-  SF.with fps $ loopFor r
+  SF.with fps $ loopFor r fonts
 
   S.destroyWindow w
   S.quit
@@ -80,11 +89,14 @@ main = do
 playerDefaultAcceleration :: Double
 playerDefaultAcceleration = 1.3
 
+playerDefaultMaxSpeed :: Double
+playerDefaultMaxSpeed = 7.8
+
 player :: Player
 player = Player 
   { playerPositionVector = V3 2.0 34.0 0
   , playerNumber = 1
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing
   , playerTeam = Team1
@@ -95,7 +107,7 @@ player2 :: Player
 player2 = Player 
   { playerPositionVector = V3 15.0 56.0 0
   , playerNumber = 2
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -106,7 +118,7 @@ player3 :: Player
 player3 = Player 
   { playerPositionVector = V3 15.0 11.0 0
   , playerNumber = 3
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -117,7 +129,7 @@ player4 :: Player
 player4 = Player 
   { playerPositionVector = V3 15.0 41.0 0
   , playerNumber = 4
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -128,7 +140,7 @@ player5 :: Player
 player5 = Player 
   { playerPositionVector = V3 15.0 26.0 0
   , playerNumber = 5
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -139,7 +151,7 @@ player6 :: Player
 player6 = Player 
   { playerPositionVector = V3 25.0 34.0 0
   , playerNumber = 6
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -150,7 +162,7 @@ player7 :: Player
 player7 = Player 
   { playerPositionVector = V3 35.0 24.0 0
   , playerNumber = 7
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -161,7 +173,7 @@ player8 :: Player
 player8 = Player 
   { playerPositionVector = V3 35.0 44.0 0
   , playerNumber = 8
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -172,7 +184,7 @@ player9 :: Player
 player9 = Player 
   { playerPositionVector = V3 50.0 24.0 0
   , playerNumber = 9
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -183,7 +195,7 @@ player10 :: Player
 player10 = Player 
   { playerPositionVector = V3 55.0 34.0 0
   , playerNumber = 10
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -194,7 +206,7 @@ player11 :: Player
 player11 = Player 
   { playerPositionVector = V3 50.0 44.0 0
   , playerNumber = 11
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
@@ -205,7 +217,7 @@ player1B :: Player
 player1B = Player 
   { playerPositionVector = V3 103.0 34.0 0
   , playerNumber = 1
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -216,7 +228,7 @@ player2B :: Player
 player2B = Player 
   { playerPositionVector = V3 90.0 11.0 0
   , playerNumber = 2
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -227,7 +239,7 @@ player3B :: Player
 player3B = Player 
   { playerPositionVector = V3 90.0 56.0 0
   , playerNumber = 3
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -238,7 +250,7 @@ player4B :: Player
 player4B = Player 
   { playerPositionVector = V3 90.0 26.0 0
   , playerNumber = 4
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -249,7 +261,7 @@ player5B :: Player
 player5B = Player 
   { playerPositionVector = V3 90.0 41.0 0
   , playerNumber = 5
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -260,7 +272,7 @@ player6B :: Player
 player6B = Player 
   { playerPositionVector = V3 80.0 34.0 0
   , playerNumber = 6
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -271,7 +283,7 @@ player7B :: Player
 player7B = Player 
   { playerPositionVector = V3 70.0 44.0 0
   , playerNumber = 7
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -282,7 +294,7 @@ player8B :: Player
 player8B = Player 
   { playerPositionVector = V3 70.0 24.0 0
   , playerNumber = 8
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -293,7 +305,7 @@ player9B :: Player
 player9B = Player 
   { playerPositionVector = V3 55.0 24.0 0
   , playerNumber = 9
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -304,7 +316,7 @@ player10B :: Player
 player10B = Player 
   { playerPositionVector = V3 50.0 34.0 0
   , playerNumber = 10
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -315,7 +327,7 @@ player11B :: Player
 player11B = Player 
   { playerPositionVector = V3 55.0 44.0 0
   , playerNumber = 11
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = 5 }
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
@@ -340,12 +352,17 @@ processLoop desiredFps = do
   liftIO $ threadDelay eDiff
   processLoop desiredFps
 
+data Fonts = Fonts
+  { fontsH2:: SDLFont.Font
+  , fontsDefault :: SDLFont.Font
+  }
 
 
-loopFor :: S.Renderer -> SF.Manager -> IO ()
-loopFor r fpsm = do
+loopFor :: S.Renderer -> Fonts-> SF.Manager -> IO ()
+loopFor r fonts fpsm = do
   pt <- newTVarIO [player, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player1B, player2B, player3B, player4B, player5B, player6B, player7B, player8B, player9B, player10B, player11B]
   bt <- newTVarIO ball
+  goals <- newTVarIO []
   t1Voronoi <- newEmptyTMVarIO
   t2Voronoi <- newEmptyTMVarIO
   allVoronoi <- newEmptyTMVarIO
@@ -359,6 +376,7 @@ loopFor r fpsm = do
           , matchStateSpaceMap = allVoronoi
           , matchStateLastPlayerTouchedBall = lastPlayerTouchedBall
           , matchPitch = Pitch 105 68
+          , matchStateGoals = goals
           }
   _ <- forkIO $ runAppM (processLoop 30) initialState
   runAppM loop' initialState
@@ -372,20 +390,30 @@ loopFor r fpsm = do
 
       -- draw the pitch
       pitch' <- pitch
-      liftIO $ render r pitch'
+      liftIO $ render r (fontsDefault fonts) pitch'
 
       -- draw the players
       players <- allPlayers
-      traverse_ (liftIO . render r) players
+      traverse_ (liftIO . render r (fontsDefault fonts)) players
 
       -- draw the ball
       ball' <- gameBall
-      liftIO $ render r ball'
+      liftIO $ render r (fontsDefault fonts) ball'
 
       -- draw space polygons
-      (SpaceMap sitesAll) <- spaceMap
-      traverse_ (liftIO . render r) $ fmap snd $ Map.toList sitesAll
+      -- (SpaceMap sitesAll) <- spaceMap
+      -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
 
+      -- draw the scores
+      (lg, mg) <- score
+      surf <- SDLFont.solid (fontsH2 fonts) white ("Liverbird " <> T.pack (show lg) <> " - " <> T.pack (show mg) <> " Man Shippy")
+      blug <- liftIO $ SVR.createTextureFromSurface r surf
+      surfDimensions <- liftIO $  SVR.surfaceDimensions surf
+      SVR.freeSurface surf
+      S.rendererDrawColor r $= black
+      let targetRect = S.Rectangle (P $ S.V2 150 20) surfDimensions
+      _ <- liftIO $ S.fillRect r (Just targetRect)
+      SVR.copy r blug Nothing (Just targetRect)
 
       S.present r
       SF.delay_ fpsm

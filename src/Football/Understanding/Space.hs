@@ -3,7 +3,7 @@ module Football.Understanding.Space where
 import Voronoi.JCVoronoi (JCVPoly (polyIndex), jcvSites2, findPoly)
 import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
 import Football.Match (Match (..), clampPitch, AttackingDirection (..), teamPlayers)
-import Football.Player (Player, Team (Team2, Team1))
+import Football.Types
 import Data.Maybe (mapMaybe)
 import Data.Map (Map, (!))
 import Data.List (foldl', minimumBy, maximumBy, sortOn)

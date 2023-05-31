@@ -6,11 +6,7 @@ import Linear (Metric(norm, signorm, dot), normalize)
 import Data.List (unfoldr)
 import GHC.IO (unsafePerformIO)
 import Control.Concurrent (threadDelay)
-
-data Ball = Ball
-  { ballPositionVector :: V3 Double
-  , ballMotionVector :: V3 Double
-  }
+import Football.Types
 
 updateBall :: Double -> Ball -> Ball
 updateBall dt ball =
@@ -46,15 +42,6 @@ rungeKutte initial dt f =
     unfolder (t, st) = 
       let rk' = rk dt f st
       in Just ((t+dt, rk'), (t+dt, rk'))
-
-
-motionVectorForPassTo2 :: Ball -> (Double, Double) -> V3 Double
-motionVectorForPassTo2 ball (targetX, targetY) = 
-  ballDirection * pure (min 31 $ dist ** 0.35 * 4.5) - ballMotionVector ball
-  where
-    targetVector = V3 targetX targetY 0
-    ballDirection = normalize (targetVector - ballPositionVector ball - ballMotionVector ball)
-    dist = norm (targetVector - ballPositionVector ball)
 
 
 

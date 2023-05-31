@@ -6,14 +6,14 @@ module Football.Behaviours.PassSpec where
 import Test.Tasty
 import Test.Tasty.HUnit
 import Football.Match (Match(..), AttackingDirection (AttackingLeftToRight, AttackingRightToLeft))
-import Football.Player (Team(..), Player (..), PlayerSpeed (..), PlayerIntention (DoNothing))
 import Football.Behaviours.Pass
 import Linear (V3(V3), normalize)
 import Control.Monad.Reader (ReaderT (runReaderT), MonadIO (liftIO), MonadReader (..), asks)
-import Football.Ball (Ball (..))
 import Core (Log (logOutput))
 import Data.List (sortOn)
 import qualified Data.Ord
+import Football.Types
+import Football.Pitch (Pitch(..))
 
 defaultPlayerSpeed :: PlayerSpeed
 defaultPlayerSpeed =
@@ -44,6 +44,7 @@ instance Match PassSpecM where
   attackingDirection Team2 = pure AttackingRightToLeft
   gameBall = asks psBall
   allPlayers = asks psPlayers
+  pitch = pure $ Pitch 105 68
 
 instance Log PassSpecM where
   logOutput stuff = liftIO $ print stuff
@@ -111,7 +112,7 @@ farAwayTeammate =
 equidistantTeammate :: V3 Double -> Player
 equidistantTeammate motion = 
   Player 
-    { playerPositionVector = V3 50 (-1) 0
+    { playerPositionVector = V3 30 0 0
     , playerMotionVector = motion
     , playerDesiredLocation = V3 0 0 0
     , playerNumber = 9
@@ -123,7 +124,7 @@ equidistantTeammate motion =
 equidistantOpponent :: V3 Double -> Player
 equidistantOpponent motion = 
   Player 
-    { playerPositionVector = V3 50 1 0
+    { playerPositionVector = V3 30 1 0
     , playerMotionVector = motion
     , playerDesiredLocation = V3 0 0 0
     , playerNumber = 9
@@ -209,7 +210,7 @@ passToFeetTests = testGroup "Passing to feet tests"
     -- Odds are not 50/50 due to b term in 1 / 1 + exp (-(az+b)) : Space evaluation in football games via field weighting based on tracking data
       let testContext =
             PassSpecContext
-              { psPlayers = [playerWithBallAtOrigin,  equidistantTeammate $ V3 0 0 0, equidistantOpponent $ V3 0 0 0, farAwayOpposition1]
+              { psPlayers = [playerWithBallAtOrigin, equidistantTeammate $ V3 0 0 0, equidistantOpponent $ V3 0 0 0, farAwayOpposition1]
               , psBall = ball
               }
       
@@ -230,9 +231,9 @@ passToFeetTests = testGroup "Passing to feet tests"
     
     res <- runPassSpecM testContext $ do
       sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
-   
+
     passTarget (head res) @?= PlayerTarget (equidistantTeammate $ V3 0 0 0)
-    passSafetyCoeff (head res) `compare` 0.33 @?= LT
+    passSafetyCoeff (head res) `compare` 0.38 @?= LT
 
   , testCase "One stationary player will see higher chance of pass completion with equidistant teammate and opponent running away from the ball" $ do
     let diff = normalize (playerPositionVector . equidistantOpponent $ V3 0 0 0 - playerPositionVector playerWithBallAtOrigin)

@@ -6,6 +6,7 @@ module Render
 
 import qualified SDL as S
 import qualified SDL.Primitive as SP
+import qualified SDL.Font as SDLFont
 import SDL.Vect             (V2(..), V3(..), V4(..))
 import Football.Player
 import Football.Ball
@@ -17,17 +18,19 @@ import SDL.Primitive (Pos)
 import Football.Understanding.Space.Data (SpacePoly(..))
 import Foreign.C (CInt)
 import qualified Data.Vector as VE
-import Football.Player (PlayerIntention(DribbleIntention))
 import Football.Pitch (Pitch(..))
+import Football.Types
+import qualified Data.Text as T
+import qualified SDL.Video.Renderer as SVR
 
 white :: SP.Color
 white = V4 255 255 255 255
 
 red :: SP.Color
-red = V4 255 0 0 255
+red = V4 200 15 47 255
 
 redT :: SP.Color
-redT = V4 255 0 0 20
+redT = V4 200 15 47 20
 
 darkRed :: SP.Color
 darkRed = V4 100 0 0 255
@@ -39,7 +42,7 @@ orange :: SP.Color
 orange = V4 255 165 0 255
 
 blue :: SP.Color
-blue = V4 0 0 255 255
+blue = V4 108 174 222 255
 
 darkBlue :: SP.Color
 darkBlue = V4 0 0 100 255
@@ -54,7 +57,7 @@ cyan :: SP.Color
 cyan = V4 0 255 255 255
 
 blueT :: SP.Color
-blueT = V4 0 0 255 20
+blueT = V4 108 174 222 20
 
 purple :: SP.Color
 purple = V4 255 0 255 255
@@ -66,10 +69,18 @@ grey :: SP.Color
 grey = V4 155 155 155 255
 
 class Render a where
-  render :: S.Renderer -> a -> IO ()
+  render :: S.Renderer -> SDLFont.Font -> a -> IO ()
 
 scaleFactor :: Double
 scaleFactor = 20.0
+
+
+data Scoreboard =
+  Scoreboard
+    { scoreboardTeamName1 :: T.Text
+    , scoreboardTeamName2 :: T.Text
+    }
+
 
 
 coordinateTransV :: (Integral b, S.R2 t) => t Double -> V2 b
@@ -87,27 +98,36 @@ coordinateTransPV (x, y) =
   V2 (floor $ (x+5)*scaleFactor) (floor $ y * scaleFactor) 
 
 instance Render Player where
-  render :: S.Renderer -> Player -> IO ()
-  render r p = do
+  render :: S.Renderer -> SDLFont.Font -> Player -> IO ()
+  render r font p = do
     let ppv = playerPositionVector p
         scaled' = coordinateTransV ppv
         colour = 
           case playerTeam p of
             Team1 -> red
             Team2 -> blue 
+
     renderIntention r scaled' (playerIntention p)
     SP.fillCircle r scaled' 10 colour
 
+    surf <- SDLFont.solid font white (T.pack (show $ playerNumber p))
+    blug <- SVR.createTextureFromSurface r surf
+    surfDimensions <- SVR.surfaceDimensions surf
+    SVR.freeSurface surf
+    let textOffset = floor <$> (\x -> x/2) <$> fromIntegral <$> surfDimensions
+    let targetRect = S.Rectangle (S.P $ scaled' - textOffset) surfDimensions
+    SVR.copy r blug Nothing (Just targetRect)
+
 instance Render Ball where
-  render :: S.Renderer -> Ball -> IO ()
-  render r b = do
+  render :: S.Renderer -> SDLFont.Font -> Ball -> IO ()
+  render r _ b = do
     let bpv = ballPositionVector b
         scaled' = coordinateTransV bpv
     SP.fillCircle r scaled' 4 grey
 
 instance Render SpacePoly where
-  render :: S.Renderer -> SpacePoly -> IO ()
-  render r (SpacePoly vp player) = do
+  render :: S.Renderer-> SDLFont.Font -> SpacePoly -> IO ()
+  render r _ (SpacePoly vp player) = do
 --    pure ()
     let 
         (xPoints, yPoints) = unzip . fmap (coordinateTransP . jcvEdgePoint1) $ polyEdges vp
@@ -130,7 +150,7 @@ instance Render SpacePoly where
     SP.polygon r (V.fromList xPoints) (V.fromList yPoints) colour
 
 instance Render Pitch where
-  render r (Pitch length width) = do
+  render r _ (Pitch length width) = do
     let pMin = coordinateTransPV            (0, 0)
     let pMax = coordinateTransPV            (length,        width)
     let halfwayMin = coordinateTransPV      (length/2,      0)
@@ -174,25 +194,28 @@ instance Render Pitch where
     SP.arc r cornerBL (floor $ scaleFactor * 1) (-90) 0  white
     SP.arc r cornerBR (floor $ scaleFactor * 1) (-180) (-90)  white
 
---renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
---renderIntention r pos i = pure ()
 renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
-renderIntention r pos (KickIntention ip p) = do
-  let iceptLoc = coordinateTransPV ip
-  SP.line r iceptLoc pos pink
-renderIntention r pos (DribbleIntention ip p) = do
-  let iceptLoc = coordinateTransPV ip
-  let kickLoc = coordinateTransPV p
-  SP.line r iceptLoc pos pink
-  SP.line r kickLoc pos cyan
-renderIntention r pos (MoveIntoSpace p) = do
-  let spaceLoc = coordinateTransPV p
-  SP.line r spaceLoc pos orange
-renderIntention r pos (ControlBallIntention p) = do
-  let spaceLoc = coordinateTransPV p
-  SP.line r spaceLoc pos pink
-renderIntention r pos (IntentionCooldown _) = pure ()
-renderIntention r pos DoNothing            = pure ()
+renderIntention r pos i = pure ()
+-- renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
+-- renderIntention r pos (PassIntention _ ip p) = do
+--   let iceptLoc = coordinateTransPV ip
+--   SP.line r iceptLoc pos pink
+-- renderIntention r pos (ShootIntention _ ip p) = do
+--   let iceptLoc = coordinateTransPV ip
+--   SP.line r iceptLoc pos purple
+-- renderIntention r pos (DribbleIntention ip p) = do
+--   let iceptLoc = coordinateTransPV ip
+--   --let kickLoc = coordinateTransV (ip + p)
+--   SP.line r iceptLoc pos cyan
+--   --SP.line r kickLoc pos cyan
+-- renderIntention r pos (MoveIntoSpace p) = do
+--   let spaceLoc = coordinateTransPV p
+--   SP.line r spaceLoc pos orange
+-- renderIntention r pos (ControlBallIntention p) = do
+--   let spaceLoc = coordinateTransPV p
+--   SP.line r spaceLoc pos pink
+-- renderIntention r pos (IntentionCooldown _) = pure ()
+-- renderIntention r pos DoNothing            = pure ()
 
 
 

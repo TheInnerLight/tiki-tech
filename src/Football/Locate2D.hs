@@ -2,10 +2,9 @@
 
 module Football.Locate2D where
 
-import Football.Player (Player(..), PlayerSpeed (playerSpeedAcceleration))
+import Football.Types
 import Control.Lens ((^.))
 import Linear (V2(..), V3(..), V4(..), _x, _y, _z, Metric (norm), normalize)
-import Football.Ball (Ball (ballPositionVector))
 
 class Locate2D a where
   locate2D :: a -> (Double, Double)

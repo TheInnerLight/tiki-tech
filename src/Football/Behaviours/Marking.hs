@@ -15,6 +15,7 @@ import Football.Behaviours.Kick (motionVectorForPassTo)
 import Data.Maybe (isNothing)
 import Football.Understanding.Space (centreOfPlay)
 import Football.Understanding.Shape (outOfPossessionDesiredPosition)
+import Football.Types
 
 playerMarkClosestOppositionPlayer :: (Monad m, Match m, Log m) => Player -> m (Maybe Player)
 playerMarkClosestOppositionPlayer player = do

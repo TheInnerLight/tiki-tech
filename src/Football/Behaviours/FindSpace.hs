@@ -14,6 +14,7 @@ import Football.Player
 import Data.List (foldl', sort, sortOn)
 
 import Football.Match
+import Football.Types
 import Core
 import Voronoi.JCVoronoi
 import Football.Locate2D (Locate2D(locate2D))

@@ -18,7 +18,7 @@ import Football.Behaviours.Kick
 import Data.List (sortOn, foldl', find)
 import Data.Maybe (isJust)
 import Football.Behaviours.FindSpace (optimalNearbySpace, nearestSpace)
-import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passSafetyCoeff, passDesirabilityCoeff), PassTarget (PlayerTarget, SpaceTarget))
+import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passSafetyCoeff, passDesirabilityCoeff))
 import Voronoi.JCVoronoi (JCVPoly, jcvSites2)
 import Control.Concurrent.STM (readTMVar, writeTMVar)
 import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
@@ -30,10 +30,13 @@ import Football.Behaviours.Marking (playerMarkClosestOppositionPlayer, positiona
 import Football.Intentions.OnTheBall (determineOnTheBallIntention, OnTheBallCriteria (OnTheBallCriteria))
 import Football.Understanding.ExpectedGoals (locationXG)
 import Football.Pitch (Pitch)
+import Football.Types
+import Football.Events.Goal (checkForGoal)
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
   , matchStatePlayers :: TVar [Player]
+  , matchStateGoals :: TVar [Goal]
   , matchStateTeam1VoronoiMap :: TMVar [JCVPoly]
   , matchStateTeam2VoronoiMap :: TMVar [JCVPoly]
   , matchStateSpaceMap :: TMVar SpaceMap
@@ -41,63 +44,75 @@ data MatchState = MatchState
   , matchPitch :: Pitch
   }
 
+goalsImpl :: (Monad m, Has m MatchState, Atomise m) => m [Goal]
+goalsImpl = do
+  st <- has
+  atomise $ readTVar $ matchStateGoals st
+
+recordGoalImpl :: (Monad m, Has m MatchState, Atomise m) => Goal -> m ()
+recordGoalImpl goal = do
+  st <- has
+  atomise $ modifyTVar (matchStateGoals st) (goal : )
+
 pitchImpl :: (Monad m, Has m MatchState) => m Pitch
 pitchImpl = matchPitch <$> has
 
-attackingDirectionImpl :: (Monad m, Has m MatchState, LiftSTM m) => Team -> m AttackingDirection
+attackingDirectionImpl :: (Monad m, Has m MatchState) => Team -> m AttackingDirection
 attackingDirectionImpl team =
   case team of
     Team1 -> pure AttackingLeftToRight
     Team2 -> pure AttackingRightToLeft
 
-kickImpl :: (Monad m, Has m MatchState, LiftSTM m) => Player -> V3 Double -> m Ball
-kickImpl player motionVector' = do
+kickImpl :: (Monad m, Has m MatchState, Atomise m) => Player -> V3 Double -> V3 Double -> m Ball
+kickImpl player loc motionVector' = do
   (state :: MatchState) <- has
   let stBall = matchStateBall state
   let stLastPlayerBall = matchStateLastPlayerTouchedBall state
-  liftSTM $ do
+  atomise $ do
     ball <- readTVar stBall
-    let ball' = ball { ballMotionVector = ballMotionVector ball + motionVector'  }
+    let ball' = ball { ballPositionVector = loc, ballMotionVector = ballMotionVector ball + motionVector'  }
     writeTVar stBall ball'
     writeTMVar stLastPlayerBall player
     pure ball'
 
-lastTouchOfBallImpl :: (Monad m, Has m MatchState, LiftSTM m) => m (Maybe Player)
+lastTouchOfBallImpl :: (Monad m, Has m MatchState, Atomise m) => m (Maybe Player)
 lastTouchOfBallImpl = do
   (state :: MatchState) <- has
   let stLastPlayerBall = matchStateLastPlayerTouchedBall state
-  liftSTM $ tryReadTMVar stLastPlayerBall
+  atomise $ tryReadTMVar stLastPlayerBall
 
-enactIntentions :: (Monad m, Has m MatchState, LiftSTM m, Match m, Log m, GetSystemTime m, Random m) => m ()
+enactIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m) => m ()
 enactIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
     players' <- traverse enactIntention players
-    liftSTM $ writeTVar (matchStatePlayers state) players'
+    atomise $ writeTVar (matchStatePlayers state) players'
   where 
     enactIntention player =
       case playerIntention player of
         DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc player
-        KickIntention iceptloc mot -> kickBallWith iceptloc mot player
+        PassIntention _ iceptloc mot -> kickBallWith iceptloc mot player
+        ShootIntention _ iceptloc mot -> kickBallWith iceptloc mot player
         MoveIntoSpace loc -> pure $ runTowardsLocation loc player
         ControlBallIntention loc -> controlBall loc player
         IntentionCooldown _ -> pure player
         DoNothing -> pure $ stopMoving player
       
-updateImpl :: (Monad m, Has m MatchState, LiftSTM m, Match m, Log m, GetSystemTime m, Random m) => Int -> m ()
+updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
   team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team1
   team2Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team2
   spaceMap' <- createSpaceMap
-  liftSTM $ do
+  atomise $ do
     writeTMVar (matchStateTeam1VoronoiMap state) team1Voronoi
     writeTMVar (matchStateTeam2VoronoiMap state) team2Voronoi
     writeTMVar (matchStateSpaceMap state) spaceMap'
+  checkForGoal
   ensureBallInPlay
   decideIntentions
   enactIntentions
-  liftSTM $ do
+  atomise $ do
     ball <- readTVar $ matchStateBall state
     let ball' = updateBall (fromIntegral fps) ball
     writeTVar (matchStateBall state) ball'
@@ -105,20 +120,20 @@ updateImpl fps = do
     let players' = fmap (updatePlayer (fromIntegral fps)) players
     writeTVar (matchStatePlayers state) players'
 
-allPlayersImpl :: (Monad m, Has m MatchState, LiftSTM m) => m [Player]
+allPlayersImpl :: (Monad m, Has m MatchState, Atomise m) => m [Player]
 allPlayersImpl = do 
   (state :: MatchState) <- has
-  liftSTM $ readTVar $ matchStatePlayers state
+  atomise $ readTVar $ matchStatePlayers state
 
-gameBallImpl :: (Monad m, Has m MatchState, LiftSTM m) => m Ball
+gameBallImpl :: (Monad m, Has m MatchState, Atomise m) => m Ball
 gameBallImpl = do 
   (state :: MatchState) <- has
-  liftSTM $ readTVar $ matchStateBall state
+  atomise $ readTVar $ matchStateBall state
 
-ensureBallInPlay :: (Monad m, Has m MatchState, LiftSTM m) => m ()
+ensureBallInPlay :: (Monad m, Has m MatchState, Atomise m) => m ()
 ensureBallInPlay = do 
   (state :: MatchState) <- has
-  liftSTM $ do 
+  atomise $ do 
     ball <- readTVar $ matchStateBall state
     let bpv = ballPositionVector ball
         ball' = 
@@ -128,12 +143,12 @@ ensureBallInPlay = do
             ball
     writeTVar (matchStateBall state) ball'
 
-decideIntentions :: (Monad m, Has m MatchState, LiftSTM m, Match m, Log m, GetSystemTime m) => m ()
+decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m) => m ()
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
     players' <- traverse updateIntention players
-    liftSTM $ writeTVar (matchStatePlayers state) players'
+    atomise $ writeTVar (matchStatePlayers state) players'
   where
     updateIntention player = do
       time <- systemTimeNow
@@ -146,7 +161,7 @@ decideIntentions = do
         DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
           determineOnTheBallIntention (OnTheBallCriteria (Just 0.65) Nothing) player
         DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = False } -> do
-          determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) (Just 0)) player
+          determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
         DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc _), dfHasControlOfBall = False, dfOppositionInPossession = Nothing } -> do
           targetLoc <- clampPitch loc
           pure $ ControlBallIntention targetLoc
@@ -161,38 +176,24 @@ decideIntentions = do
           targetLoc <- clampPitch nearbySpace
           pure $ MoveIntoSpace targetLoc
         DecisionFactors { dfHasControlOfBall = True} -> do
-          ball <- gameBall
-          attackingDirection' <- attackingDirection (playerTeam player)
-          let dribbleLoc = 
-                case attackingDirection' of
-                  AttackingLeftToRight -> playerPositionVector player + V3 2.5 0 0
-                  AttackingRightToLeft -> playerPositionVector player - V3 2.5 0 0
-          currXG <- locationXG (playerTeam player) player
-          dibbleXG <- locationXG (playerTeam player) dribbleLoc
-          let dribbleXGAdded = dibbleXG - currXG
-          obi <- determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) (Just dribbleXGAdded)) player
-          pure $ case obi of
-            DribbleIntention _ _ -> DribbleIntention (locate2D ball) (locate2D dribbleLoc)
-            x                    -> x
-          --pure $ DribbleIntention (locate2D ball) (locate2D dribbleLoc)
-          --determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
+          determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
         _  -> pure DoNothing
       pure player { playerIntention = newIntention }
     
 
-team1VoronoiMapImpl :: (Monad m, Has m MatchState, LiftSTM m) => m [JCVPoly]
+team1VoronoiMapImpl :: (Monad m, Has m MatchState, Atomise m) => m [JCVPoly]
 team1VoronoiMapImpl = do
   (state :: MatchState) <- has
-  liftSTM $ readTMVar $ matchStateTeam1VoronoiMap state
+  atomise $ readTMVar $ matchStateTeam1VoronoiMap state
 
-team2VoronoiMapImpl :: (Monad m, Has m MatchState, LiftSTM m) => m [JCVPoly]
+team2VoronoiMapImpl :: (Monad m, Has m MatchState, Atomise m) => m [JCVPoly]
 team2VoronoiMapImpl = do
   (state :: MatchState) <- has
-  liftSTM $ readTMVar $ matchStateTeam2VoronoiMap state
+  atomise $ readTMVar $ matchStateTeam2VoronoiMap state
 
-allPlayersVoronoiMapImpl :: (Monad m, Has m MatchState, LiftSTM m) => m SpaceMap
+allPlayersVoronoiMapImpl :: (Monad m, Has m MatchState, Atomise m) => m SpaceMap
 allPlayersVoronoiMapImpl = do
   (state :: MatchState) <- has
-  liftSTM $ readTMVar $ matchStateSpaceMap state
+  atomise $ readTMVar $ matchStateSpaceMap state
 
   

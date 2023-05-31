@@ -5,7 +5,7 @@ module Football.Match where
 
 import Linear.V3
 import Control.Lens ((^.))
-import Linear (Metric(norm, dot, quadrance), normalize)
+import Linear (Metric(norm, dot, quadrance, distance), normalize)
 import Football.Ball
 import Football.Player
 import Core
@@ -16,6 +16,10 @@ import Voronoi.JCVoronoi (JCVPoly)
 import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (spacePolyPlayer))
 import qualified Data.Map as Map
 import Football.Pitch (Pitch)
+import Data.Foldable (find)
+import Football.Locate2D (Locate2D(locate2D))
+import Football.Types
+import Data.List (groupBy, partition)
 
 data AttackingDirection 
   = AttackingLeftToRight
@@ -26,10 +30,12 @@ class Match m where
   gameBall :: m Ball
   lastTouchOfBall :: m (Maybe Player)
   allPlayers :: m [Player]
-  kickBall :: Player -> V3 Double -> m Ball
+  kickBall :: Player -> V3 Double -> V3 Double -> m Ball
   update :: Int -> m ()
   spaceMap :: m SpaceMap
   pitch :: m Pitch
+  goals :: m [Goal]
+  recordGoal :: Goal -> m ()
     
 class HasTeam a where
   getTeam :: a -> Team
@@ -40,13 +46,8 @@ instance HasTeam Team where
 instance HasTeam Player where
   getTeam = playerTeam
 
-canKick :: (Monad m, Match m) => Player -> m Bool
-canKick player = do
-    ball <- gameBall
-    let dist = norm (playerPositionVector player - ballPositionVector ball)
-        ballMot' = pure (1.0/30.0) * ballMotionVector ball + pure (1.0/30.0) * playerMotionVector player
-        intersec = (dot ballMot' (ballPositionVector ball - playerPositionVector player)) ** 2.0  - (quadrance (ballPositionVector ball - playerPositionVector player) - 0.5) ** 2.0
-    pure $ intersec >= 0 || dist < 0.5
+score :: (Functor m, Match m) => m (Int, Int)
+score = (\(g1s, g2s) -> (length g1s, length g2s)) . partition (\ g -> goalTeam g == Team1) <$> goals
 
 oppositionPlayers :: (Functor m, Match m) => Team -> m [Player]
 oppositionPlayers team = filter (\p -> playerTeam p /= team) <$> allPlayers

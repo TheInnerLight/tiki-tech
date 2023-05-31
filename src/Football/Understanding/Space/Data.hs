@@ -1,7 +1,7 @@
 module Football.Understanding.Space.Data where
 import Data.Map (Map)
 import Voronoi.JCVoronoi (JCVPoly)
-import Football.Player (Player)
+import Football.Types
 
 newtype SpaceMap = SpaceMap (Map Int SpacePoly)
 

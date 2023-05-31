@@ -2,8 +2,8 @@ module Football.Understanding.ExpectedGoals where
 
 import Football.Match
 import Football.Locate2D (Locate2D (locate2D))
-import Football.Player (Team)
 import Football.Pitch (Pitch(pitchLength, pitchWidth))
+import Football.Types
 
 xgValue :: Double -> Double
 xgValue distance =

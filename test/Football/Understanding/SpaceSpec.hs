@@ -5,7 +5,7 @@ module Football.Understanding.SpaceSpec where
 import Test.Tasty
 import Test.Tasty.HUnit
 import Football.Match (Match(..), AttackingDirection (AttackingLeftToRight))
-import Football.Player (Team(Team1))
+import Football.Types
 import Football.Understanding.Space (pitchHorizontalZone)
 import Football.Understanding.Space.Data
 import Football.Understanding.Space.Data (HorizontalZone(CentreHZ))

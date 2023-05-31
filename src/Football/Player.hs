@@ -6,42 +6,7 @@ import Linear (Metric(norm, signorm, dot, quadrance, distance), normalize, proje
 import Football.Ball
 import Data.List (sort)
 import Data.Time.Clock.System (SystemTime)
-import GHC.IO (unsafePerformIO)
-
-data Team
-  = Team1
-  | Team2
-  deriving (Eq, Ord, Show)
-
-oppositionTeam :: Team -> Team
-oppositionTeam Team1 = Team2
-oppositionTeam Team2 = Team1
-
-data PlayerIntention
-  = KickIntention (Double, Double) (V3 Double)
-  | DribbleIntention (Double, Double) (Double, Double)
-  | MoveIntoSpace (Double, Double)
-  | ControlBallIntention (Double, Double)
-  | IntentionCooldown SystemTime
-  | DoNothing
-  deriving (Eq, Ord, Show)
-
-data PlayerSpeed = PlayerSpeed
-  { playerSpeedAcceleration :: Double
-  , playerSpeedMax :: Double
-  }
-  deriving (Eq, Ord, Show)
-
-data Player = Player
-  { playerPositionVector :: V3 Double
-  , playerDesiredLocation :: V3 Double
-  , playerNumber :: Int
-  , playerSpeed :: PlayerSpeed
-  , playerMotionVector :: V3 Double
-  , playerIntention :: PlayerIntention
-  , playerTeam :: Team
-  }
-  deriving (Eq, Ord, Show)
+import Football.Types
 
 updatePlayer :: Double -> Player -> Player
 updatePlayer dt player =

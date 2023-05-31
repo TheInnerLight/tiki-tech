@@ -7,8 +7,8 @@ import Data.Time.Clock.System (SystemTime)
 class Has m a where
   has :: m a
 
-class LiftSTM m where
- liftSTM :: STM a -> m a
+class Atomise m where
+  atomise :: STM a -> m a
 
 class Log m where
   logOutput :: Show a => a -> m ()

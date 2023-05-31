@@ -4,10 +4,8 @@
 
 module Football.Understanding.DecisionFactors where
 
-import Football.Player (Player (playerPositionVector, playerMotionVector, playerTeam, playerNumber))
 import Football.Match
 import Football.Locate2D (Locate2D(locate2D))
-import Football.Ball (Ball(..))
 import Control.Monad (filterM, join)
 import Linear (Metric(norm, distance))
 import Data.Foldable (find, Foldable (foldMap'))
@@ -20,6 +18,9 @@ import Voronoi.JCVoronoi (voronoiPolygonArea)
 import Football.Behaviours.FindSpace (findClosestOpposition)
 import Football.Understanding.Interception (interceptionInfoPlayerBallRK, interceptionTimePlayersBallRK)
 import Football.Pitch (Pitch(Pitch))
+import Core (Log)
+import Football.Types
+import Football.Behaviours.Kick (canKick)
 
 data DecisionFactors = DecisionFactors
   { dfClosestPlayerToBall :: Maybe ClosestPlayerToBall
@@ -43,11 +44,10 @@ checkClosestPlayer :: (Match m, Monad m) => Player -> m (Maybe ClosestPlayerToBa
 checkClosestPlayer player = do
   ball <- gameBall
   teamPlayers' <- teammates player
-  pitch' <- pitch
-  let (iceptLoc3D, iceptTime) = interceptionInfoPlayerBallRK pitch' player ball
+  (iceptLoc3D, iceptTime) <- interceptionInfoPlayerBallRK player ball
   let iceptLoc = locate2D iceptLoc3D
-  let noCloserPlayers = interceptionTimePlayersBallRK pitch' teamPlayers' ball >= iceptTime
-  if noCloserPlayers then
+  otherIceptTime <- interceptionTimePlayersBallRK teamPlayers' ball
+  if otherIceptTime >= iceptTime then
     pure $ Just $ ClosestPlayerToBall iceptLoc iceptTime
   else
     pure Nothing
@@ -66,11 +66,11 @@ checkOppositionInPossession player = do
     Just lp | playerTeam lp /= playerTeam player -> pure $ Just $ OppositionInPossession lp
     _ -> pure Nothing
 
-checkInPossession :: (Match m, Monad m) => Player -> m Bool
+checkInPossession :: (Match m, Monad m, Log m) => Player -> m Bool
 checkInPossession player = do
   ball <- gameBall
-  canKick' <- canKick player
-  pure (canKick' && norm (playerMotionVector player - ballMotionVector ball) < 1)
+  canKick' <- isJust <$> canKick player
+  pure (canKick' && norm (playerMotionVector player - ballMotionVector ball) < 4)
 
 checkInCompressedSpace :: (Match m, Monad m) => Player -> m Bool
 checkInCompressedSpace player = do
@@ -84,7 +84,7 @@ checkIsUnderPressure player = do
   op <- findClosestOpposition player
   pure $ distance (playerPositionVector player) (playerPositionVector op) <= 3.0
 
-calculateDecisionFactors :: (Match m, Monad m) => Player -> m DecisionFactors
+calculateDecisionFactors :: (Match m, Monad m, Log m) => Player -> m DecisionFactors
 calculateDecisionFactors player = do
   cp <- checkClosestPlayer player
   tip <- checkTeammateInPossession player

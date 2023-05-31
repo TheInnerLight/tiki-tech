@@ -64,14 +64,19 @@ library
         Football.Ball
         Football.Match
         Football.Match.Engine
-        Football.Behaviours.Marking
+        Football.Behaviours.Dribble
         Football.Behaviours.FindSpace
-        Football.Behaviours.Press
         Football.Behaviours.Kick
+        Football.Behaviours.Marking
         Football.Behaviours.Pass
+        Football.Behaviours.Press
+        Football.Behaviours.Shoot
+        Football.Events.Goal
         Football.Intentions.OnTheBall
         Football.Locate2D
         Football.Pitch
+        Football.Maths 
+        Football.Types
         Football.Understanding.DecisionFactors
         Football.Understanding.ExpectedGoals
         Football.Understanding.Interception
@@ -101,6 +106,7 @@ library
         random,
         statistics,
         stm,
+        text,
         time,
         vector
 
@@ -137,10 +143,13 @@ executable tiki-techa
         random,
         sdl2,
         sdl2-gfx,
+        sdl2-ttf,
         stm,
+        text,
         time,
         vector,
-        tiki-techa,
+        tiki-techa
+        
         
 
     -- Directories containing source files.

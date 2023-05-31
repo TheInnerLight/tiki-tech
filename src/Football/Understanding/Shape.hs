@@ -13,6 +13,7 @@ import qualified Data.Map as Map
 import Core (Log(..))
 import Football.Understanding.Space (centreOfPlay, offsideLine)
 import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
+import Football.Types
 
 data PositionSphere = PositionEllipse
     { positionEllipseCentre :: (Double, Double)
