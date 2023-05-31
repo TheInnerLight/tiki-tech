@@ -12,6 +12,7 @@ import Core (GetSystemTime (systemTimeNow), Random (randomNormalMeanStd), Log (l
 import Data.Time.Clock.System (SystemTime(..))
 import Football.Types
 import Football.Locate2D (Locate2D(locate2D))
+import Football.Maths
 
 canKick :: (Monad m, Match m, Log m) => Player -> m (Maybe (V3 Double))
 canKick player = do
@@ -19,59 +20,11 @@ canKick player = do
   if distance (ballPositionVector ball) (playerPositionVector player) <= 0.5 then
     pure $ Just (ballPositionVector ball)
   else do
-    let ballPos = ballPositionVector ball
-        playerPos = playerPositionVector player
-        posDiff = ballPos - playerPos
-        ballDir =  - normalize (ballMotionVector ball)
-        normalToBallDir = normalize $ V3 (ballDir ^. _x) (-ballDir ^. _y) 0
-        playerDir = - normalize (playerMotionVector player)
-        normalToPlayerDir = normalize $ V3 (playerDir ^. _x) (-playerDir ^. _y) 0
-        crossNormal = normalize $ cross normalToBallDir normalToPlayerDir
-        rejection = posDiff - project posDiff normalToPlayerDir - project posDiff crossNormal
-        sDistanceToLinePos = norm rejection / dot normalToBallDir (normalize rejection)
-    if abs sDistanceToLinePos < 0.5 then
-      pure $ Just $ ballPos - normalToBallDir * pure sDistanceToLinePos
+    let (dist, _, closestBallPos) = distanceAndClosestIntercepts (1/30) (ballPositionVector ball, ballMotionVector ball) (playerPositionVector player, playerMotionVector player)
+    if dist <= 0.7 then do
+      pure $ Just closestBallPos
     else
       pure Nothing
-        --closestApproach = ballPos - normalToBallDir * pure sDistanceToLinePos
-    
-    -- let (p0x, p0y) = locate2D $ playerPositionVector player - playerMotionVector player / 30
-    --     (p1x, p1y) = locate2D $ playerPositionVector player
-    --     (b0x, b0y) = locate2D $ ballPositionVector ball - ballMotionVector ball / 30
-    --     (b1x, b1y) = locate2D $ ballMotionVector ball
-
-    --     denom = (p0x - p1x) * (b0y - b1y) - (p0y - p1y) * (b0x - b1x)
-    --     td = (p0x - b0x) * (b0y - b1y) - (p0y - b0y) * (b0x - b1x)
-    --     ud = (p0x - b0x) * (p0y - p1y) - (p0y - p0y) * (p0x - p1x)
-    --     t = td / denom
-    --     u = ud / denom
-
-    -- if t >= 0 && t <= 1 && u >= 0 && u <= 1 then
-    --   pure $ Just $ V3 (p0x + t * (p1x-p0x)) (p0y + t * (p1y-p0y)) 0
-    -- else
-    --   pure Nothing
-
-        --if (denom /= 0)
-
-
-    -- let relBallMot = -ballMotionVector ball
-    --     relBallDir = normalize relBallMot
-    --     relPlayerMot = -playerMotionVector player
-    --     relPlayerDir = normalize relPlayerMot
-    --     normalToBallDir = normalize $ V3 (relBallDir ^. _x) (-relBallDir ^. _y) 0
-    --     normalToPlayerDir = normalize $ V3 (relPlayerDir ^. _x) (-relPlayerDir ^. _y) 0
-    --     perpBallDist = dot normalToBallDir (playerPositionVector player - ballPositionVector ball)
-    --     perpPlayerDist = dot normalToPlayerDir (playerPositionVector player - ballPositionVector ball)
-
-    -- if perpBallDist <= 0.5 then do
-    --   let parDist = dot relBallDir (playerPositionVector player - ballPositionVector ball)
-    --       closestPoint = ballPositionVector ball + pure parDist * relBallDir
-    --   if distance closestPoint (playerPositionVector player) <=  0.5 && parDist >= 0  && parDist <= norm relBallMot / 30 then
-    --     pure $ Just closestPoint
-    --   else
-    --     pure Nothing
-    -- else 
-    --   pure Nothing
 
 kickBallWith :: (Monad m, Match m, GetSystemTime m, Log m) => (Double, Double) -> V3 Double -> Player -> m Player
 kickBallWith iceptLoc desiredBallMotion player = do
@@ -161,7 +114,7 @@ motionVectorForPassToWeak ball (targetX, targetY) =
 
 motionVectorForPassTo :: Ball -> (Double, Double) -> V3 Double
 motionVectorForPassTo ball (targetX, targetY) = 
-  maxMag 31 $ ballDirection * pure (10.9 * exp (0.027 * dist)) - ballMotionVector ball
+  maxMag 31 $ ballDirection * pure (10.9 * exp (0.0267 * dist)) - ballMotionVector ball
   where
     targetVector = V3 targetX targetY 0
     ballDirection = normalize (targetVector - ballPositionVector ball)
@@ -169,7 +122,7 @@ motionVectorForPassTo ball (targetX, targetY) =
 
 timeForPassTo :: Ball -> (Double, Double) -> Double
 timeForPassTo ball (targetX, targetY) = 
-  0.951*exp(0.0351*dist)
+  0.655*exp(0.0345*dist)
   where
     targetVector = V3 targetX targetY 0
     dist = norm (targetVector - ballPositionVector ball)

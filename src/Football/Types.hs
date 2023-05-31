@@ -23,25 +23,25 @@ data PlayerIntention
   deriving (Eq, Ord, Show)
 
 data PlayerSpeed = PlayerSpeed
-  { playerSpeedAcceleration :: Double
-  , playerSpeedMax :: Double
+  { playerSpeedAcceleration :: !Double
+  , playerSpeedMax :: !Double
   }
   deriving (Eq, Ord, Show)
 
 data Player = Player
-  { playerPositionVector :: V3 Double
-  , playerDesiredLocation :: V3 Double
-  , playerNumber :: Int
-  , playerSpeed :: PlayerSpeed
-  , playerMotionVector :: V3 Double
-  , playerIntention :: PlayerIntention
-  , playerTeam :: Team
+  { playerPositionVector :: !(V3 Double)
+  , playerDesiredLocation :: !(V3 Double)
+  , playerNumber :: !Int
+  , playerSpeed :: !PlayerSpeed
+  , playerMotionVector :: !(V3 Double)
+  , playerIntention :: !PlayerIntention
+  , playerTeam :: !Team
   }
   deriving (Eq, Ord, Show)
 
 data Ball = Ball
-  { ballPositionVector :: V3 Double
-  , ballMotionVector :: V3 Double
+  { ballPositionVector :: !(V3 Double)
+  , ballMotionVector :: !(V3 Double)
   } deriving (Eq, Ord, Show)
 
 data PassTarget
@@ -55,7 +55,7 @@ data ShotTarget
   deriving (Eq, Ord, Show)
 
 data Goal = Goal
-  { goalTeam :: Team
-  , goalScorer :: Player
+  { goalTeam :: !Team
+  , goalScorer :: !Player
   } deriving (Eq, Ord, Show)
 

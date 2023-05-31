@@ -218,8 +218,8 @@ passToFeetTests = testGroup "Passing to feet tests"
         sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
 
       passTarget (head res) @?= PlayerTarget (equidistantTeammate $ V3 0 0 0)
-      passSafetyCoeff (head res) `compare` 0.6 @?= GT
-      passSafetyCoeff (head res) `compare` 0.62 @?= LT
+      passSafetyCoeff (head res) `compare` 0.63 @?= GT
+      passSafetyCoeff (head res) `compare` 0.65 @?= LT
 
   , testCase "One stationary player will see lower chance of pass completion with equidistant teammate and opponent running toward the ball" $ do
     let diff = normalize (playerPositionVector . equidistantOpponent $ V3 0 0 0 - playerPositionVector playerWithBallAtOrigin)
@@ -233,7 +233,7 @@ passToFeetTests = testGroup "Passing to feet tests"
       sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
 
     passTarget (head res) @?= PlayerTarget (equidistantTeammate $ V3 0 0 0)
-    passSafetyCoeff (head res) `compare` 0.38 @?= LT
+    passSafetyCoeff (head res) `compare` 0.45 @?= LT
 
   , testCase "One stationary player will see higher chance of pass completion with equidistant teammate and opponent running away from the ball" $ do
     let diff = normalize (playerPositionVector . equidistantOpponent $ V3 0 0 0 - playerPositionVector playerWithBallAtOrigin)
@@ -242,13 +242,12 @@ passToFeetTests = testGroup "Passing to feet tests"
             { psPlayers = [playerWithBallAtOrigin, equidistantTeammate $ V3 0 0 0, equidistantOpponent (pure 7.6 * diff), farAwayOpposition1]
             , psBall = ball
             }
-    
+
     res <- runPassSpecM testContext $ do
       sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
 
-    
     passTarget (head res) @?= PlayerTarget (equidistantTeammate $ V3 0 0 0)
-    passSafetyCoeff (head res) `compare` 0.84 @?= GT
+    passSafetyCoeff (head res) `compare` 0.81 @?= GT
   ]
 
 

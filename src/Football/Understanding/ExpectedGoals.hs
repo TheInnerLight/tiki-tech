@@ -2,7 +2,7 @@ module Football.Understanding.ExpectedGoals where
 
 import Football.Match
 import Football.Locate2D (Locate2D (locate2D))
-import Football.Pitch (Pitch(pitchLength, pitchWidth))
+import Football.Pitch (Pitch(pitchLength, pitchWidth), isInPitchBounds)
 import Football.Types
 
 xgValue :: Double -> Double
@@ -16,9 +16,12 @@ locationXG team l = do
       halfWidthOfPitch = pitchWidth pitch' / 2
   attackingDirection' <- attackingDirection team
   let (x, y) = locate2D l
-  pure $ case attackingDirection' of
-    AttackingLeftToRight -> xgValue (sqrt ((lengthOfPitch-x)**2.0 + (halfWidthOfPitch-y) **2.0))
-    AttackingRightToLeft -> xgValue (sqrt (x**2.0                 + (halfWidthOfPitch-y) **2.0))
+  if isInPitchBounds (x, y) pitch' then 
+    pure $ case attackingDirection' of
+      AttackingLeftToRight -> xgValue (sqrt ((lengthOfPitch-x)**2.0 + (halfWidthOfPitch-y) **2.0))
+      AttackingRightToLeft -> xgValue (sqrt (x**2.0                 + (halfWidthOfPitch-y) **2.0))
+  else
+    pure 0
 
 
 

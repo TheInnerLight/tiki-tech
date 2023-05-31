@@ -48,7 +48,7 @@ build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
--- extra-source-files:
+extra-source-files: cbits/jc_voronoi.h, cbits/jc_voronoi.c
 
 common warnings
     ghc-options: -Wall
@@ -86,9 +86,6 @@ library
         Voronoi.JCVoronoi
         Core
 
-    extra-lib-dirs: /home/phil/Projects/tiki-techa/libs
-    extra-libraries: voronoi
-
     -- Modules included in this library but not exported.
     -- other-modules:
 
@@ -115,6 +112,8 @@ library
 
     -- Base language which the package is written in.
     default-language: Haskell2010
+
+    c-sources: cbits/jc_voronoi.c
 
 executable tiki-techa
     -- Import common warning flags.

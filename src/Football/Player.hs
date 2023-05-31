@@ -7,19 +7,29 @@ import Football.Ball
 import Data.List (sort)
 import Data.Time.Clock.System (SystemTime)
 import Football.Types
+import Football.Maths
 
 updatePlayer :: Double -> Player -> Player
 updatePlayer dt player =
   let ppv = playerPositionVector player
-      ppv' = ppv + playerMotionVector player / pure dt
-      maxSpeed = playerSpeedMax $ playerSpeed player
-      acceleration = playerSpeedAcceleration $ playerSpeed player
-      direction = normalize (playerDesiredLocation player - ppv')
-      acc = pure maxSpeed * direction - playerMotionVector player * pure acceleration
-      deltaSpeed = acc / pure dt
-      pmv' = playerMotionVector player + deltaSpeed
-
+      pmv = playerMotionVector player
+      direction = normalize (playerDesiredLocation player - ppv)
+      (ppv', pmv') = rk2 (1.0/dt) (playerMotionEq direction (playerSpeed player)) (ppv, pmv)
   in player { playerPositionVector = ppv', playerMotionVector = pmv' }
+
+playerMotionEq :: V3 Double -> PlayerSpeed -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
+playerMotionEq direction pSpeed (ppv, pmv) =
+  let acc = pure (playerSpeedMax pSpeed ) * direction  - pure (playerSpeedAcceleration pSpeed) * pmv
+  in (pmv, acc)
+
+rk2 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double)) -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
+rk2 dt f (bp, bp')  = 
+  (bp + pure dt*(k1 + 2.0*k2 + 2.0*k3 + k4)/6.0, bp' + pure dt*(k1' + 2.0*k2' + 2.0*k3' + k4')/6.0)
+  where
+      (k1, k1') = f (bp, bp')
+      (k2, k2') = f (bp + pure (0.5*dt)*k1, bp' + pure (0.5*dt)*k1')
+      (k3, k3') = f (bp + pure (0.5*dt)*k2, bp' + pure (0.5*dt)*k2')
+      (k4, k4') = f (bp + pure (1.0*dt)*k3, bp' + pure (1.0*dt)*k3')
 
 maxMag :: Double -> V3 Double -> V3 Double
 maxMag m v =
@@ -29,17 +39,21 @@ maxMag m v =
     v
 
 -- use Fujimura-Sugihara model
-distanceToTargetAfter :: V3 Double -> Double -> Player -> Double
-distanceToTargetAfter target t p =
+distanceToTargetAfter :: Double -> (V3 Double, V3 Double) -> Double -> Player -> Double
+distanceToTargetAfter dt (target, targetVector) t p =
   let 
       start = playerPositionVector p
       ms = playerSpeedMax (playerSpeed p)
       pa = playerSpeedAcceleration (playerSpeed p)
       -- vector difference between x(t) and A(t)
       st = target - start - pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
+      st2 = start + pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
       -- radius B(t)
       rt = (ms*(t - (1 - exp(-pa * t))/pa))
-  in norm st - rt
+
+  in 
+    (fst $ movingObjectAndPointClosestIntercept dt (target, targetVector) st2) - rt
+    --norm st - rt
 
 runTowardsLocation :: (Double, Double) -> Player -> Player
 runTowardsLocation (x, y) player =

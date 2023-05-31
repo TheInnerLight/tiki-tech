@@ -15,10 +15,11 @@ interceptionInfoPlayerBallRK player ball = do
   pitch' <- pitch
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
-      dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && (distanceToTargetAfter bpv' t' player > 0.5)
-      (t, (fbpv, fbmv)) = head $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) 0.03 ballMotionEq
+      dt = 0.03
+      dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && (distanceToTargetAfter dt (bpv', bmv') t' player > 0.5)
+      (t, (fbpv, fbmv)) = head $ drop 1 $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) dt ballMotionEq
   if isInPitchBounds fbpv pitch' then
-    pure (fbpv + fbmv*0.03, t)
+    pure (fbpv, t)
   else 
     pure (fbpv, 1/0)
 
@@ -30,10 +31,11 @@ interceptionInfoPlayersBallRK players ball = do
   pitch' <- pitch
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
-      dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && all (\p -> distanceToTargetAfter bpv' t' p > 0.5) players
-      (t, (fbpv, fbmv)) = head $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) 0.03 ballMotionEq
+      dt = 0.03
+      dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && all (\p -> distanceToTargetAfter dt (bpv', bmv') t' p > 0.5) players
+      (t, (fbpv, fbmv)) = head $ drop 1 $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) dt ballMotionEq
   if isInPitchBounds fbpv pitch' then
-    pure (fbpv + fbmv*0.03, t)
+    pure (fbpv, t)
   else 
     pure (fbpv, 1/0)
 
