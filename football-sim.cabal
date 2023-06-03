@@ -134,6 +134,7 @@ executable tiki-techa
     -- Other library packages from which modules are imported.
     build-depends:
         base ^>=4.17.0.0,
+        async,
         containers,
         lens,
         linear,
@@ -170,6 +171,7 @@ test-suite tiki-techa-test
     other-modules:
       Football.Behaviours.PassSpec
       Football.Understanding.SpaceSpec
+      Football.MathsSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

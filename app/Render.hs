@@ -211,7 +211,7 @@ renderIntention r pos i = pure ()
 -- renderIntention r pos (MoveIntoSpace p) = do
 --   let spaceLoc = coordinateTransPV p
 --   SP.line r spaceLoc pos orange
--- renderIntention r pos (ControlBallIntention p) = do
+-- renderIntention r pos (ControlBallIntention p _) = do
 --   let spaceLoc = coordinateTransPV p
 --   SP.line r spaceLoc pos pink
 -- renderIntention r pos (IntentionCooldown _) = pure ()

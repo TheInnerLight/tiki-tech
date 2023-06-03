@@ -1,3 +1,6 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 module Football.Behaviours.Marking where
 
 import Football.Ball
@@ -10,7 +13,7 @@ import Voronoi.JCVoronoi (JCVPoly(..))
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Understanding.Space.Data (SpacePoly(spacePolyJCV, spacePolyPlayer), SpaceMap (SpaceMap))
 import qualified Data.Map as Map
-import Core (Log(..))
+import Core (Log(..), Cache)
 import Football.Behaviours.Kick (motionVectorForPassTo)
 import Data.Maybe (isNothing)
 import Football.Understanding.Space (centreOfPlay)
@@ -29,7 +32,7 @@ playerMarkClosestOppositionPlayer player = do
         Just teamP -> Map.insert teamP p acc
         Nothing -> acc
 
-positionalOrientedZonalMark :: (Monad m, Match m, Log m) => Player -> m (Double, Double)
+positionalOrientedZonalMark :: (Monad m, Match m, Log m, Cache m "centre-of-play") => Player -> m (Double, Double)
 positionalOrientedZonalMark player = do
   outOfPossessionDesiredPosition player
 

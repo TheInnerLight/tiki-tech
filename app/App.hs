@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE DataKinds #-}
 
 module App where
 
@@ -12,6 +13,8 @@ import Control.Monad.IO.Class
 import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO, newEmptyTMVarIO)
 import Data.Time.Clock.System (getSystemTime)
 import Data.Random.Normal (normalIO')
+import qualified Control.Concurrent.Async as Async
+import qualified Control.Concurrent.Async as Async
 
 newtype AppM a = 
   AppM {unAppM :: ReaderT MatchState IO a}
@@ -44,6 +47,17 @@ instance GetSystemTime AppM where
 instance Random AppM where
   randomNormalMeanStd :: Double -> Double -> AppM Double
   randomNormalMeanStd mean std = liftIO $ normalIO' (mean, std)
+
+instance Concurrent AppM where
+  mapConcurrently :: Traversable t => (a -> AppM b) -> t a -> AppM (t b)
+  mapConcurrently f t = do
+    st <- has
+    liftIO $ Async.mapConcurrently (flip runAppM st . f) t
+
+instance Cache AppM "centre-of-play" where
+  cacheLookup = cacheLookupCentreOfPlayImpl
+  cacheInsert = cacheInsertCentreOfPlayImpl
+
 
 runAppM :: AppM a -> MatchState -> IO a
 runAppM = runReaderT . unAppM

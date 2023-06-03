@@ -13,7 +13,8 @@ updatePlayer :: Double -> Player -> Player
 updatePlayer dt player =
   let ppv = playerPositionVector player
       pmv = playerMotionVector player
-      direction = normalize (playerDesiredLocation player - ppv)
+      desiredMotion = pure (playerSpeedMax $ playerSpeed player) * normalize (playerDesiredLocation player - ppv)
+      direction = if norm(desiredMotion - pmv) > 0 then normalize (desiredMotion - pmv) else normalize desiredMotion
       (ppv', pmv') = rk2 (1.0/dt) (playerMotionEq direction (playerSpeed player)) (ppv, pmv)
   in player { playerPositionVector = ppv', playerMotionVector = pmv' }
 
@@ -46,13 +47,13 @@ distanceToTargetAfter dt (target, targetVector) t p =
       ms = playerSpeedMax (playerSpeed p)
       pa = playerSpeedAcceleration (playerSpeed p)
       -- vector difference between x(t) and A(t)
-      st = target - start - pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
+      --st = target - start - pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
       st2 = start + pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
       -- radius B(t)
       rt = (ms*(t - (1 - exp(-pa * t))/pa))
 
   in 
-    (fst $ movingObjectAndPointClosestIntercept dt (target, targetVector) st2) - rt
+    fst (movingObjectAndPointClosestInterceptWithinTimeStep (-dt) (target, targetVector) st2) - rt
     --norm st - rt
 
 runTowardsLocation :: (Double, Double) -> Player -> Player
@@ -63,6 +64,12 @@ runTowardsLocation (x, y) player =
 stopMoving :: Player -> Player
 stopMoving player =
   player { playerDesiredLocation = playerPositionVector player }
+
+
+intentionCooldown :: PlayerIntention -> Maybe SystemTime
+intentionCooldown (IntentionCooldown t) = Just t
+intentionCooldown (ControlBallIntention _ t) = Just t
+intentionCooldown _                     = Nothing
 
 -- interceptionTimePlayerBall :: Player -> Ball -> Double
 -- interceptionTimePlayerBall player ball =

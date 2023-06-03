@@ -17,7 +17,7 @@ data PlayerIntention
   | ShootIntention ShotTarget (Double, Double) (V3 Double)
   | DribbleIntention (Double, Double) (V3 Double)
   | MoveIntoSpace (Double, Double)
-  | ControlBallIntention (Double, Double)
+  | ControlBallIntention (Double, Double) SystemTime
   | IntentionCooldown SystemTime
   | DoNothing
   deriving (Eq, Ord, Show)

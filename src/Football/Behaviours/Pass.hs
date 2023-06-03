@@ -11,7 +11,7 @@ import Football.Locate2D (Locate2D(locate2D))
 import Football.Understanding.Space.Data (SpacePoly(spacePolyJCV, spacePolyPlayer), SpaceMap (SpaceMap))
 import qualified Data.Map as Map
 import Core (Log(..))
-import Football.Behaviours.Kick (motionVectorForPassTo, motionVectorForPassToArrivalSpeed, timeForPassTo)
+import Football.Behaviours.Kick (motionVectorForPassTo, motionVectorForPassToArrivalSpeed, timeForPassTo, motionVectorForPassToMedium)
 import Football.Understanding.Space (offsideLine, isOnside)
 import Control.Monad (filterM)
 import Football.Understanding.ExpectedGoals (locationXG)
@@ -117,7 +117,7 @@ toSpacePassingOptions player = do
   teamSpaceMap <- spaceMapForTeam player
   let calcToSpaceDesirability v1 = do
         let (centreX, centreY) = polyPoint $ spacePolyJCV v1
-            ball' = ball { ballMotionVector = motionVectorForPassTo ball (centreX, centreY) }
+            ball' = ball { ballMotionVector = motionVectorForPassToMedium ball (centreX, centreY) }
         trd <- interceptionTimePlayerBallRK (spacePolyPlayer v1) ball'
         oid <- interceptionTimePlayersBallRK oppositionPlayers' ball'
         let z1 = (oid - trd) / sqrt 2

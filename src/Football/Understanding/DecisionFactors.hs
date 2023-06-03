@@ -9,16 +9,16 @@ import Football.Locate2D (Locate2D(locate2D))
 import Control.Monad (filterM, join)
 import Linear (Metric(norm, distance))
 import Data.Foldable (find, Foldable (foldMap'))
-import Data.Maybe (maybe, isJust)
+import Data.Maybe (maybe, isJust, listToMaybe, catMaybes)
 import Data.List (sort)
 import qualified Data.Map as Map
 import Football.Understanding.Space.Data (SpaceMap(SpaceMap), SpacePoly (spacePolyJCV, spacePolyPlayer))
 import qualified Data.Foldable as Map
 import Voronoi.JCVoronoi (voronoiPolygonArea)
 import Football.Behaviours.FindSpace (findClosestOpposition)
-import Football.Understanding.Interception (interceptionInfoPlayerBallRK, interceptionTimePlayersBallRK)
+import Football.Understanding.Interception (interceptionInfoPlayerBallRK, interceptionTimePlayersBallRK, interceptionInfoPlayerBallRKI, InterceptionData (interceptionDataDistance, interceptionDataBallLocation, interceptionDataTime))
 import Football.Pitch (Pitch(Pitch))
-import Core (Log)
+import Core (Log (logOutput))
 import Football.Types
 import Football.Behaviours.Kick (canKick)
 
@@ -40,17 +40,21 @@ newtype TeammateInPossession = TeammateInPossession Player
 
 newtype OppositionInPossession = OppositionInPossession Player
 
-checkClosestPlayer :: (Match m, Monad m) => Player -> m (Maybe ClosestPlayerToBall)
+checkClosestPlayer :: (Match m, Monad m, Log m) => Player -> m (Maybe ClosestPlayerToBall)
 checkClosestPlayer player = do
   ball <- gameBall
   teamPlayers' <- teammates player
-  (iceptLoc3D, iceptTime) <- interceptionInfoPlayerBallRK player ball
-  let iceptLoc = locate2D iceptLoc3D
-  otherIceptTime <- interceptionTimePlayersBallRK teamPlayers' ball
-  if otherIceptTime >= iceptTime then
-    pure $ Just $ ClosestPlayerToBall iceptLoc iceptTime
-  else
-    pure Nothing
+  stuff <- interceptionInfoPlayerBallRKI player ball
+  let iceptLocs = catMaybes [find (\x -> interceptionDataDistance x < -2.0) stuff, find (\x -> interceptionDataDistance x < -1.5) stuff, find (\x -> interceptionDataDistance x < -1.0) stuff,  find (\x -> interceptionDataDistance x < -0.5) stuff, listToMaybe stuff]
+  case listToMaybe iceptLocs of
+    Just iceptLoc -> do
+      let iceptLoc2D = locate2D (interceptionDataBallLocation iceptLoc)
+      otherIceptTime <- interceptionTimePlayersBallRK teamPlayers' ball
+      if otherIceptTime >= interceptionDataTime iceptLoc then
+        pure $ Just $ ClosestPlayerToBall iceptLoc2D  (interceptionDataTime iceptLoc)
+      else
+        pure Nothing
+    Nothing -> pure Nothing
 
 checkTeammateInPossession :: (Match m, Monad m) => Player -> m (Maybe TeammateInPossession)
 checkTeammateInPossession player = do

@@ -61,8 +61,11 @@ purple = V4 255 0 255 255
 grey :: SP.Color
 grey = V4 155 155 155 255
 
-fps :: Int
-fps = 30
+processFps :: Int
+processFps = 30
+
+renderFPS :: Int
+renderFPS = 60
 
 
 main :: IO ()
@@ -78,7 +81,7 @@ main = do
 
   let fonts = Fonts {fontsH2 = h2font, fontsDefault = font}
   
-  SF.with fps $ loopFor r fonts
+  SF.with renderFPS $ loopFor r fonts
 
   S.destroyWindow w
   S.quit
@@ -347,8 +350,7 @@ processLoop desiredFps = do
   t2 <- liftIO getSystemTime
   let (n2 :: Integer) = fromIntegral (systemSeconds t2 * 1000000000) + fromIntegral (systemNanoseconds t2)
       microDiff = fromIntegral (n2-n1) `div` 1000
-      eDiff = max 0 (1000000 `div` fps - microDiff)
-
+      eDiff = max 0 (1000000 `div` desiredFps - microDiff)
   liftIO $ threadDelay eDiff
   processLoop desiredFps
 
@@ -367,6 +369,7 @@ loopFor r fonts fpsm = do
   t2Voronoi <- newEmptyTMVarIO
   allVoronoi <- newEmptyTMVarIO
   lastPlayerTouchedBall <- newEmptyTMVarIO
+  cOfP <- newEmptyTMVarIO
   let initialState = 
         MatchState 
           { matchStateBall = bt
@@ -377,8 +380,9 @@ loopFor r fonts fpsm = do
           , matchStateLastPlayerTouchedBall = lastPlayerTouchedBall
           , matchPitch = Pitch 105 68
           , matchStateGoals = goals
+          , matchStateCentreOfPlay = cOfP
           }
-  _ <- forkIO $ runAppM (processLoop 30) initialState
+  _ <- forkIO $ runAppM (processLoop processFps) initialState
   runAppM loop' initialState
   where
     loop' :: AppM ()

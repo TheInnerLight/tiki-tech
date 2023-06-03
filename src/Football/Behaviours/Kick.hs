@@ -20,7 +20,7 @@ canKick player = do
   if distance (ballPositionVector ball) (playerPositionVector player) <= 0.5 then
     pure $ Just (ballPositionVector ball)
   else do
-    let (dist, _, closestBallPos) = distanceAndClosestIntercepts (1/30) (ballPositionVector ball, ballMotionVector ball) (playerPositionVector player, playerMotionVector player)
+    let (dist, closestBallPos, _) = distanceAndClosestInterceptsWithinTimeStep (-1/30) (ballPositionVector ball, ballMotionVector ball) (playerPositionVector player, playerMotionVector player)
     if dist <= 0.7 then do
       pure $ Just closestBallPos
     else
@@ -115,6 +115,14 @@ motionVectorForPassToWeak ball (targetX, targetY) =
 motionVectorForPassTo :: Ball -> (Double, Double) -> V3 Double
 motionVectorForPassTo ball (targetX, targetY) = 
   maxMag 31 $ ballDirection * pure (10.9 * exp (0.0267 * dist)) - ballMotionVector ball
+  where
+    targetVector = V3 targetX targetY 0
+    ballDirection = normalize (targetVector - ballPositionVector ball)
+    dist = norm (targetVector - ballPositionVector ball)
+
+motionVectorForPassToMedium :: Ball -> (Double, Double) -> V3 Double
+motionVectorForPassToMedium ball (targetX, targetY) = 
+  maxMag 31 $ ballDirection * pure (8.18 * exp (0.0287 * dist)) - ballMotionVector ball
   where
     targetVector = V3 targetX targetY 0
     ballDirection = normalize (targetVector - ballPositionVector ball)

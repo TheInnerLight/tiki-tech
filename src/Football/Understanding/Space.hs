@@ -1,3 +1,7 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+
+
 module Football.Understanding.Space where
 
 import Voronoi.JCVoronoi (JCVPoly (polyIndex), jcvSites2, findPoly)
@@ -13,6 +17,7 @@ import qualified Data.Vector as Vec
 import Statistics.Quantile (median, medianUnbiased)
 import Data.Ord (comparing, Down(..))
 import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
+import Core (Cache, cached, CacheKeyValue (CacheKey, CacheValue))
 
 createSpaceMap :: (Match m, Monad m) => m SpaceMap
 createSpaceMap = do
@@ -47,11 +52,17 @@ pitchHorizontalZone team x = do
     highY AttackingLeftToRight = RightHalf
     highY AttackingRightToLeft = LeftHalf 
 
-centreOfPlay :: (Match m, Monad m) => m (Double, Double)
-centreOfPlay = do
+calcCentreOfPlay :: (Match m, Monad m) => m (Double, Double)
+calcCentreOfPlay = do
   players' <- allPlayers
   let (xs, ys) = unzip $ locate2D <$> players'
   pure (median medianUnbiased $ Vec.fromList xs, median medianUnbiased $ Vec.fromList ys)
+
+
+centreOfPlay :: (Match m, Monad m, Cache m "centre-of-play") => m (Double, Double)
+centreOfPlay = do
+  cached (const calcCentreOfPlay) ()
+
 
 offsideLine :: (Match m, Monad m) => Team -> m Double
 offsideLine team  = do

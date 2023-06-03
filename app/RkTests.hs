@@ -11,7 +11,7 @@ ballDistanceTimeUntil2mps ball =
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
       dropFast (t', (bpv', bmv')) =
-        norm bmv' >= 10.0
+        norm bmv' >= 6.5
       (t, (fbpv, fbmv)) = head $ dropWhile dropFast $ rungeKutte (bpv, bmv) 0.1 ballMotionEq
   in (distance fbpv bpv, t)
 

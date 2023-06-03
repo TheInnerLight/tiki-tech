@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Football.Behaviours.FindSpace where
@@ -79,7 +81,7 @@ findPolySpaces player = do
   pure $ (\(_, poly) -> polyToBlock poly) <$> Map.toList spaceMap''
   
 
-optimalNearbySpace :: (Monad m, Match m, Log m) => Player -> m (Double, Double)
+optimalNearbySpace :: (Monad m, Match m, Log m, Cache m "centre-of-play") => Player -> m (Double, Double)
 optimalNearbySpace player = do
     polySpaces <- findPolySpaces player
     polyEdges' <- findEdgeSpaces
