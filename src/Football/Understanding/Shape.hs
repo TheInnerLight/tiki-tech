@@ -13,9 +13,10 @@ import Voronoi.JCVoronoi (JCVPoly(..))
 import Football.Locate2D (Locate2D(locate2D))
 import qualified Data.Map as Map
 import Core (Log(..), Cache)
-import Football.Understanding.Space (centreOfPlay, offsideLine)
+import Football.Understanding.Space (centresOfPlay, offsideLine)
 import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
 import Football.Types
+import Football.Understanding.Space.Data (CentresOfPlayCache, CentresOfPlay (centresOfPlayBothTeams))
 
 data PositionSphere = PositionEllipse
     { positionEllipseCentre :: (Double, Double)
@@ -23,9 +24,9 @@ data PositionSphere = PositionEllipse
     , positionEllipseYAxis :: Double
     }
 
-outOfPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m "centre-of-play") => Player -> m (Double, Double)
+outOfPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 outOfPossessionDesiredPosition player = do
-  (pCentreX, pCentreY) <- centreOfPlay
+  (pCentreX, pCentreY) <- centresOfPlayBothTeams <$> centresOfPlay
   (ballX, ballY) <- locate2D <$> gameBall
   pitch' <- pitch
 
@@ -61,9 +62,9 @@ outOfPossessionDesiredPosition player = do
   where
     inDirection maxX minX diffX diffY (x, y) = (max minX $ min maxX $ x+diffX, y+diffY)
 
-inPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m "centre-of-play") => Player -> m (Double, Double)
+inPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 inPossessionDesiredPosition player = do
-  (pCentreX, pCentreY) <- centreOfPlay
+  (pCentreX, pCentreY) <- centresOfPlayBothTeams <$> centresOfPlay
   (ballX, ballY) <- locate2D <$> gameBall
   pitch' <- pitch
   offsideLineX <- offsideLine (playerTeam player)

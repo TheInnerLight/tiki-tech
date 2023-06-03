@@ -14,7 +14,7 @@ import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO, newEm
 import Data.Time.Clock.System (getSystemTime)
 import Data.Random.Normal (normalIO')
 import qualified Control.Concurrent.Async as Async
-import qualified Control.Concurrent.Async as Async
+import Football.Understanding.Space.Data (CentresOfPlayCache)
 
 newtype AppM a = 
   AppM {unAppM :: ReaderT MatchState IO a}
@@ -54,7 +54,7 @@ instance Concurrent AppM where
     st <- has
     liftIO $ Async.mapConcurrently (flip runAppM st . f) t
 
-instance Cache AppM "centre-of-play" where
+instance Cache AppM CentresOfPlayCache where
   cacheLookup = cacheLookupCentreOfPlayImpl
   cacheInsert = cacheInsertCentreOfPlayImpl
 

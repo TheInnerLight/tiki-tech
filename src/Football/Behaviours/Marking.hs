@@ -11,12 +11,12 @@ import Data.List (sortOn, minimumBy, reverse, foldl', find)
 import qualified Data.Ord
 import Voronoi.JCVoronoi (JCVPoly(..))
 import Football.Locate2D (Locate2D(locate2D))
-import Football.Understanding.Space.Data (SpacePoly(spacePolyJCV, spacePolyPlayer), SpaceMap (SpaceMap))
+import Football.Understanding.Space.Data (SpacePoly(spacePolyJCV, spacePolyPlayer), SpaceMap (SpaceMap), CentresOfPlayCache)
 import qualified Data.Map as Map
 import Core (Log(..), Cache)
 import Football.Behaviours.Kick (motionVectorForPassTo)
 import Data.Maybe (isNothing)
-import Football.Understanding.Space (centreOfPlay)
+import Football.Understanding.Space (centresOfPlay)
 import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 import Football.Types
 
@@ -32,7 +32,7 @@ playerMarkClosestOppositionPlayer player = do
         Just teamP -> Map.insert teamP p acc
         Nothing -> acc
 
-positionalOrientedZonalMark :: (Monad m, Match m, Log m, Cache m "centre-of-play") => Player -> m (Double, Double)
+positionalOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 positionalOrientedZonalMark player = do
   outOfPossessionDesiredPosition player
 

@@ -12,7 +12,7 @@ import Data.Maybe (mapMaybe)
 import Data.Map (Map, (!))
 import Data.List (foldl', minimumBy, maximumBy, sortOn)
 import qualified Data.Map as Map
-import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone(..), HorizontalHalf (..))
+import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone(..), HorizontalHalf (..), CentresOfPlay (centresOfPlayBothTeams, CentresOfPlay, centresOfPlayTeam1, centresOfPlayTeam2), CentresOfPlayCache)
 import qualified Data.Vector as Vec
 import Statistics.Quantile (median, medianUnbiased)
 import Data.Ord (comparing, Down(..))
@@ -52,16 +52,25 @@ pitchHorizontalZone team x = do
     highY AttackingLeftToRight = RightHalf
     highY AttackingRightToLeft = LeftHalf 
 
-calcCentreOfPlay :: (Match m, Monad m) => m (Double, Double)
-calcCentreOfPlay = do
+calcCentresOfPlay :: (Match m, Monad m) => m CentresOfPlay
+calcCentresOfPlay = do
   players' <- allPlayers
   let (xs, ys) = unzip $ locate2D <$> players'
-  pure (median medianUnbiased $ Vec.fromList xs, median medianUnbiased $ Vec.fromList ys)
+  let (t1xs, t1ys) = unzip $ locate2D <$> filter (\p -> playerTeam p == Team1) players'
+  let (t2xs, t2ys) = unzip $ locate2D <$> filter (\p -> playerTeam p == Team2) players'
+  let allPlayersCofP = (median medianUnbiased $ Vec.fromList xs, median medianUnbiased $ Vec.fromList ys)
+  let t1CofP = (median medianUnbiased $ Vec.fromList t1xs, median medianUnbiased $ Vec.fromList t1ys)
+  let t2CofP = (median medianUnbiased $ Vec.fromList t2xs, median medianUnbiased $ Vec.fromList t2ys)
+  pure CentresOfPlay
+    { centresOfPlayBothTeams = allPlayersCofP
+    , centresOfPlayTeam1 = t1CofP
+    , centresOfPlayTeam2 = t2CofP
+    }
 
 
-centreOfPlay :: (Match m, Monad m, Cache m "centre-of-play") => m (Double, Double)
-centreOfPlay = do
-  cached (const calcCentreOfPlay) ()
+centresOfPlay :: (Match m, Monad m, Cache m CentresOfPlayCache) => m CentresOfPlay
+centresOfPlay = do
+  cached (const calcCentresOfPlay) ()
 
 
 offsideLine :: (Match m, Monad m) => Team -> m Double

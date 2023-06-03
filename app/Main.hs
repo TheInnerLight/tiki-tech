@@ -380,7 +380,7 @@ loopFor r fonts fpsm = do
           , matchStateLastPlayerTouchedBall = lastPlayerTouchedBall
           , matchPitch = Pitch 105 68
           , matchStateGoals = goals
-          , matchStateCentreOfPlay = cOfP
+          , matchStateCentresOfPlay = cOfP
           }
   _ <- forkIO $ runAppM (processLoop processFps) initialState
   runAppM loop' initialState

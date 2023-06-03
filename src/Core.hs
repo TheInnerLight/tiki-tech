@@ -9,7 +9,6 @@
 module Core where
 import Control.Concurrent.STM (STM)
 import Data.Time.Clock.System (SystemTime)
-import GHC.Base (Symbol)
   
 class Has m a where
   has :: m a
@@ -29,19 +28,15 @@ class Random m where
 class Concurrent m where
   mapConcurrently :: Traversable t => (a -> m b) -> t a -> m (t b)
 
-class (CacheKeyValue l) => Cache m (l :: Symbol) where
+class (CacheKeyValue l) => Cache m l where
   cacheLookup :: CacheKey l -> m (Maybe (CacheValue l))
   cacheInsert :: CacheKey l -> CacheValue l -> m ()
 
-class CacheKeyValue (l :: Symbol) where
-  type CacheKey l = ck | ck -> l
+class CacheKeyValue l where
+  type CacheKey l
   type CacheValue l = cv | cv -> l
 
-instance CacheKeyValue "centre-of-play" where
-  type CacheKey "centre-of-play" = ()
-  type CacheValue "centre-of-play" = (Double, Double)
-
-cached :: (CacheKeyValue l, Cache m (l :: Symbol), Monad m) => (CacheKey l -> m (CacheValue l)) -> CacheKey l -> m (CacheValue l)
+cached :: (CacheKeyValue l, Cache m l, Monad m) => (CacheKey l -> m (CacheValue l)) -> CacheKey l -> m (CacheValue l)
 cached f k = do
   cl <- cacheLookup k
   case cl of 

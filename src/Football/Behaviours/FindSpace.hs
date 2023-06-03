@@ -20,11 +20,11 @@ import Football.Types
 import Core
 import Voronoi.JCVoronoi
 import Football.Locate2D (Locate2D(locate2D))
-import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone (HalfSpaceHZ, WingHZ, CentreHZ), HorizontalHalf (LeftHalf, RightHalf))
+import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone (HalfSpaceHZ, WingHZ, CentreHZ), HorizontalHalf (LeftHalf, RightHalf), CentresOfPlayCache)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Map ((!))
-import Football.Understanding.Space (offsideLine, centreOfPlay, pitchHorizontalZone)
+import Football.Understanding.Space (offsideLine, centresOfPlay, pitchHorizontalZone)
 import Control.Monad (filterM)
 import Data.Maybe (listToMaybe)
 import Football.Understanding.Shape (inPossessionDesiredPosition)
@@ -81,7 +81,7 @@ findPolySpaces player = do
   pure $ (\(_, poly) -> polyToBlock poly) <$> Map.toList spaceMap''
   
 
-optimalNearbySpace :: (Monad m, Match m, Log m, Cache m "centre-of-play") => Player -> m (Double, Double)
+optimalNearbySpace :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 optimalNearbySpace player = do
     polySpaces <- findPolySpaces player
     polyEdges' <- findEdgeSpaces

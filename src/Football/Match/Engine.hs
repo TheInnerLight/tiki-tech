@@ -24,7 +24,7 @@ import Voronoi.JCVoronoi (JCVPoly, jcvSites2)
 import Control.Concurrent.STM (readTMVar, writeTMVar)
 import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
 import Football.Understanding.Space (createSpaceMap)
-import Football.Understanding.Space.Data (SpaceMap)
+import Football.Understanding.Space.Data (SpaceMap, CentresOfPlayCache, CentresOfPlay)
 import Football.Understanding.DecisionFactors
 import Data.Foldable (foldlM)
 import Football.Behaviours.Marking (playerMarkClosestOppositionPlayer, positionalOrientedZonalMark)
@@ -44,7 +44,7 @@ data MatchState = MatchState
   , matchStateTeam2VoronoiMap :: TMVar [JCVPoly]
   , matchStateSpaceMap :: TMVar SpaceMap
   , matchStateLastPlayerTouchedBall :: TMVar Player
-  , matchStateCentreOfPlay :: TMVar (Double, Double)
+  , matchStateCentresOfPlay :: TMVar CentresOfPlay
   , matchPitch :: Pitch
   }
 
@@ -102,7 +102,7 @@ enactIntentions = do
         IntentionCooldown _ -> pure player
         DoNothing -> pure $ stopMoving player
       
-updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m, Concurrent m, Cache m "centre-of-play") => Int -> m ()
+updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m, Concurrent m, Cache m CentresOfPlayCache) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
   team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team1
@@ -112,7 +112,7 @@ updateImpl fps = do
     writeTMVar (matchStateTeam1VoronoiMap state) team1Voronoi
     writeTMVar (matchStateTeam2VoronoiMap state) team2Voronoi
     writeTMVar (matchStateSpaceMap state) spaceMap'
-    _ <- tryTakeTMVar (matchStateCentreOfPlay state)
+    _ <- tryTakeTMVar (matchStateCentresOfPlay state)
     pure ()
   checkForGoal
   ensureBallInPlay
@@ -149,7 +149,7 @@ ensureBallInPlay = do
             ball
     writeTVar (matchStateBall state) ball'
 
-decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Concurrent m, Cache m "centre-of-play") => m ()
+decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Concurrent m, Cache m CentresOfPlayCache) => m ()
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -192,15 +192,15 @@ decideIntentions = do
         _  -> pure DoNothing
       pure player { playerIntention = newIntention }
 
-cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe (Double, Double))
+cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe CentresOfPlay)
 cacheLookupCentreOfPlayImpl () = do
   (state :: MatchState) <- has
-  atomise $ tryReadTMVar $ matchStateCentreOfPlay state
+  atomise $ tryReadTMVar $ matchStateCentresOfPlay state
 
-cacheInsertCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> (Double, Double) -> m ()
+cacheInsertCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> CentresOfPlay -> m ()
 cacheInsertCentreOfPlayImpl () v = do
   (state :: MatchState) <- has
-  atomise $ writeTMVar (matchStateCentreOfPlay state) v
+  atomise $ writeTMVar (matchStateCentresOfPlay state) v
 
 
 team1VoronoiMapImpl :: (Monad m, Has m MatchState, Atomise m) => m [JCVPoly]
