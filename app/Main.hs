@@ -75,7 +75,7 @@ main = do
   SDLFont.initialize
   font <- SDLFont.load "Roboto-Regular.ttf" 18
   h2font <- SDLFont.load "Roboto-Regular.ttf" 32
-  w <- S.createWindow "sdl2-gfx-example" S.defaultWindow { S.windowInitialSize = V2 screenWidth screenHeight }
+  w <- S.createWindow "Tiki Tech" S.defaultWindow { S.windowInitialSize = V2 screenWidth screenHeight }
   r <- S.createRenderer w (-1) S.defaultRenderer
   S.showWindow w
 

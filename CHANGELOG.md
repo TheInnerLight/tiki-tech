@@ -1,4 +1,4 @@
-# Revision history for tiki-techa
+# Revision history for tiki-tech
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
