@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Football.Understanding.Interception where
 
 import Football.Pitch (Pitch, isInPitchBounds)
@@ -6,9 +8,11 @@ import Football.Ball
 import Football.Types
 import Linear (V3, Metric (distance))
 import Football.Match (Match (pitch))
-import Data.List (mapAccumR)
+import Data.List (mapAccumR, find, minimumBy)
 import Control.Lens ((&))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes, listToMaybe)
+import Football.Understanding.Interception.Data (InterceptionData(..), InterceptionDataCache)
+import Core (Cache, cached)
 
 zipAdj :: (a -> b) -> [a] -> [(a, b)]
 zipAdj f x = zip x $ fmap f (tail x)
@@ -29,15 +33,8 @@ interceptionInfoPlayerBallRK player ball = do
   else 
     pure (fbpv, 1/0)
 
-data InterceptionData = InterceptionData
-  { interceptionDataTime :: Double
-  , interceptionDataDistance :: Double
-  , interceptionDataBallLocation :: V3 Double
-  , interceptionDataBallVector :: V3 Double
-  } deriving (Eq, Ord, Show)
-
-interceptionInfoPlayerBallRKI :: (Match m, Monad m) => Player -> Ball -> m [InterceptionData]
-interceptionInfoPlayerBallRKI player ball = do
+calcInterceptionInfoPlayerBallRKI :: (Match m, Monad m) => Player -> Ball -> m [InterceptionData]
+calcInterceptionInfoPlayerBallRKI player ball = do
   pitch' <- pitch
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
@@ -61,7 +58,19 @@ interceptionInfoPlayerBallRKI player ball = do
 
   pure $ filter (\intData -> isInPitchBounds (interceptionDataBallLocation intData) pitch') $ fastestAndOptimalInterception $ rungeKutte (bpv, bmv) dt ballMotionEq
 
+interceptionInfoPlayerBallRKI :: (Match m, Monad m, Cache m InterceptionDataCache) => Player -> Ball -> m [InterceptionData]
+interceptionInfoPlayerBallRKI player ball = 
+  cached (uncurry calcInterceptionInfoPlayerBallRKI) (player, ball)
 
+safestInterceptionOption :: [InterceptionData] -> Maybe InterceptionData
+safestInterceptionOption icepts = 
+  listToMaybe $ catMaybes [find (\x -> interceptionDataDistance x < -2.0) icepts, find (\x -> interceptionDataDistance x < -1.5) icepts, find (\x -> interceptionDataDistance x < -1.0) icepts,  find (\x -> interceptionDataDistance x < -0.5) icepts, listToMaybe icepts]
+
+fastestInterceptionOption :: [InterceptionData] -> Maybe InterceptionData
+fastestInterceptionOption (i:icepts) = 
+  Just $ minimumBy (\x y -> compare (interceptionDataDistance x) (interceptionDataDistance y) ) (i:icepts)
+fastestInterceptionOption [] = 
+  Nothing
 
 interceptionTimePlayersBallRK :: (Match m, Monad m) =>  [Player] -> Ball -> m Double
 interceptionTimePlayersBallRK players ball = snd <$> interceptionInfoPlayersBallRK players ball

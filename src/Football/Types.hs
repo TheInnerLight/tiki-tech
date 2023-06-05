@@ -16,7 +16,8 @@ data PlayerIntention
   = PassIntention PassTarget (Double, Double) (V3 Double)
   | ShootIntention ShotTarget (Double, Double) (V3 Double)
   | DribbleIntention (Double, Double) (V3 Double)
-  | MoveIntoSpace (Double, Double)
+  | MoveIntoSpace (Double, Double) SystemTime
+  | RunToLocation (Double, Double) SystemTime
   | ControlBallIntention (Double, Double) SystemTime
   | IntentionCooldown SystemTime
   | DoNothing
@@ -30,7 +31,6 @@ data PlayerSpeed = PlayerSpeed
 
 data Player = Player
   { playerPositionVector :: !(V3 Double)
-  , playerDesiredLocation :: !(V3 Double)
   , playerNumber :: !Int
   , playerSpeed :: !PlayerSpeed
   , playerMotionVector :: !(V3 Double)
@@ -58,4 +58,12 @@ data Goal = Goal
   { goalTeam :: !Team
   , goalScorer :: !Player
   } deriving (Eq, Ord, Show)
+
+data PhaseOfPlay 
+  = AttackingTransitionPhase
+  | DefensiveTransitionPhase
+  | InPossessionPhase
+  | OutOfPossessionPhase
+  
+
 

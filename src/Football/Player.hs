@@ -8,12 +8,17 @@ import Data.List (sort)
 import Data.Time.Clock.System (SystemTime)
 import Football.Types
 import Football.Maths
+import Football.Locate2D (Locate2D(locate2D))
 
 updatePlayer :: Double -> Player -> Player
 updatePlayer dt player =
   let ppv = playerPositionVector player
       pmv = playerMotionVector player
-      desiredMotion = pure (playerSpeedMax $ playerSpeed player) * normalize (playerDesiredLocation player - ppv)
+      desired = 
+        case playerDesiredLocation' player of
+          Just (desX, desY) -> V3 desX desY 0
+          Nothing           -> ppv
+      desiredMotion = pure (playerSpeedMax $ playerSpeed player) * normalize (desired - ppv)
       direction = if norm(desiredMotion - pmv) > 0 then normalize (desiredMotion - pmv) else normalize desiredMotion
       (ppv', pmv') = rk2 (1.0/dt) (playerMotionEq direction (playerSpeed player)) (ppv, pmv)
   in player { playerPositionVector = ppv', playerMotionVector = pmv' }
@@ -39,6 +44,12 @@ maxMag m v =
   else
     v
 
+playerControlCentre :: Double -> Player -> V3 Double
+playerControlCentre time player =
+  let pa = playerSpeedAcceleration (playerSpeed player)
+      start = playerPositionVector player
+  in start + pure ((1 - exp(-pa * time))/pa) * playerMotionVector player
+
 -- use Fujimura-Sugihara model
 distanceToTargetAfter :: Double -> (V3 Double, V3 Double) -> Double -> Player -> Double
 distanceToTargetAfter dt (target, targetVector) t p =
@@ -56,46 +67,22 @@ distanceToTargetAfter dt (target, targetVector) t p =
     fst (movingObjectAndPointClosestInterceptWithinTimeStep (-dt) (target, targetVector) st2) - rt
     --norm st - rt
 
-runTowardsLocation :: (Double, Double) -> Player -> Player
-runTowardsLocation (x, y) player =
-  let targetV = V3 x y 0
-  in player { playerDesiredLocation = targetV }
-
-stopMoving :: Player -> Player
-stopMoving player =
-  player { playerDesiredLocation = playerPositionVector player }
-
+playerDesiredLocation' :: Player -> Maybe (Double, Double)
+playerDesiredLocation' p =
+  intentionToLocation (playerIntention p)
+  where
+    intentionToLocation (PassIntention _ loc _) = Just loc
+    intentionToLocation (ShootIntention _ loc _) = Just loc
+    intentionToLocation (DribbleIntention loc _) = Just loc
+    intentionToLocation (MoveIntoSpace loc _) = Just loc
+    intentionToLocation (RunToLocation loc _) = Just loc
+    intentionToLocation (ControlBallIntention loc _) = Just loc
+    intentionToLocation (IntentionCooldown _) = Nothing
+    intentionToLocation DoNothing = Nothing
 
 intentionCooldown :: PlayerIntention -> Maybe SystemTime
 intentionCooldown (IntentionCooldown t) = Just t
 intentionCooldown (ControlBallIntention _ t) = Just t
+intentionCooldown (MoveIntoSpace _ t) = Just t
+intentionCooldown (RunToLocation _ t) = Just t
 intentionCooldown _                     = Nothing
-
--- interceptionTimePlayerBall :: Player -> Ball -> Double
--- interceptionTimePlayerBall player ball =
---   case interceptionTime maxSpeed bpv (ballMotionVector ball) ppv (playerMotionVector player) of
---     Just d -> d
---     Nothing -> 20
---   where 
---     ppv = playerPositionVector player
---     bpv = ballPositionVector ball
---     maxSpeed = playerSpeedMax $ playerSpeed player
-
--- interceptionTime :: Double -> V3 Double -> V3 Double -> V3 Double -> V3 Double -> Maybe Double
--- interceptionTime speed tpv tv ppv pv =
---   let a = quadrance tv - speed ** 2.0
---       b = 2.0 * dot (tpv - ppv) tv
---       c = quadrance (tpv - ppv)
---       root1 = (-b + sqrt(b ** 2.0  - 4 * a * c / 2)) / (2 * a)
---       root2 = (-b - sqrt(b ** 2.0  - 4 * a * c / 2)) / (2 * a)
---       ts = sort . filter (>0) $ [root1, root2]
---   in case ts of 
---     t : _ -> Just t
---     []    -> Nothing
-  
--- interceptionVector :: Double -> V3 Double -> V3 Double -> V3 Double -> V3 Double -> V3 Double
--- interceptionVector speed tpv tv ppv pv =
---   case interceptionTime speed tpv tv ppv pv of
---     Just t -> normalize (tpv + pure t * tv - ppv)
---     Nothing -> tv
-

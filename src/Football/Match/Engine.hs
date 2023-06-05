@@ -35,6 +35,10 @@ import Football.Types
 import Football.Events.Goal (checkForGoal)
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Control.Concurrent (tryTakeMVar)
+import Football.Intentions.OpenPlay (decideOpenPlayIntention)
+import Data.Map (Map)
+import Football.Understanding.Interception.Data (InterceptionData, InterceptionDataCache)
+import qualified Data.Map as Map
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
@@ -45,6 +49,7 @@ data MatchState = MatchState
   , matchStateSpaceMap :: TMVar SpaceMap
   , matchStateLastPlayerTouchedBall :: TMVar Player
   , matchStateCentresOfPlay :: TMVar CentresOfPlay
+  , matchStateInterceptionCache :: TMVar (Map (Player, Ball) [InterceptionData])
   , matchPitch :: Pitch
   }
 
@@ -97,12 +102,13 @@ enactIntentions = do
         DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc player
         PassIntention _ iceptloc mot -> kickBallWith iceptloc mot player
         ShootIntention _ iceptloc mot -> kickBallWith iceptloc mot player
-        MoveIntoSpace loc -> pure $ runTowardsLocation loc player
+        MoveIntoSpace loc _ -> pure player
+        RunToLocation loc _ -> pure player
         ControlBallIntention loc _ -> controlBall loc player
         IntentionCooldown _ -> pure player
-        DoNothing -> pure $ stopMoving player
+        DoNothing -> pure player
       
-updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m, Concurrent m, Cache m CentresOfPlayCache) => Int -> m ()
+updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
   team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team1
@@ -113,6 +119,7 @@ updateImpl fps = do
     writeTMVar (matchStateTeam2VoronoiMap state) team2Voronoi
     writeTMVar (matchStateSpaceMap state) spaceMap'
     _ <- tryTakeTMVar (matchStateCentresOfPlay state)
+    _ <- tryTakeTMVar (matchStateInterceptionCache state)
     pure ()
   checkForGoal
   ensureBallInPlay
@@ -149,7 +156,7 @@ ensureBallInPlay = do
             ball
     writeTVar (matchStateBall state) ball'
 
-decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Concurrent m, Cache m CentresOfPlayCache) => m ()
+decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => m ()
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -161,36 +168,7 @@ decideIntentions = do
       time <- systemTimeNow
       case intentionCooldown (playerIntention player) of
         Just endTime | time < endTime -> pure player
-        _ -> decideIntention player
-    decideIntention player = do
-      decisionFactors <- calculateDecisionFactors player
-      newIntention <- case decisionFactors of
-        DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
-          determineOnTheBallIntention (OnTheBallCriteria (Just 0.65) Nothing) player
-        DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = False } -> do
-          determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
-        DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False, dfOppositionInPossession = Nothing } -> do
-          targetLoc <- clampPitch loc
-          time <- systemTimeNow
-          let timestep = max 0.1 $ min 0.5 (0.5*t)
-          pure $ ControlBallIntention targetLoc $ time { systemNanoseconds = systemNanoseconds time + floor (timestep*1000000000) }
-        DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False, dfOppositionInPossession = Just _  } -> do
-          targetLoc <- clampPitch loc
-          time <- systemTimeNow
-          let timestep = max 0.1 $ min 0.5 (0.5*t)
-          pure $ ControlBallIntention targetLoc $ time { systemNanoseconds = systemNanoseconds time + floor (timestep*1000000000) }
-        DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfOppositionInPossession = Just (OppositionInPossession _)  } -> do
-          loc <- positionalOrientedZonalMark player
-          time <- systemTimeNow
-          pure $ ControlBallIntention loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
-        DecisionFactors { dfTeammateInPossession = Just _} -> do
-          nearbySpace <- optimalNearbySpace player
-          targetLoc <- clampPitch nearbySpace
-          pure $ MoveIntoSpace targetLoc
-        DecisionFactors { dfHasControlOfBall = True} -> do
-          determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
-        _  -> pure DoNothing
-      pure player { playerIntention = newIntention }
+        _ -> decideOpenPlayIntention player
 
 cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe CentresOfPlay)
 cacheLookupCentreOfPlayImpl () = do
@@ -202,6 +180,21 @@ cacheInsertCentreOfPlayImpl () v = do
   (state :: MatchState) <- has
   atomise $ writeTMVar (matchStateCentresOfPlay state) v
 
+cacheLookupInterceptionDataImpl :: (Monad m, Has m MatchState, Atomise m) => (Player, Ball) -> m (Maybe [InterceptionData])
+cacheLookupInterceptionDataImpl (player, ball) = do
+  (state :: MatchState) <- has
+  cache <- atomise $ tryReadTMVar $ matchStateInterceptionCache state
+  case cache of
+    Just c  -> pure $ Map.lookup (player, ball) c
+    Nothing -> pure Nothing
+
+cacheInsertInterceptionDataImpl :: (Monad m, Has m MatchState, Atomise m) => (Player, Ball) -> [InterceptionData] -> m ()
+cacheInsertInterceptionDataImpl (player, ball) v = do
+  (state :: MatchState) <- has
+  cache <- atomise $ tryReadTMVar $ matchStateInterceptionCache state
+  case cache of
+    Just c -> atomise $ writeTMVar (matchStateInterceptionCache state) $ Map.insert (player, ball) v c 
+    Nothing -> atomise $ writeTMVar (matchStateInterceptionCache state) (Map.fromList [((player, ball), v)])
 
 team1VoronoiMapImpl :: (Monad m, Has m MatchState, Atomise m) => m [JCVPoly]
 team1VoronoiMapImpl = do

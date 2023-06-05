@@ -103,7 +103,6 @@ player = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player2 :: Player
@@ -114,7 +113,6 @@ player2 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player3 :: Player
@@ -125,7 +123,6 @@ player3 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player4 :: Player
@@ -136,7 +133,6 @@ player4 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player5 :: Player
@@ -147,7 +143,6 @@ player5 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player6 :: Player
@@ -158,7 +153,6 @@ player6 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player7 :: Player
@@ -169,7 +163,6 @@ player7 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player8 :: Player
@@ -180,7 +173,6 @@ player8 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player9 :: Player
@@ -191,7 +183,6 @@ player9 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player10 :: Player
@@ -202,7 +193,6 @@ player10 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player11 :: Player
@@ -213,7 +203,6 @@ player11 = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team1
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player1B :: Player
@@ -224,7 +213,6 @@ player1B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player2B :: Player
@@ -235,7 +223,6 @@ player2B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player3B :: Player
@@ -246,7 +233,6 @@ player3B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player4B :: Player
@@ -257,7 +243,6 @@ player4B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player5B :: Player
@@ -268,7 +253,6 @@ player5B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player6B :: Player
@@ -279,7 +263,6 @@ player6B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player7B :: Player
@@ -290,7 +273,6 @@ player7B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player8B :: Player
@@ -301,7 +283,6 @@ player8B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player9B :: Player
@@ -312,7 +293,6 @@ player9B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player10B :: Player
@@ -323,7 +303,6 @@ player10B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 player11B :: Player
@@ -334,7 +313,6 @@ player11B = Player
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
-  , playerDesiredLocation = V3 0 0 0
   }
 
 
@@ -370,6 +348,7 @@ loopFor r fonts fpsm = do
   allVoronoi <- newEmptyTMVarIO
   lastPlayerTouchedBall <- newEmptyTMVarIO
   cOfP <- newEmptyTMVarIO
+  icache <- newEmptyTMVarIO
   let initialState = 
         MatchState 
           { matchStateBall = bt
@@ -381,6 +360,7 @@ loopFor r fonts fpsm = do
           , matchPitch = Pitch 105 68
           , matchStateGoals = goals
           , matchStateCentresOfPlay = cOfP
+          , matchStateInterceptionCache = icache
           }
   _ <- forkIO $ runAppM (processLoop processFps) initialState
   runAppM loop' initialState
@@ -405,8 +385,8 @@ loopFor r fonts fpsm = do
       liftIO $ render r (fontsDefault fonts) ball'
 
       -- draw space polygons
-      -- (SpaceMap sitesAll) <- spaceMap
-      -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
+      (SpaceMap sitesAll) <- spaceMap
+      traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
 
       -- draw the scores
       (lg, mg) <- score

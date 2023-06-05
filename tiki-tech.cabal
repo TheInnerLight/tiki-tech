@@ -73,6 +73,7 @@ library
         Football.Behaviours.Shoot
         Football.Events.Goal
         Football.Intentions.OnTheBall
+        Football.Intentions.OpenPlay 
         Football.Locate2D
         Football.Pitch
         Football.Maths 
@@ -80,6 +81,7 @@ library
         Football.Understanding.DecisionFactors
         Football.Understanding.ExpectedGoals
         Football.Understanding.Interception
+        Football.Understanding.Interception.Data
         Football.Understanding.Shape
         Football.Understanding.Space
         Football.Understanding.Space.Data

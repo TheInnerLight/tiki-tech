@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -16,9 +17,10 @@ import Football.Understanding.Space.Data (SpaceMap(SpaceMap), SpacePoly (spacePo
 import qualified Data.Foldable as Map
 import Voronoi.JCVoronoi (voronoiPolygonArea)
 import Football.Behaviours.FindSpace (findClosestOpposition)
-import Football.Understanding.Interception (interceptionInfoPlayerBallRK, interceptionTimePlayersBallRK, interceptionInfoPlayerBallRKI, InterceptionData (interceptionDataDistance, interceptionDataBallLocation, interceptionDataTime))
+import Football.Understanding.Interception.Data
+import Football.Understanding.Interception (interceptionInfoPlayerBallRK, interceptionTimePlayersBallRK, interceptionInfoPlayerBallRKI, safestInterceptionOption)
 import Football.Pitch (Pitch(Pitch))
-import Core (Log (logOutput))
+import Core (Log (logOutput), Cache)
 import Football.Types
 import Football.Behaviours.Kick (canKick)
 
@@ -40,13 +42,12 @@ newtype TeammateInPossession = TeammateInPossession Player
 
 newtype OppositionInPossession = OppositionInPossession Player
 
-checkClosestPlayer :: (Match m, Monad m, Log m) => Player -> m (Maybe ClosestPlayerToBall)
+checkClosestPlayer :: (Match m, Monad m, Log m, Cache m InterceptionDataCache) => Player -> m (Maybe ClosestPlayerToBall)
 checkClosestPlayer player = do
   ball <- gameBall
   teamPlayers' <- teammates player
-  stuff <- interceptionInfoPlayerBallRKI player ball
-  let iceptLocs = catMaybes [find (\x -> interceptionDataDistance x < -2.0) stuff, find (\x -> interceptionDataDistance x < -1.5) stuff, find (\x -> interceptionDataDistance x < -1.0) stuff,  find (\x -> interceptionDataDistance x < -0.5) stuff, listToMaybe stuff]
-  case listToMaybe iceptLocs of
+  interceptionOptions <- interceptionInfoPlayerBallRKI player ball
+  case safestInterceptionOption interceptionOptions of
     Just iceptLoc -> do
       let iceptLoc2D = locate2D (interceptionDataBallLocation iceptLoc)
       otherIceptTime <- interceptionTimePlayersBallRK teamPlayers' ball
@@ -88,7 +89,7 @@ checkIsUnderPressure player = do
   op <- findClosestOpposition player
   pure $ distance (playerPositionVector player) (playerPositionVector op) <= 3.0
 
-calculateDecisionFactors :: (Match m, Monad m, Log m) => Player -> m DecisionFactors
+calculateDecisionFactors :: (Match m, Monad m, Log m, Cache m InterceptionDataCache) => Player -> m DecisionFactors
 calculateDecisionFactors player = do
   cp <- checkClosestPlayer player
   tip <- checkTeammateInPossession player

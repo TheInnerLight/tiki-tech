@@ -54,7 +54,6 @@ playerWithBallAtOrigin =
   Player 
     { playerPositionVector = V3 0 0 0
     , playerMotionVector = V3 0 0 0
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 8
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -66,7 +65,6 @@ easyPassingOptionTeammate =
   Player 
     { playerPositionVector = V3 10 0 0
     , playerMotionVector = V3 0 0 0
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 10
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -78,7 +76,6 @@ farAwayOpposition1 =
   Player 
     { playerPositionVector = V3 100 0 0
     , playerMotionVector = V3 0 0 0
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 8
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -90,7 +87,6 @@ farAwayOpposition2 =
   Player 
     { playerPositionVector = V3 110 0 0
     , playerMotionVector = V3 0 0 0
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 10
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -102,7 +98,6 @@ farAwayTeammate =
   Player 
     { playerPositionVector = V3 90 0 0
     , playerMotionVector = V3 0 0 0
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 9
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -114,7 +109,6 @@ equidistantTeammate motion =
   Player 
     { playerPositionVector = V3 30 0 0
     , playerMotionVector = motion
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 9
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -126,7 +120,6 @@ equidistantOpponent motion =
   Player 
     { playerPositionVector = V3 30 1 0
     , playerMotionVector = motion
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 9
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -138,7 +131,6 @@ highLineOpposingCentreBack1 =
   Player 
     { playerPositionVector = V3 20 (-5) 0
     , playerMotionVector = V3 0 0 0
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 4
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -150,7 +142,6 @@ highLineOpposingCentreBack2 =
   Player 
     { playerPositionVector = V3 20 (5) 0
     , playerMotionVector = V3 0 0 0
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 5
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing
@@ -162,7 +153,6 @@ runningNearLineTeammate motion =
   Player 
     { playerPositionVector = V3 15 0 0
     , playerMotionVector = motion
-    , playerDesiredLocation = V3 0 0 0
     , playerNumber = 9
     , playerSpeed = defaultPlayerSpeed
     , playerIntention = DoNothing

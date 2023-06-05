@@ -18,11 +18,12 @@ import Statistics.Quantile (median, medianUnbiased)
 import Data.Ord (comparing, Down(..))
 import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
 import Core (Cache, cached, CacheKeyValue (CacheKey, CacheValue))
+import Football.Player (playerControlCentre)
 
 createSpaceMap :: (Match m, Monad m) => m SpaceMap
 createSpaceMap = do
   players' <- allPlayers
-  allPlayersVoronoi <- jcvSites2 <$> traverse (clampPitch . locate2D . ProjectFuture 0.3) players'
+  allPlayersVoronoi <- jcvSites2 <$> traverse (clampPitch . locate2D . playerControlCentre 0.1) players'
   let map1 = Map.fromList $ fmap (\v -> (polyIndex v, v)) allPlayersVoronoi
   let folder acc (i, p) =
         case Map.lookup i map1 of

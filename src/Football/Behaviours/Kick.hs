@@ -28,14 +28,13 @@ canKick player = do
 
 kickBallWith :: (Monad m, Match m, GetSystemTime m, Log m) => (Double, Double) -> V3 Double -> Player -> m Player
 kickBallWith iceptLoc desiredBallMotion player = do
-  let player' = runTowardsLocation iceptLoc player
-  ballInRange <- canKick player'
+  ballInRange <- canKick player
   case ballInRange of
     Just r -> do
-      player'' <-  kickSuccess r player'
+      player'' <-  kickSuccess r player
       logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerIntention player))
       pure player''
-    Nothing -> pure player'
+    Nothing -> pure player
   where
     kickSuccess kickLoc player' = do
       time <- systemTimeNow
@@ -44,33 +43,31 @@ kickBallWith iceptLoc desiredBallMotion player = do
 
 dribbleToLocation :: (Monad m, Match m, GetSystemTime m, Log m) => (Double, Double) -> V3 Double -> Player -> m Player
 dribbleToLocation iceptLoc diff player = do
-  let player' = runTowardsLocation iceptLoc player
-  ballInRange <- canKick player'
+  ballInRange <- canKick player
   case ballInRange of
     Just r -> do
-      player'' <-  kickSuccess r player'
+      player'' <-  kickSuccess r player
       logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerIntention player))
       pure player''
-    Nothing -> pure player'
+    Nothing -> pure player
   where
     kickSuccess kickLoc player' = do
       time <- systemTimeNow
-      ball' <- kickBall player kickLoc diff
+      ball' <- kickBall player' kickLoc diff
       let cooldownTime = 0.3
       let cooldownTS = floor $ cooldownTime * 1e9
       let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
-      pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + cooldownTS }, playerDesiredLocation = eBallPos }
+      pure $ player' { playerIntention = RunToLocation (locate2D eBallPos) $ time { systemNanoseconds = systemNanoseconds time + cooldownTS } }
 
 controlBall :: (Monad m, Match m, GetSystemTime m, Random m, Log m) => (Double, Double) -> Player -> m Player
 controlBall loc player = do
-  let player' = runTowardsLocation loc player
-  ballInRange <- canKick player'
+  ballInRange <- canKick player
   case ballInRange of
     Just r -> do 
-      player'' <- kickSuccess r player'
+      player'' <- kickSuccess r player
       logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerIntention player))
       pure player''
-    Nothing -> pure player'
+    Nothing -> pure player
   where
     kickSuccess kickLoc player' = do
       ball <- gameBall
@@ -80,7 +77,7 @@ controlBall loc player = do
       let cooldownTime = 0.1
       let cooldownTS = floor $ cooldownTime * 1e9
       let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
-      pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + cooldownTS }, playerDesiredLocation = eBallPos }
+      pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + cooldownTS } }
 
 motionVectorForDribble :: Player -> Ball -> (Double, Double) -> V3 Double
 motionVectorForDribble player ball (targetX, targetY) = 

@@ -15,6 +15,7 @@ import Data.Time.Clock.System (getSystemTime)
 import Data.Random.Normal (normalIO')
 import qualified Control.Concurrent.Async as Async
 import Football.Understanding.Space.Data (CentresOfPlayCache)
+import Football.Understanding.Interception.Data (InterceptionDataCache)
 
 newtype AppM a = 
   AppM {unAppM :: ReaderT MatchState IO a}
@@ -57,6 +58,10 @@ instance Concurrent AppM where
 instance Cache AppM CentresOfPlayCache where
   cacheLookup = cacheLookupCentreOfPlayImpl
   cacheInsert = cacheInsertCentreOfPlayImpl
+
+instance Cache AppM InterceptionDataCache where
+  cacheLookup = cacheLookupInterceptionDataImpl
+  cacheInsert = cacheInsertInterceptionDataImpl
 
 
 runAppM :: AppM a -> MatchState -> IO a

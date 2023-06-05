@@ -16,7 +16,7 @@ import Core (Log(..), Cache)
 import Football.Understanding.Space (centresOfPlay, offsideLine)
 import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
 import Football.Types
-import Football.Understanding.Space.Data (CentresOfPlayCache, CentresOfPlay (centresOfPlayBothTeams))
+import Football.Understanding.Space.Data (CentresOfPlayCache, CentresOfPlay (centresOfPlayBothTeams, centresOfPlayTeam1, centresOfPlayTeam2))
 
 data PositionSphere = PositionEllipse
     { positionEllipseCentre :: (Double, Double)
@@ -26,7 +26,9 @@ data PositionSphere = PositionEllipse
 
 outOfPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 outOfPossessionDesiredPosition player = do
-  (pCentreX, pCentreY) <- centresOfPlayBothTeams <$> centresOfPlay
+  (pCentreX, pCentreY) <- case oppositionTeam (playerTeam player) of
+    Team1 -> centresOfPlayTeam1 <$> centresOfPlay
+    Team2 -> centresOfPlayTeam2 <$> centresOfPlay
   (ballX, ballY) <- locate2D <$> gameBall
   pitch' <- pitch
 
