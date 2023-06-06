@@ -65,5 +65,10 @@ data PhaseOfPlay
   | InPossessionPhase
   | OutOfPossessionPhase
   
+data GameHalf
+  = FirstHalf
+  | SecondHalf
+
+data GameTime = GameTime GameHalf Int
 
 

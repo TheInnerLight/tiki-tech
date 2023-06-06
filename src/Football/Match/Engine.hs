@@ -34,7 +34,7 @@ import Football.Pitch (Pitch)
 import Football.Types
 import Football.Events.Goal (checkForGoal)
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
-import Control.Concurrent (tryTakeMVar)
+import Control.Concurrent (tryTakeMVar, modifyMVar, modifyMVar_)
 import Football.Intentions.OpenPlay (decideOpenPlayIntention)
 import Data.Map (Map)
 import Football.Understanding.Interception.Data (InterceptionData, InterceptionDataCache)
@@ -51,6 +51,7 @@ data MatchState = MatchState
   , matchStateCentresOfPlay :: TMVar CentresOfPlay
   , matchStateInterceptionCache :: TMVar (Map (Player, Ball) [InterceptionData])
   , matchPitch :: Pitch
+  , matchStateGameTime :: TVar GameTime
   }
 
 goalsImpl :: (Monad m, Has m MatchState, Atomise m) => m [Goal]
@@ -120,6 +121,7 @@ updateImpl fps = do
     writeTMVar (matchStateSpaceMap state) spaceMap'
     _ <- tryTakeTMVar (matchStateCentresOfPlay state)
     _ <- tryTakeTMVar (matchStateInterceptionCache state)
+    _ <- modifyTVar' (matchStateGameTime state) (\(GameTime h t) -> GameTime h (t+timeStep))
     pure ()
   checkForGoal
   ensureBallInPlay
@@ -132,6 +134,8 @@ updateImpl fps = do
     players <- readTVar $ matchStatePlayers state
     let players' = fmap (updatePlayer (fromIntegral fps)) players
     writeTVar (matchStatePlayers state) players'
+  where
+    timeStep = 1000000 `div` fps
 
 allPlayersImpl :: (Monad m, Has m MatchState, Atomise m) => m [Player]
 allPlayersImpl = do 
@@ -211,4 +215,8 @@ allPlayersVoronoiMapImpl = do
   (state :: MatchState) <- has
   atomise $ readTMVar $ matchStateSpaceMap state
 
+gameTimeImpl :: (Monad m, Has m MatchState, Atomise m) => m GameTime
+gameTimeImpl = do
+  (state :: MatchState) <- has
+  atomise $ readTVar $ matchStateGameTime state
   

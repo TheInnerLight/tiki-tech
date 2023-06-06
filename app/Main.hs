@@ -39,6 +39,7 @@ import Data.Time.Clock.System (getSystemTime, SystemTime (systemSeconds, systemN
 import Control.Concurrent (threadDelay, forkIO)
 import Control.Monad.Reader.Class (MonadReader(ask))
 import Data.Text as T
+import qualified Text.Printf as TText
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -315,8 +316,6 @@ player11B = Player
   , playerTeam = Team2
   }
 
-
-
 ball :: Ball
 ball = Ball { ballPositionVector = V3 3.0 34.0 0, ballMotionVector = V3 0.0 0.0 0.0 }
 
@@ -349,6 +348,7 @@ loopFor r fonts fpsm = do
   lastPlayerTouchedBall <- newEmptyTMVarIO
   cOfP <- newEmptyTMVarIO
   icache <- newEmptyTMVarIO
+  gametimer <- newTVarIO $ GameTime FirstHalf 0
   let initialState = 
         MatchState 
           { matchStateBall = bt
@@ -361,6 +361,7 @@ loopFor r fonts fpsm = do
           , matchStateGoals = goals
           , matchStateCentresOfPlay = cOfP
           , matchStateInterceptionCache = icache
+          , matchStateGameTime = gametimer
           }
   _ <- forkIO $ runAppM (processLoop processFps) initialState
   runAppM loop' initialState
@@ -390,7 +391,11 @@ loopFor r fonts fpsm = do
 
       -- draw the scores
       (lg, mg) <- score
-      surf <- SDLFont.solid (fontsH2 fonts) white ("Liverbird " <> T.pack (show lg) <> " - " <> T.pack (show mg) <> " Man Shippy")
+
+      (GameTime _ time) <- currentGameTime
+      let (mm, ss) = (time `quot` 1000000) `quotRem` 60
+
+      surf <- SDLFont.solid (fontsH2 fonts) white (T.pack (TText.printf "%02d" mm) <> ":" <> T.pack (TText.printf "%02d" ss) <> " Liverbird " <> T.pack (show lg) <> " - " <> T.pack (show mg) <> " Man Shippy")
       blug <- liftIO $ SVR.createTextureFromSurface r surf
       surfDimensions <- liftIO $  SVR.surfaceDimensions surf
       SVR.freeSurface surf

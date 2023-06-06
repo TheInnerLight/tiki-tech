@@ -36,7 +36,8 @@ class Match m where
   pitch :: m Pitch
   goals :: m [Goal]
   recordGoal :: Goal -> m ()
-    
+  currentGameTime :: m GameTime
+
 class HasTeam a where
   getTeam :: a -> Team
 

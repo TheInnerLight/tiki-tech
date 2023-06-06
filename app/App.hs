@@ -38,6 +38,7 @@ instance Match AppM where
   pitch = pitchImpl
   goals = goalsImpl
   recordGoal = recordGoalImpl
+  currentGameTime = gameTimeImpl
 
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff
