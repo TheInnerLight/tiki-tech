@@ -57,6 +57,7 @@ data ShotTarget
 data Goal = Goal
   { goalTeam :: !Team
   , goalScorer :: !Player
+  , goalTime :: !GameTime
   } deriving (Eq, Ord, Show)
 
 data PhaseOfPlay 
@@ -64,11 +65,24 @@ data PhaseOfPlay
   | DefensiveTransitionPhase
   | InPossessionPhase
   | OutOfPossessionPhase
+  deriving (Eq, Ord, Show)
   
 data GameHalf
   = FirstHalf
   | SecondHalf
+  deriving (Eq, Ord, Show)
 
-data GameTime = GameTime GameHalf Int
+data GameTime 
+  = GameTime GameHalf Int
+  deriving (Eq, Ord, Show)
+
+data TouchOfBall = TouchOfBall
+  { touchOfBallPlayer :: !Player
+  , touchOfBallTime :: !GameTime
+  }
+
+data MatchLogEntry
+  = GoalLogEntry Goal
+  | TouchLogEntry TouchOfBall
 
 

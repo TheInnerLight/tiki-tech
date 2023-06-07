@@ -71,9 +71,11 @@ library
         Football.Behaviours.Pass
         Football.Behaviours.Press
         Football.Behaviours.Shoot
+        Football.Events
         Football.Events.Goal
         Football.Intentions.OnTheBall
-        Football.Intentions.OpenPlay 
+        Football.Intentions.OpenPlay
+        Football.GameTime
         Football.Locate2D
         Football.Pitch
         Football.Maths 

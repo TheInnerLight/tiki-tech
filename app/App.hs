@@ -30,15 +30,14 @@ instance Atomise AppM where
 instance Match AppM where
   attackingDirection = attackingDirectionImpl
   gameBall = gameBallImpl
-  lastTouchOfBall = lastTouchOfBallImpl
   allPlayers = allPlayersImpl
   kickBall = kickImpl
   update = updateImpl
   spaceMap = allPlayersVoronoiMapImpl
   pitch = pitchImpl
-  goals = goalsImpl
-  recordGoal = recordGoalImpl
   currentGameTime = gameTimeImpl
+  matchEventLog = matchEventLogImpl
+  recordInMatchEventLog = recordInMatchEventLogImpl
 
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff

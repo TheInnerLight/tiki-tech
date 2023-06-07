@@ -40,6 +40,7 @@ import Control.Concurrent (threadDelay, forkIO)
 import Control.Monad.Reader.Class (MonadReader(ask))
 import Data.Text as T
 import qualified Text.Printf as TText
+import Football.Events.Goal (score)
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -341,7 +342,7 @@ loopFor :: S.Renderer -> Fonts-> SF.Manager -> IO ()
 loopFor r fonts fpsm = do
   pt <- newTVarIO [player, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player1B, player2B, player3B, player4B, player5B, player6B, player7B, player8B, player9B, player10B, player11B]
   bt <- newTVarIO ball
-  goals <- newTVarIO []
+  eventLog <- newTVarIO []
   t1Voronoi <- newEmptyTMVarIO
   t2Voronoi <- newEmptyTMVarIO
   allVoronoi <- newEmptyTMVarIO
@@ -358,7 +359,7 @@ loopFor r fonts fpsm = do
           , matchStateSpaceMap = allVoronoi
           , matchStateLastPlayerTouchedBall = lastPlayerTouchedBall
           , matchPitch = Pitch 105 68
-          , matchStateGoals = goals
+          , matchStateEventLog = eventLog
           , matchStateCentresOfPlay = cOfP
           , matchStateInterceptionCache = icache
           , matchStateGameTime = gametimer
@@ -386,8 +387,8 @@ loopFor r fonts fpsm = do
       liftIO $ render r (fontsDefault fonts) ball'
 
       -- draw space polygons
-      (SpaceMap sitesAll) <- spaceMap
-      traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
+      -- (SpaceMap sitesAll) <- spaceMap
+      -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
 
       -- draw the scores
       (lg, mg) <- score

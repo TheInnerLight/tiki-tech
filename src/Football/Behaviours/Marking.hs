@@ -20,12 +20,18 @@ import Football.Understanding.Space (centresOfPlay)
 import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 import Football.Types
 
-playerMarkClosestOppositionPlayer :: (Monad m, Match m, Log m) => Player -> m (Maybe Player)
+playerMarkClosestOppositionPlayer :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 playerMarkClosestOppositionPlayer player = do
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   teamPlayers' <- teamPlayers (playerTeam player)
   let matchUp = foldl' (folder teamPlayers') Map.empty oppositionPlayers'
-  pure $ Map.lookup player matchUp
+  attackingDirection' <- attackingDirection (playerTeam player)
+  let offset = case attackingDirection' of
+        AttackingLeftToRight -> V3 (-2) 0 0
+        AttackingRightToLeft -> V3 2 0 0
+  case Map.lookup player matchUp of
+    Just p | playerNumber player /= 1 -> pure $ locate2D $ playerPositionVector p + offset
+    _ -> outOfPossessionDesiredPosition player
   where 
     folder teamPlayers' acc p =
       case find (\p' -> isNothing $ Map.lookup p' acc) $ sortOn (distance (playerPositionVector p) . playerPositionVector) teamPlayers' of

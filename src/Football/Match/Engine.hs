@@ -43,7 +43,6 @@ import qualified Data.Map as Map
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
   , matchStatePlayers :: TVar [Player]
-  , matchStateGoals :: TVar [Goal]
   , matchStateTeam1VoronoiMap :: TMVar [JCVPoly]
   , matchStateTeam2VoronoiMap :: TMVar [JCVPoly]
   , matchStateSpaceMap :: TMVar SpaceMap
@@ -52,17 +51,18 @@ data MatchState = MatchState
   , matchStateInterceptionCache :: TMVar (Map (Player, Ball) [InterceptionData])
   , matchPitch :: Pitch
   , matchStateGameTime :: TVar GameTime
+  , matchStateEventLog :: TVar [MatchLogEntry]
   }
 
-goalsImpl :: (Monad m, Has m MatchState, Atomise m) => m [Goal]
-goalsImpl = do
+matchEventLogImpl :: (Monad m, Has m MatchState, Atomise m) => m [MatchLogEntry]
+matchEventLogImpl = do
   st <- has
-  atomise $ readTVar $ matchStateGoals st
+  atomise $ readTVar $ matchStateEventLog st
 
-recordGoalImpl :: (Monad m, Has m MatchState, Atomise m) => Goal -> m ()
-recordGoalImpl goal = do
+recordInMatchEventLogImpl :: (Monad m, Has m MatchState, Atomise m) => MatchLogEntry -> m ()
+recordInMatchEventLogImpl event = do
   st <- has
-  atomise $ modifyTVar (matchStateGoals st) (goal : )
+  atomise $ modifyTVar (matchStateEventLog st) (event : )
 
 pitchImpl :: (Monad m, Has m MatchState) => m Pitch
 pitchImpl = matchPitch <$> has
@@ -73,9 +73,10 @@ attackingDirectionImpl team =
     Team1 -> pure AttackingLeftToRight
     Team2 -> pure AttackingRightToLeft
 
-kickImpl :: (Monad m, Has m MatchState, Atomise m) => Player -> V3 Double -> V3 Double -> m Ball
+kickImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => Player -> V3 Double -> V3 Double -> m Ball
 kickImpl player loc motionVector' = do
   (state :: MatchState) <- has
+  time <- currentGameTime
   let stBall = matchStateBall state
   let stLastPlayerBall = matchStateLastPlayerTouchedBall state
   atomise $ do
@@ -83,13 +84,8 @@ kickImpl player loc motionVector' = do
     let ball' = ball { ballPositionVector = loc, ballMotionVector = ballMotionVector ball + motionVector'  }
     writeTVar stBall ball'
     writeTMVar stLastPlayerBall player
+    modifyTVar' (matchStateEventLog state) (TouchLogEntry (TouchOfBall player time) :)
     pure ball'
-
-lastTouchOfBallImpl :: (Monad m, Has m MatchState, Atomise m) => m (Maybe Player)
-lastTouchOfBallImpl = do
-  (state :: MatchState) <- has
-  let stLastPlayerBall = matchStateLastPlayerTouchedBall state
-  atomise $ tryReadTMVar stLastPlayerBall
 
 enactIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m) => m ()
 enactIntentions = do

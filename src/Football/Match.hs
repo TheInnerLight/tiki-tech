@@ -28,15 +28,14 @@ data AttackingDirection
 class Match m where
   attackingDirection :: Team -> m AttackingDirection
   gameBall :: m Ball
-  lastTouchOfBall :: m (Maybe Player)
   allPlayers :: m [Player]
   kickBall :: Player -> V3 Double -> V3 Double -> m Ball
   update :: Int -> m ()
   spaceMap :: m SpaceMap
   pitch :: m Pitch
-  goals :: m [Goal]
-  recordGoal :: Goal -> m ()
   currentGameTime :: m GameTime
+  matchEventLog :: m [MatchLogEntry]
+  recordInMatchEventLog :: MatchLogEntry -> m ()
 
 class HasTeam a where
   getTeam :: a -> Team
@@ -47,8 +46,7 @@ instance HasTeam Team where
 instance HasTeam Player where
   getTeam = playerTeam
 
-score :: (Functor m, Match m) => m (Int, Int)
-score = (\(g1s, g2s) -> (length g1s, length g2s)) . partition (\ g -> goalTeam g == Team1) <$> goals
+
 
 oppositionPlayers :: (Functor m, Match m) => Team -> m [Player]
 oppositionPlayers team = filter (\p -> playerTeam p /= team) <$> allPlayers

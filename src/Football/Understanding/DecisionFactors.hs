@@ -23,24 +23,22 @@ import Football.Pitch (Pitch(Pitch))
 import Core (Log (logOutput), Cache)
 import Football.Types
 import Football.Behaviours.Kick (canKick)
+import Football.Events (touchEvents, turnovers)
+import Football.GameTime (gameTimeSeconds)
 
 data DecisionFactors = DecisionFactors
   { dfClosestPlayerToBall :: Maybe ClosestPlayerToBall
-  , dfTeammateInPossession :: Maybe TeammateInPossession
-  , dfOppositionInPossession :: Maybe OppositionInPossession
+  , dfGamePhase :: PhaseOfPlay
   , dfHasControlOfBall :: Bool
   , dfInCompressedSpace :: Bool
   , dfIsUnderPressure :: Bool
-  }
+  } deriving Show
 
 data ClosestPlayerToBall = ClosestPlayerToBall
   { closestPlayerToBallInterceptionLocation :: (Double, Double)
   , closestPlayerToBallInterceptionTime :: Double
-  }
+  } deriving Show
 
-newtype TeammateInPossession = TeammateInPossession Player
-
-newtype OppositionInPossession = OppositionInPossession Player
 
 checkClosestPlayer :: (Match m, Monad m, Log m, Cache m InterceptionDataCache) => Player -> m (Maybe ClosestPlayerToBall)
 checkClosestPlayer player = do
@@ -57,19 +55,21 @@ checkClosestPlayer player = do
         pure Nothing
     Nothing -> pure Nothing
 
-checkTeammateInPossession :: (Match m, Monad m) => Player -> m (Maybe TeammateInPossession)
-checkTeammateInPossession player = do
-  lastTouch <- lastTouchOfBall
-  case lastTouch of
-    Just lp | playerTeam lp == playerTeam player && playerNumber lp /= playerNumber player -> pure $ Just $ TeammateInPossession lp
-    _ -> pure Nothing
-
-checkOppositionInPossession :: (Match m, Monad m) => Player -> m (Maybe OppositionInPossession)
-checkOppositionInPossession player = do
-  lastTouch <- lastTouchOfBall
-  case lastTouch of
-    Just lp | playerTeam lp /= playerTeam player -> pure $ Just $ OppositionInPossession lp
-    _ -> pure Nothing
+checkPhase :: (Match m, Monad m, Log m) => Player -> m PhaseOfPlay
+checkPhase player = do
+  time <- currentGameTime
+  maybeEvent <- listToMaybe <$> turnovers
+  case maybeEvent of
+    Just (TouchOfBall touchPlayer touchTime) | playerTeam touchPlayer == playerTeam player && gameTimeSeconds time - gameTimeSeconds touchTime <= 3 -> 
+      pure AttackingTransitionPhase
+    Just (TouchOfBall touchPlayer _) | playerTeam touchPlayer == playerTeam player ->
+      pure InPossessionPhase
+    Just (TouchOfBall _ touchTime) | gameTimeSeconds time - gameTimeSeconds touchTime <= 3 ->
+      pure DefensiveTransitionPhase
+    Just (TouchOfBall _ _) ->
+      pure OutOfPossessionPhase
+    Nothing -> 
+      pure InPossessionPhase
 
 checkInPossession :: (Match m, Monad m, Log m) => Player -> m Bool
 checkInPossession player = do
@@ -92,16 +92,14 @@ checkIsUnderPressure player = do
 calculateDecisionFactors :: (Match m, Monad m, Log m, Cache m InterceptionDataCache) => Player -> m DecisionFactors
 calculateDecisionFactors player = do
   cp <- checkClosestPlayer player
-  tip <- checkTeammateInPossession player
-  oip <- checkOppositionInPossession player
   hcb <- checkInPossession player
   comp <- checkInCompressedSpace player
   unp <- checkIsUnderPressure player
+  phase <- checkPhase player
   pure $ DecisionFactors 
     { dfClosestPlayerToBall = cp
-    , dfTeammateInPossession = tip
-    , dfOppositionInPossession = oip
     , dfHasControlOfBall = hcb
     , dfInCompressedSpace = comp
     , dfIsUnderPressure = unp
+    , dfGamePhase = phase
     }
