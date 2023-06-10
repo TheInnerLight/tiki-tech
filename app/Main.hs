@@ -88,8 +88,8 @@ main = do
   S.destroyWindow w
   S.quit
   where
-    screenWidth = 2300
-    screenHeight = 1460
+    screenWidth = 1380
+    screenHeight = 876
 
 playerDefaultAcceleration :: Double
 playerDefaultAcceleration = 1.3

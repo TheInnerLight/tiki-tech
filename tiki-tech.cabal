@@ -71,8 +71,10 @@ library
         Football.Behaviours.Pass
         Football.Behaviours.Press
         Football.Behaviours.Shoot
+        Football.Behaviours.Throw
         Football.Events
         Football.Events.Goal
+        Football.Events.ThrowIn
         Football.Intentions.OnTheBall
         Football.Intentions.OpenPlay
         Football.Intentions.ThrowIn

@@ -14,6 +14,7 @@ oppositionTeam Team2 = Team1
 
 data PlayerIntention
   = PassIntention PassTarget (Double, Double) (V3 Double)
+  | ThrowIntention Player (Double, Double) (V3 Double)
   | ShootIntention ShotTarget (Double, Double) (V3 Double)
   | DribbleIntention (Double, Double) (V3 Double)
   | MoveIntoSpace (Double, Double) SystemTime

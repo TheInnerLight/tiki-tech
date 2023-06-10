@@ -37,6 +37,8 @@ import Football.Intentions.OpenPlay (decideOpenPlayIntention)
 import Data.Map (Map)
 import Football.Understanding.Interception.Data (InterceptionData, InterceptionDataCache)
 import qualified Data.Map as Map
+import Football.Events.ThrowIn (checkForThrowIn)
+import Football.Intentions.ThrowIn (decideThrowInIntention)
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
@@ -68,6 +70,11 @@ getGameStateImpl = do
   st <- has
   atomise $ readTVar (matchStateGameState st)
 
+setGameStateImpl :: (Monad m, Has m MatchState, Atomise m) => GameState -> m ()
+setGameStateImpl gs = do
+  st <- has
+  atomise $ writeTVar (matchStateGameState st) gs
+
 pitchImpl :: (Monad m, Has m MatchState) => m Pitch
 pitchImpl = matchPitch <$> has
 
@@ -91,6 +98,16 @@ kickImpl player loc motionVector' = do
     modifyTVar' (matchStateEventLog state) (TouchLogEntry (TouchOfBall player time) :)
     pure ball'
 
+setBallMotionParamsImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => V3 Double -> V3 Double -> m Ball
+setBallMotionParamsImpl ballPos ballMot = do
+  (state :: MatchState) <- has
+  let stBall = matchStateBall state
+  atomise $ do
+    ball <- readTVar stBall
+    let ball' = ball { ballPositionVector = ballPos, ballMotionVector = ballMot }
+    writeTVar stBall ball'
+    pure ball'
+
 enactIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m) => m ()
 enactIntentions = do
     (state :: MatchState) <- has
@@ -102,6 +119,10 @@ enactIntentions = do
       case playerIntention player of
         DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc player
         PassIntention _ iceptloc mot -> kickBallWith iceptloc mot player
+        ThrowIntention _ iceptloc mot -> do 
+            p <- kickBallWith iceptloc mot player
+            setGameState OpenPlay
+            pure p
         ShootIntention _ iceptloc mot -> kickBallWith iceptloc mot player
         MoveIntoSpace loc _ -> pure player
         RunToLocation loc _ -> pure player
@@ -124,6 +145,7 @@ updateImpl fps = do
     _ <- modifyTVar' (matchStateGameTime state) (\(GameTime h t) -> GameTime h (t+timeStep))
     pure ()
   checkForGoal
+  checkForThrowIn
   ensureBallInPlay
   decideIntentions
   enactIntentions
@@ -147,18 +169,22 @@ gameBallImpl = do
   (state :: MatchState) <- has
   atomise $ readTVar $ matchStateBall state
 
-ensureBallInPlay :: (Monad m, Has m MatchState, Atomise m) => m ()
+ensureBallInPlay :: (Monad m, Match m, Has m MatchState, Atomise m) => m ()
 ensureBallInPlay = do 
   (state :: MatchState) <- has
+  gs <- getGameState
   atomise $ do 
     ball <- readTVar $ matchStateBall state
-    let bpv = ballPositionVector ball
-        ball' = 
-          if (bpv ^. _x < 0.0 || bpv ^. _x > 105.0 || bpv ^. _y < 0.0 || bpv ^. _y > 68.0) then
-            ball { ballPositionVector = V3 55 34 0 }
-          else
-            ball
-    writeTVar (matchStateBall state) ball'
+    case gs of
+      ThrowIn _ _ -> pure ()
+      _  -> do
+        let bpv = ballPositionVector ball
+            ball' = 
+              if (bpv ^. _x < 0.0 || bpv ^. _x > 105.0 || bpv ^. _y < 0.0 || bpv ^. _y > 68.0) then
+                ball { ballPositionVector = V3 55 34 0 }
+              else
+                ball
+        writeTVar (matchStateBall state) ball'
 
 decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, GetSystemTime m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => m ()
 decideIntentions = do
@@ -174,7 +200,7 @@ decideIntentions = do
       case (intentionCooldown (playerIntention player), gameState) of
         (Just endTime, _) | time < endTime -> pure player
         (_, OpenPlay) -> decideOpenPlayIntention player
-        (_, ThrowIn _ _) -> error "errror"
+        (_, ThrowIn loc team) -> decideThrowInIntention loc team player
 
 cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe CentresOfPlay)
 cacheLookupCentreOfPlayImpl () = do

@@ -40,6 +40,8 @@ instance Match AppM where
   matchEventLog = matchEventLogImpl
   recordInMatchEventLog = recordInMatchEventLogImpl
   getGameState = getGameStateImpl
+  setGameState = setGameStateImpl
+  setBallMotionParams = setBallMotionParamsImpl
 
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff

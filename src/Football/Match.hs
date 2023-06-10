@@ -30,6 +30,7 @@ class Match m where
   gameBall :: m Ball
   allPlayers :: m [Player]
   kickBall :: Player -> V3 Double -> V3 Double -> m Ball
+  setBallMotionParams :: V3 Double -> V3 Double -> m Ball
   update :: Int -> m ()
   spaceMap :: m SpaceMap
   pitch :: m Pitch
@@ -37,6 +38,7 @@ class Match m where
   matchEventLog :: m [MatchLogEntry]
   recordInMatchEventLog :: MatchLogEntry -> m ()
   getGameState :: m GameState
+  setGameState :: GameState -> m ()
 
 class HasTeam a where
   getTeam :: a -> Team
