@@ -7,13 +7,13 @@ import Football.Understanding.DecisionFactors
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Football.Intentions.OnTheBall
 import Football.Match
-import Core (GetSystemTime(systemTimeNow), Log (logOutput), Cache)
+import Core (GetSystemTime(systemTimeNow), Log (logOutput), Cache, Random)
 import Football.Behaviours.Marking (positionalOrientedZonalMark, playerMarkClosestOppositionPlayer)
 import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Understanding.Space.Data (CentresOfPlayCache)
 import Football.Understanding.Interception.Data (InterceptionDataCache)
 
-decideOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => Player -> m Player
+decideOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => Player -> m Player
 decideOpenPlayIntention player = do
   decisionFactors <- calculateDecisionFactors player
   newIntention <- case decisionFactors of

@@ -89,7 +89,7 @@ main = do
   S.quit
   where
     screenWidth = 2300
-    screenHeight = 1360
+    screenHeight = 1460
 
 playerDefaultAcceleration :: Double
 playerDefaultAcceleration = 1.3
@@ -350,6 +350,7 @@ loopFor r fonts fpsm = do
   cOfP <- newEmptyTMVarIO
   icache <- newEmptyTMVarIO
   gametimer <- newTVarIO $ GameTime FirstHalf 0
+  gamestate <- newTVarIO $ OpenPlay
   let initialState = 
         MatchState 
           { matchStateBall = bt
@@ -363,6 +364,7 @@ loopFor r fonts fpsm = do
           , matchStateCentresOfPlay = cOfP
           , matchStateInterceptionCache = icache
           , matchStateGameTime = gametimer
+          , matchStateGameState = gamestate
           }
   _ <- forkIO $ runAppM (processLoop processFps) initialState
   runAppM loop' initialState

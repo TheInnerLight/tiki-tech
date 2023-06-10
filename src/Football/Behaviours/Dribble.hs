@@ -14,11 +14,15 @@ import Football.Types
 import Data.List (sortOn)
 import qualified Data.Ord
 import Football.Pitch (rightGoalLine, leftGoalLine)
+import qualified Statistics.Distribution.Normal as ND
+import Statistics.Distribution (Distribution(cumulative))
 
 data DribbleTarget 
   = DribbleAwayFromOpponents (Double, Double)
   | DribbleTowardsTouchline (V3 Double)
   | DribbleTowardsGoal (V3 Double)
+  deriving Show
+
 
 data DribbleDesirability =
   DribbleDesirability
@@ -26,14 +30,16 @@ data DribbleDesirability =
     , dribbleDirection :: !(V3 Double)
     , dribbleSafetyCoeff :: !Double
     , dribbleXGAdded :: !Double
-    , dribbleDesirabilityCoeff :: !Double
-    }
+    , dribbleOppositionXGAdded :: !Double
+    } deriving Show
 
 awayFromOppositionDribbleOptions :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
 awayFromOppositionDribbleOptions player = do
   ns <- nearestSpace player
   curXG <- locationXG (playerTeam player) player
   newXG <- locationXG (playerTeam player) ns
+  curOppXG <- locationXG (oppositionTeam $ playerTeam player) player
+  newOppXG <- locationXG (oppositionTeam $ playerTeam player) ns
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   ball <- gameBall
   let ball' = ball { ballMotionVector = motionVectorForDribble player ball ns }
@@ -48,8 +54,8 @@ awayFromOppositionDribbleOptions player = do
     { dribbleTarget = DribbleAwayFromOpponents ns
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
-    , dribbleXGAdded = xgAdded
-    , dribbleDesirabilityCoeff = xgAdded*safety  -- consider whether including opposition XG is helpful
+    , dribbleXGAdded = xgAdded * safety
+    , dribbleOppositionXGAdded = (newOppXG - curOppXG) * (1-safety)
     }
 
 towardsTouchlineDribbleOption :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
@@ -61,6 +67,8 @@ towardsTouchlineDribbleOption player = do
           AttackingRightToLeft -> playerPositionVector player - V3 2.5 0 0
   curXG <- locationXG (playerTeam player) player
   newXG <- locationXG (playerTeam player) dribbleLoc
+  curOppXG <- locationXG (oppositionTeam $ playerTeam player) player
+  newOppXG <- locationXG (oppositionTeam $ playerTeam player) dribbleLoc
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   ball <- gameBall
   let ball' = ball { ballMotionVector = motionVectorForDribble player ball (locate2D dribbleLoc) }
@@ -75,8 +83,8 @@ towardsTouchlineDribbleOption player = do
     { dribbleTarget = DribbleTowardsTouchline dribbleLoc
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
-    , dribbleXGAdded = xgAdded
-    , dribbleDesirabilityCoeff = xgAdded*safety -- consider whether including opposition XG is helpful
+    , dribbleXGAdded = xgAdded * safety
+    , dribbleOppositionXGAdded = (newOppXG - curOppXG) * (1-safety)
     }
 
 towardsGoalDribbleOption :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
@@ -95,6 +103,8 @@ towardsGoalDribbleOption player = do
       dribbleLoc = playerPositionVector player + dir * 4
   curXG <- locationXG (playerTeam player) player
   newXG <- locationXG (playerTeam player) dribbleLoc
+  curOppXG <- locationXG (oppositionTeam $ playerTeam player) player
+  newOppXG <- locationXG (oppositionTeam $ playerTeam player) dribbleLoc
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   ball <- gameBall
   let ball' = ball { ballMotionVector = motionVectorForDribble player ball (locate2D dribbleLoc) }
@@ -109,8 +119,8 @@ towardsGoalDribbleOption player = do
     { dribbleTarget = DribbleTowardsGoal dribbleLoc
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
-    , dribbleXGAdded = xgAdded
-    , dribbleDesirabilityCoeff = xgAdded*safety -- consider whether including opposition XG is helpful
+    , dribbleXGAdded = xgAdded * safety
+    , dribbleOppositionXGAdded = (newOppXG - curOppXG) * (1-safety)
     }
 
 desirableDribbleOptions :: (Monad m, Match m, Log m) => Player -> m [DribbleDesirability]
@@ -118,5 +128,5 @@ desirableDribbleOptions player = do
   ao <- awayFromOppositionDribbleOptions player
   tt <- towardsTouchlineDribbleOption player
   tg <- towardsGoalDribbleOption player
-  pure $ sortOn (Data.Ord.Down . dribbleDesirabilityCoeff) [ao, tt, tg]
+  pure [ao, tt, tg]
 

@@ -5,9 +5,10 @@ import Football.Understanding.SpaceSpec (spaceSpecTests)
 import Test.Tasty.Ingredients.ConsoleReporter (consoleTestReporter)
 import Football.Behaviours.PassSpec (passTests)
 import Football.MathsSpec (mathsTests)
+import Football.Intentions.OnTheBallSpec (onTheBallTests)
 
 main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [spaceSpecTests, passTests, mathsTests]
+tests = testGroup "Tests" [spaceSpecTests, passTests, mathsTests, onTheBallTests]

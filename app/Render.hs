@@ -82,20 +82,19 @@ data Scoreboard =
     }
 
 
-
 coordinateTransV :: (Integral b, S.R2 t) => t Double -> V2 b
 coordinateTransV v = 
-  fmap floor $ (v ^. _xy ) * pure scaleFactor + pure scaleFactor * V2 5.0 0
+  fmap floor $ (v ^. _xy ) * pure scaleFactor + pure scaleFactor * V2 5.0 2.5
 
 
 coordinateTransP :: (Integral a, Integral b) => (Double, Double) -> (a, b)
 coordinateTransP (x, y) = 
-  (floor $ (x+5)*scaleFactor, floor $ y * scaleFactor) 
+  (floor $ (x+5)*scaleFactor, floor $ (y+2.5) * scaleFactor) 
 
 
 coordinateTransPV :: Integral a => (Double, Double) -> V2 a
 coordinateTransPV (x, y) = 
-  V2 (floor $ (x+5)*scaleFactor) (floor $ y * scaleFactor) 
+  V2 (floor $ (x+5)*scaleFactor) (floor $ (y+2.5) * scaleFactor) 
 
 instance Render Player where
   render :: S.Renderer -> SDLFont.Font -> Player -> IO ()

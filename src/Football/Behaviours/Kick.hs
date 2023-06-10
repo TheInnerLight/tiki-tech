@@ -8,7 +8,7 @@ import Football.Player
 import Data.List (sort)
 import Football.Match
 import Control.Monad (when, void)
-import Core (GetSystemTime (systemTimeNow), Random (randomNormalMeanStd), Log (logOutput))
+import Core (GetSystemTime (systemTimeNow), Random (randomNormalMeanStd, randomRange), Log (logOutput))
 import Data.Time.Clock.System (SystemTime(..))
 import Football.Types
 import Football.Locate2D (Locate2D(locate2D))
@@ -111,7 +111,7 @@ motionVectorForPassToWeak ball (targetX, targetY) =
 
 motionVectorForPassTo :: Ball -> (Double, Double) -> V3 Double
 motionVectorForPassTo ball (targetX, targetY) = 
-  maxMag 31 $ ballDirection * pure (10.9 * exp (0.0267 * dist)) - ballMotionVector ball
+  maxMag 16 $ ballDirection * pure (10.9 * exp (0.0267 * dist)) - ballMotionVector ball
   where
     targetVector = V3 targetX targetY 0
     ballDirection = normalize (targetVector - ballPositionVector ball)

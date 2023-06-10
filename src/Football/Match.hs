@@ -36,6 +36,7 @@ class Match m where
   currentGameTime :: m GameTime
   matchEventLog :: m [MatchLogEntry]
   recordInMatchEventLog :: MatchLogEntry -> m ()
+  getGameState :: m GameState
 
 class HasTeam a where
   getTeam :: a -> Team

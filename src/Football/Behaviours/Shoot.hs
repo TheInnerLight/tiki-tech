@@ -19,8 +19,7 @@ data ShotDesirability =
     , shotBallVector :: !(V3 Double)
     , shotXG :: !Double
     , shotSafetyCoeff :: !Double
-    , shotDesirabilityCoeff :: !Double
-    }
+    } deriving Show
 
 centreShotOption :: (Monad m, Match m, Log m) => Player -> m ShotDesirability
 centreShotOption player = do
@@ -40,10 +39,9 @@ centreShotOption player = do
     , shotBallVector = shotVec
     , shotXG = xg
     , shotSafetyCoeff = xg
-    , shotDesirabilityCoeff = xg
     }
 
 desirableShotOptions :: (Monad m, Match m, Log m) => Player -> m [ShotDesirability]
 desirableShotOptions player = do
   cs <- centreShotOption player
-  pure $ sortOn (Data.Ord.Down . shotDesirabilityCoeff) [cs]
+  pure [cs]

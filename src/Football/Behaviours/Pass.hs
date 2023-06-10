@@ -30,7 +30,6 @@ data PassDesirability = PassDesirability
   , passXGAdded :: !Double
   -- | Approximate opposition XG added by the pass (useful for judging e.g. how dangerous a backpass is)
   , passOppositionXGAdded :: !Double
-  , passDesirabilityCoeff :: !Double
   } deriving (Eq, Show)
 
 toFeetPassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
@@ -60,9 +59,8 @@ toFeetPassingOptions player = do
           , passOppositionInterceptionDistance = oid
           , passTeammateReceptionDistance = trd
           , passSafetyCoeff = safety
-          , passXGAdded = newXG - originalXG
-          , passOppositionXGAdded = newOppXG - originalOppXG
-          , passDesirabilityCoeff = (newXG - originalXG) * safety - (newOppXG - originalOppXG) * (1-safety)
+          , passXGAdded = (newXG - originalXG)*safety
+          , passOppositionXGAdded = (newOppXG - originalOppXG)*(1-safety)
           }
   onsidePlayers <- filterM (isOnside (playerTeam player)) teamPlayers'
   traverse calcToFeetDesirability onsidePlayers
@@ -98,9 +96,8 @@ throughBallPassingOptions player = do
           , passOppositionInterceptionDistance = oid
           , passTeammateReceptionDistance = trd
           , passSafetyCoeff = safety
-          , passXGAdded = newXG - originalXG
-          , passOppositionXGAdded = newOppXG - originalOppXG
-          , passDesirabilityCoeff = (newXG - originalXG) * safety - (newOppXG - originalOppXG) * (1-safety)
+          , passXGAdded = (newXG - originalXG)*safety
+          , passOppositionXGAdded = (newOppXG - originalOppXG)*(1-safety)
           }
   onsidePlayers <- filterM (isOnside (playerTeam player)) $ filter (/= player) teamPlayers'
   let forwardRunningPlayers = filter (\p -> dot attackingRunVector (playerMotionVector p) > 4) onsidePlayers
@@ -132,9 +129,8 @@ toSpacePassingOptions player = do
           , passOppositionInterceptionDistance = oid
           , passTeammateReceptionDistance = trd
           , passSafetyCoeff = safety
-          , passXGAdded = newXG - originalXG
-          , passOppositionXGAdded = newOppXG - originalOppXG
-          , passDesirabilityCoeff = (newXG - originalXG) * safety - (newOppXG - originalOppXG) * (1-safety)
+          , passXGAdded = (newXG - originalXG)*safety
+          , passOppositionXGAdded = (newOppXG - originalOppXG)*(1-safety)
           }
   onsidePolygons <- filterM (isOnside (playerTeam player) . spacePolyPlayer) $ filter (\p -> spacePolyPlayer p /= player) teamSpaceMap
   spaceDesirability <- traverse calcToSpaceDesirability onsidePolygons
@@ -145,6 +141,6 @@ safestPassingOptions player = do
   toFeetPassOptions <- toFeetPassingOptions player
   toSpacePassOptions <- toSpacePassingOptions player
   throughBallOptions <- throughBallPassingOptions player
-  pure $ sortOn (Data.Ord.Down . passDesirabilityCoeff) (toFeetPassOptions ++ toSpacePassOptions ++ throughBallOptions) 
+  pure (toFeetPassOptions ++ toSpacePassOptions ++ throughBallOptions) 
 
 

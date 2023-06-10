@@ -16,6 +16,7 @@ import Data.Random.Normal (normalIO')
 import qualified Control.Concurrent.Async as Async
 import Football.Understanding.Space.Data (CentresOfPlayCache)
 import Football.Understanding.Interception.Data (InterceptionDataCache)
+import System.Random (randomRIO)
 
 newtype AppM a = 
   AppM {unAppM :: ReaderT MatchState IO a}
@@ -38,6 +39,7 @@ instance Match AppM where
   currentGameTime = gameTimeImpl
   matchEventLog = matchEventLogImpl
   recordInMatchEventLog = recordInMatchEventLogImpl
+  getGameState = getGameStateImpl
 
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff
@@ -46,8 +48,8 @@ instance GetSystemTime AppM where
   systemTimeNow = liftIO getSystemTime
 
 instance Random AppM where
-  randomNormalMeanStd :: Double -> Double -> AppM Double
   randomNormalMeanStd mean std = liftIO $ normalIO' (mean, std)
+  randomRange mind maxd = liftIO $ randomRIO (mind, maxd)
 
 instance Concurrent AppM where
   mapConcurrently :: Traversable t => (a -> AppM b) -> t a -> AppM (t b)

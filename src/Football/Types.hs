@@ -66,6 +66,10 @@ data PhaseOfPlay
   | InPossessionPhase
   | OutOfPossessionPhase
   deriving (Eq, Ord, Show)
+
+data GameState
+  = OpenPlay
+  | ThrowIn Team (Double, Double)
   
 data GameHalf
   = FirstHalf

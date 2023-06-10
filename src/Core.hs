@@ -24,6 +24,7 @@ class GetSystemTime m where
 
 class Random m where
   randomNormalMeanStd :: Double -> Double -> m Double
+  randomRange :: Double -> Double -> m Double
 
 class Concurrent m where
   mapConcurrently :: Traversable t => (a -> m b) -> t a -> m (t b)

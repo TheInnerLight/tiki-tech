@@ -51,21 +51,21 @@ playerControlCentre time player =
   in start + pure ((1 - exp(-pa * time))/pa) * playerMotionVector player
 
 -- use Fujimura-Sugihara model
-distanceToTargetAfter :: Double -> (V3 Double, V3 Double) -> Double -> Player -> Double
-distanceToTargetAfter dt (target, targetVector) t p =
+distanceToTargetAfter :: (V3 Double, V3 Double) -> Double -> Player -> Double
+distanceToTargetAfter (target, targetVector) t p =
   let 
       start = playerPositionVector p
       ms = playerSpeedMax (playerSpeed p)
       pa = playerSpeedAcceleration (playerSpeed p)
       -- vector difference between x(t) and A(t)
-      --st = target - start - pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
-      st2 = start + pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
+      st = target - start - pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
+      --st2 = start + pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
       -- radius B(t)
       rt = (ms*(t - (1 - exp(-pa * t))/pa))
 
   in 
-    fst (movingObjectAndPointClosestInterceptWithinTimeStep (-dt) (target, targetVector) st2) - rt
-    --norm st - rt
+    -- fst (movingObjectAndPointClosestInterceptWithinTimeStep (-dt) (target, targetVector) st2) - rt
+    norm st - rt
 
 playerDesiredLocation' :: Player -> Maybe (Double, Double)
 playerDesiredLocation' p =

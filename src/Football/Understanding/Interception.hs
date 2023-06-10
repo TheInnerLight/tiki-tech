@@ -26,12 +26,25 @@ interceptionInfoPlayerBallRK player ball = do
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
       dt = 0.015
-      dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && (distanceToTargetAfter dt (bpv', bmv') t' player > 0.5)
+      dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && (distanceToTargetAfter (bpv', bmv') t' player > 0.5)
       (t, (fbpv, fbmv)) = head $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) dt ballMotionEq
-  if isInPitchBounds fbpv pitch' then
-    pure (fbpv, t)
-  else 
-    pure (fbpv, 1/0)
+--  if isInPitchBounds fbpv pitch' then
+  pure (fbpv, t)
+  -- else 
+  --   pure (fbpv, 1/0)
+
+-- outOfPlayTime :: (Match m, Monad m) =>  Ball -> m (V3 Double, Double)
+-- outOfPlayTime ball = do
+--   pitch' <- pitch
+--   let bpv = ballPositionVector ball
+--       bmv = ballMotionVector ball
+--       dt = 0.015
+--       dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch'
+--       (t, (fbpv, fbmv)) = head $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) dt ballMotionEq
+--   if isInPitchBounds fbpv pitch' then
+--     pure (fbpv, 1/0)
+--   else 
+--     pure (fbpv, t)
 
 calcInterceptionInfoPlayerBallRKI :: (Match m, Monad m) => Player -> Ball -> m [InterceptionData]
 calcInterceptionInfoPlayerBallRKI player ball = do
@@ -49,7 +62,7 @@ calcInterceptionInfoPlayerBallRKI player ball = do
         let ((intData,_):rest) =
               ls
               & fmap (\(t', (bpv', bmv')) -> 
-                (InterceptionData t' (distanceToTargetAfter dt (bpv', bmv') t' player) bpv' bmv')
+                (InterceptionData t' (distanceToTargetAfter (bpv', bmv') t' player) bpv' bmv')
               )
               & zipAdj id
               & dropWhile (\((intData),d2) -> isInPitchBounds (interceptionDataBallLocation intData) pitch' && interceptionDataDistance intData > 0.5)
@@ -81,10 +94,8 @@ interceptionInfoPlayersBallRK players ball = do
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
       dt = 0.015
-      dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && all (\p -> distanceToTargetAfter dt (bpv', bmv') t' p > 0.5) players
+      dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && all (\p -> distanceToTargetAfter (bpv', bmv') t' p > 0.5) players
       (t, (fbpv, fbmv)) = head $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) dt ballMotionEq
-  if isInPitchBounds fbpv pitch' then
-    pure (fbpv, t)
-  else 
-    pure (fbpv, 1/0)
+  pure (fbpv, t)
+
 

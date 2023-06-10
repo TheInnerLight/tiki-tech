@@ -18,8 +18,6 @@ import Football.Match
 import Football.Behaviours.Kick
 import Data.List (sortOn, foldl', find)
 import Data.Maybe (isJust)
-import Football.Behaviours.FindSpace (optimalNearbySpace, nearestSpace)
-import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passSafetyCoeff, passDesirabilityCoeff))
 import Voronoi.JCVoronoi (JCVPoly, jcvSites2)
 import Control.Concurrent.STM (readTMVar, writeTMVar)
 import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
@@ -52,6 +50,7 @@ data MatchState = MatchState
   , matchPitch :: Pitch
   , matchStateGameTime :: TVar GameTime
   , matchStateEventLog :: TVar [MatchLogEntry]
+  , matchStateGameState :: TVar GameState
   }
 
 matchEventLogImpl :: (Monad m, Has m MatchState, Atomise m) => m [MatchLogEntry]
@@ -63,6 +62,11 @@ recordInMatchEventLogImpl :: (Monad m, Has m MatchState, Atomise m) => MatchLogE
 recordInMatchEventLogImpl event = do
   st <- has
   atomise $ modifyTVar (matchStateEventLog st) (event : )
+
+getGameStateImpl :: (Monad m, Has m MatchState, Atomise m) => m GameState
+getGameStateImpl = do
+  st <- has
+  atomise $ readTVar (matchStateGameState st)
 
 pitchImpl :: (Monad m, Has m MatchState) => m Pitch
 pitchImpl = matchPitch <$> has
@@ -156,7 +160,7 @@ ensureBallInPlay = do
             ball
     writeTVar (matchStateBall state) ball'
 
-decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => m ()
+decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, GetSystemTime m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => m ()
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -166,9 +170,11 @@ decideIntentions = do
   where
     updateIntention player = do
       time <- systemTimeNow
-      case intentionCooldown (playerIntention player) of
-        Just endTime | time < endTime -> pure player
-        _ -> decideOpenPlayIntention player
+      gameState <- getGameState
+      case (intentionCooldown (playerIntention player), gameState) of
+        (Just endTime, _) | time < endTime -> pure player
+        (_, OpenPlay) -> decideOpenPlayIntention player
+        (_, ThrowIn _ _) -> error "errror"
 
 cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe CentresOfPlay)
 cacheLookupCentreOfPlayImpl () = do
