@@ -37,7 +37,7 @@ import Football.Intentions.OpenPlay (decideOpenPlayIntention)
 import Data.Map (Map)
 import Football.Understanding.Interception.Data (InterceptionData, InterceptionDataCache)
 import qualified Data.Map as Map
-import Football.Events.ThrowIn (checkForThrowIn)
+import Football.Events.OutOfPlay (checkForThrowIn)
 import Football.Intentions.ThrowIn (decideThrowInIntention)
 
 data MatchState = MatchState 

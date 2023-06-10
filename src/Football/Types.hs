@@ -71,6 +71,7 @@ data PhaseOfPlay
 data GameState
   = OpenPlay
   | ThrowIn Team (Double, Double)
+  | CornerKick Team (Double, Double)
   
 data GameHalf
   = FirstHalf
