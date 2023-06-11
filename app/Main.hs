@@ -157,30 +157,11 @@ player6 = Player
   , playerTeam = Team1
   }
 
-player7 :: Player
-player7 = Player 
-  { playerPositionVector = V3 35.0 24.0 0
-  , playerNumber = 7
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
-  }
 
 player8 :: Player
 player8 = Player 
-  { playerPositionVector = V3 35.0 44.0 0
+  { playerPositionVector = V3 34.0 43.0 0
   , playerNumber = 8
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
-  }
-
-player9 :: Player
-player9 = Player 
-  { playerPositionVector = V3 50.0 24.0 0
-  , playerNumber = 9
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
@@ -189,8 +170,28 @@ player9 = Player
 
 player10 :: Player
 player10 = Player 
-  { playerPositionVector = V3 55.0 34.0 0
+  { playerPositionVector = V3 36.0 23.0 0 -- V3 55.0 34.0 0
   , playerNumber = 10
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team1
+  }
+
+player7 :: Player
+player7 = Player 
+  { playerPositionVector = V3 50.0 44.0 0
+  , playerNumber = 7
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team1
+  }
+
+player9 :: Player
+player9 = Player 
+  { playerPositionVector = V3 50.0 34.0 0
+  , playerNumber = 9
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
@@ -199,7 +200,7 @@ player10 = Player
 
 player11 :: Player
 player11 = Player 
-  { playerPositionVector = V3 50.0 44.0 0
+  { playerPositionVector = V3 50.0 24.0 0
   , playerNumber = 11
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -267,16 +268,6 @@ player6B = Player
   , playerTeam = Team2
   }
 
-player7B :: Player
-player7B = Player 
-  { playerPositionVector = V3 70.0 44.0 0
-  , playerNumber = 7
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
-  }
-
 player8B :: Player
 player8B = Player 
   { playerPositionVector = V3 70.0 24.0 0
@@ -287,20 +278,30 @@ player8B = Player
   , playerTeam = Team2
   }
 
-player9B :: Player
-player9B = Player 
-  { playerPositionVector = V3 55.0 24.0 0
-  , playerNumber = 9
+player10B :: Player
+player10B = Player 
+  { playerPositionVector = V3 70.0 44.0 0 --
+  , playerNumber = 10
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
   , playerTeam = Team2
   }
 
-player10B :: Player
-player10B = Player 
-  { playerPositionVector = V3 50.0 34.0 0
-  , playerNumber = 10
+player7B :: Player
+player7B = Player 
+  { playerPositionVector = V3 55.0 22.0 0 --V3 70.0 44.0 0
+  , playerNumber = 7
+  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+  , playerMotionVector = V3 0.0 0.0 0.0 
+  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
+  , playerTeam = Team2
+  }
+
+player9B :: Player
+player9B = Player 
+  { playerPositionVector = V3 65.0 34.0 0
+  , playerNumber = 9
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
   , playerIntention = DoNothing --KickIntention (15.0, 45.0)
@@ -309,7 +310,7 @@ player10B = Player
 
 player11B :: Player
 player11B = Player 
-  { playerPositionVector = V3 55.0 44.0 0
+  { playerPositionVector = V3 55.0 46.0 0
   , playerNumber = 11
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -318,7 +319,7 @@ player11B = Player
   }
 
 ball :: Ball
-ball = Ball { ballPositionVector = V3 3.0 34.0 0, ballMotionVector = V3 0.0 0.0 0.0 }
+ball = Ball { ballPositionVector = V3 52.5 34.0 0, ballMotionVector = V3 0.0 0.0 0.0 }
 
 processLoop :: Int -> AppM ()
 processLoop desiredFps = do
@@ -350,7 +351,7 @@ loopFor r fonts fpsm = do
   cOfP <- newEmptyTMVarIO
   icache <- newEmptyTMVarIO
   gametimer <- newTVarIO $ GameTime FirstHalf 0
-  gamestate <- newTVarIO $ OpenPlay
+  gamestate <- newTVarIO $ KickOff Team1
   let initialState = 
         MatchState 
           { matchStateBall = bt
@@ -399,13 +400,14 @@ loopFor r fonts fpsm = do
       let (mm, ss) = (time `quot` 1000000) `quotRem` 60
 
       surf <- SDLFont.solid (fontsH2 fonts) white (T.pack (TText.printf "%02d" mm) <> ":" <> T.pack (TText.printf "%02d" ss) <> " Liverbird " <> T.pack (show lg) <> " - " <> T.pack (show mg) <> " Man Shippy")
-      blug <- liftIO $ SVR.createTextureFromSurface r surf
+      timeAndScoreTexture <- liftIO $ SVR.createTextureFromSurface r surf
       surfDimensions <- liftIO $  SVR.surfaceDimensions surf
       SVR.freeSurface surf
       S.rendererDrawColor r $= black
       let targetRect = S.Rectangle (P $ S.V2 150 20) surfDimensions
       _ <- liftIO $ S.fillRect r (Just targetRect)
-      SVR.copy r blug Nothing (Just targetRect)
+      SVR.copy r timeAndScoreTexture Nothing (Just targetRect)
+      S.destroyTexture timeAndScoreTexture
 
       S.present r
       SF.delay_ fpsm

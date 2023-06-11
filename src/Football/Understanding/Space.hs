@@ -99,7 +99,13 @@ isOffide team x = do
 isOnside :: (Match m, Monad m, Locate2D x) => Team -> x -> m Bool
 isOnside team x = not <$> isOffide team x
 
-  
+isInOwnHalf :: (Match m, Monad m) => Player -> m Bool
+isInOwnHalf player = do
+  attackingDirection' <- attackingDirection (playerTeam player)
+  pitch' <- pitch
+  pure $ case attackingDirection' of
+    AttackingLeftToRight -> fst (locate2D player) < pitchHalfwayLineX pitch'
+    AttackingRightToLeft -> fst (locate2D player) > pitchHalfwayLineX pitch'
 
 
 

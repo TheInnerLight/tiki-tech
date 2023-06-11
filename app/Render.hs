@@ -110,12 +110,15 @@ instance Render Player where
     SP.fillCircle r scaled' 10 colour
 
     surf <- SDLFont.solid font white (T.pack (show $ playerNumber p))
-    blug <- SVR.createTextureFromSurface r surf
+    shirtNumberTexture <- SVR.createTextureFromSurface r surf
     surfDimensions <- SVR.surfaceDimensions surf
     SVR.freeSurface surf
     let textOffset = floor <$> (\x -> x/2) <$> fromIntegral <$> surfDimensions
     let targetRect = S.Rectangle (S.P $ scaled' - textOffset) surfDimensions
-    SVR.copy r blug Nothing (Just targetRect)
+    SVR.copy r shirtNumberTexture Nothing (Just targetRect)
+    S.destroyTexture shirtNumberTexture
+
+    
 
 instance Render Ball where
   render :: S.Renderer -> SDLFont.Font -> Ball -> IO ()
@@ -173,7 +176,9 @@ instance Render Pitch where
     let cornerTR = coordinateTransPV        (length,        0)
     let cornerBL = coordinateTransPV        (0,             width)
     let cornerBR = coordinateTransPV        (length,        width)
-    SP.fillRectangle r pMin pMax green
+    let outerPMin = coordinateTransPV       (-5,            -2.5)
+    let outerPMax = coordinateTransPV       (length+5,      width+2.5)
+    SP.fillRectangle r outerPMin outerPMax green
     SP.rectangle r pMin pMax white
     SP.line r halfwayMin halfwayMax white
     SP.fillCircle r centreSpot (floor $ scaleFactor * 0.22) white

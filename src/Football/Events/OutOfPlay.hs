@@ -56,9 +56,10 @@ checkForThrowIn = do
 data CrossedGoalLine 
   = CrossedForCorner (Double, Double) Team
   | CrossedForGoalKick (Double, Double) Team
+  | CrossedForGoal Goal
 
-wentForCornerOrGoalKick :: (Match m, Monad m) => m (Maybe CrossedGoalLine)
-wentForCornerOrGoalKick = do
+crossedGoalLine :: (Match m, Monad m) => m (Maybe CrossedGoalLine)
+crossedGoalLine = do
   ball <- gameBall
   pitch' <- pitch
   let ballNow = ballPositionVector ball
@@ -91,11 +92,16 @@ wentForCornerOrGoalKick = do
       if playerTeam lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (pitchLength pitch' - 5, goal2Pos ^. _y) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (pitchLength pitch', 0) rightGoalScoredTeam
     (_, Just ip, Just lastTouch) | ballPrev ^. _x <= goal2Min ^. _x && ballNow  ^. _x > goal2Max ^. _x && ip ^. _y > goal2Max ^. _y -> 
       if playerTeam lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (pitchLength pitch' - 5, goal2Pos ^. _y) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (pitchLength pitch', pitchWidth pitch') rightGoalScoredTeam
+    (Just ip, _, Just lastTouch) | ballPrev ^. _x >= goal1Min ^. _x && ballNow  ^. _x < goal1Max ^. _x && ip ^. _y >= goal1Min ^. _y && ip ^. _y <= goal1Max ^. _y && ip ^. _z >= goal1Min ^. _z && ip ^. _z <= goal1Max ^. _z  -> 
+      pure $ Just $ CrossedForGoal $ Goal leftGoalScoredTeam lastTouch time
+    (_, Just ip, Just lastTouch) | ballPrev ^. _x <= goal2Min ^. _x && ballNow  ^. _x > goal2Max ^. _x && ip ^. _y >= goal2Min ^. _y && ip ^. _y <= goal2Max ^. _y && ip ^. _z >= goal2Min ^. _z && ip ^. _z <= goal2Max ^. _z  -> 
+      pure $ Just $ CrossedForGoal $ Goal rightGoalScoredTeam lastTouch time
     _ -> pure Nothing
   
-checkForCornerOrGoalKick :: (Match m, Monad m, Log m) => m ()
-checkForCornerOrGoalKick = do
-  maybeCrossedLine <- wentForCornerOrGoalKick
+checkedCrossedGoalLine :: (Match m, Monad m, Log m) => m ()
+checkedCrossedGoalLine = do
+  maybeCrossedLine <- crossedGoalLine
+  pitch' <- pitch
   case maybeCrossedLine of
     Just (CrossedForCorner loc team) -> do
       _ <- setBallMotionParams (V3 (fst loc) (snd loc) 0) (V3 0 0 0)
@@ -103,4 +109,12 @@ checkForCornerOrGoalKick = do
     Just (CrossedForGoalKick loc team) -> do
       _ <- setBallMotionParams (V3 (fst loc) (snd loc) 0) (V3 0 0 0)
       setGameState $ GoalKick team loc
+    Just (CrossedForGoal goal) -> do
+      _ <- setBallMotionParams (V3 (pitchLength pitch' / 2) (pitchWidth pitch' / 2) 0) (V3 0 0 0)
+      recordInMatchEventLog $ GoalLogEntry goal
+      logOutput "------------------------------------------------------"
+      logOutput "Goal!"
+      logOutput goal
+      logOutput "------------------------------------------------------"
+      setGameState $ KickOff $ oppositionTeam $ goalTeam goal
     Nothing -> pure ()

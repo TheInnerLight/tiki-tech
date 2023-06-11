@@ -72,6 +72,10 @@ playerDesiredLocation' p =
   intentionToLocation (playerIntention p)
   where
     intentionToLocation (PassIntention _ loc _) = Just loc
+    intentionToLocation (ThrowIntention _ loc _) = Just loc
+    intentionToLocation (TakeCornerIntention _ loc _) = Just loc
+    intentionToLocation (TakeGoalKickIntention _ loc _) = Just loc
+    intentionToLocation (TakeKickOffIntention _ loc _) = Just loc
     intentionToLocation (ShootIntention _ loc _) = Just loc
     intentionToLocation (DribbleIntention loc _) = Just loc
     intentionToLocation (MoveIntoSpace loc _) = Just loc

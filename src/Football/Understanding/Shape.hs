@@ -24,6 +24,30 @@ data PositionSphere = PositionEllipse
     , positionEllipseYAxis :: Double
     }
 
+outOfPossessionFormationRelativeTo :: (Monad m, Match m) => Double -> Double -> Player -> (Double, Double) -> m (Double, Double)
+outOfPossessionFormationRelativeTo verticalCompactness horizontalCompactness player (uCentreX, uCentreY) = do
+  attackingDirection' <- attackingDirection (playerTeam player)
+  pitch' <- pitch
+  let (centreX, centreY) = invertIfNeeded pitch' attackingDirection' (uCentreX, uCentreY)
+  let pos = case playerNumber player of
+        1 -> inDirection  25   1     (-25*verticalCompactness) 0                              (centreX, centreY)
+        2 -> inDirection  62.5 5     (-15*verticalCompactness) (8+5*horizontalCompactness)    (centreX, centreY)
+        3 -> inDirection  62.5 5     (-15*verticalCompactness) (-8-5*horizontalCompactness)   (centreX, centreY)
+        4 -> inDirection  52.5 5     (-15*verticalCompactness) (3+5*horizontalCompactness)    (centreX, centreY)
+        5 -> inDirection  52.5 5     (-15*verticalCompactness) (-3-5*horizontalCompactness)   (centreX, centreY)
+        6 -> inDirection  65   10    (-10*verticalCompactness) 0                              (centreX, centreY)
+        10 -> inDirection 70   15    (-5*verticalCompactness)  (-3-5*horizontalCompactness)   (centreX, centreY)
+        8 -> inDirection  70   15    (-5*verticalCompactness)  (3+5*horizontalCompactness)    (centreX, centreY)
+        11 -> inDirection 85   20    (7*verticalCompactness)   (-5-5*horizontalCompactness)   (centreX, centreY)
+        7 -> inDirection  85   20    (7*verticalCompactness)   (5+5*horizontalCompactness)    (centreX, centreY)
+        9 -> inDirection  90   25    (9*verticalCompactness)   0                              (centreX, centreY)
+        _ -> inDirection  105  0     0    0                                                   (centreX, centreY)
+  pure $ invertIfNeeded pitch' attackingDirection' pos
+  where
+    inDirection maxX minX diffX diffY (x, y) = (max minX $ min maxX $ x+diffX, y+diffY)
+    invertIfNeeded  _      AttackingLeftToRight (posX, posY) = (posX, posY)
+    invertIfNeeded  pitch' AttackingRightToLeft (posX, posY) = (pitchLength pitch' - posX, pitchWidth pitch' - posY)
+
 outOfPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 outOfPossessionDesiredPosition player = do
   (pCentreX, pCentreY) <- case oppositionTeam (playerTeam player) of
@@ -37,32 +61,10 @@ outOfPossessionDesiredPosition player = do
         case attackingDirection' of
           AttackingLeftToRight -> (0.55*pCentreX+0.45*ballX                        , max 28 $ min 40 $ 0.85*pCentreY+ 0.15*ballY                       )
           AttackingRightToLeft -> (pitchLength pitch' - (0.55*pCentreX+0.45*ballX) , max 28 $ min 40 $ pitchWidth pitch' - (0.85*pCentreY + 0.15*ballY))
-      --centreY = max 28 $ min 40 $ 0.85*pCentreY+ 0.15*ballY
       halfPitchLength = 0.5 * pitchLength pitch'
-      widthMult = min halfPitchLength centreX / halfPitchLength
-
-  let pos = case playerNumber player of
-        1 -> inDirection  25   1     (-25) 0                 (centreX, centreY)
-        2 -> inDirection  62.5 5     (-15) (8+5*widthMult)   (centreX, centreY)
-        3 -> inDirection  62.5 5     (-15) (-8-5*widthMult)  (centreX, centreY)
-        4 -> inDirection  52.5 5     (-15) (3+5*widthMult)   (centreX, centreY)
-        5 -> inDirection  52.5 5     (-15) (-3-5*widthMult)  (centreX, centreY)
-        6 -> inDirection  65   10    (-10) 0                 (centreX, centreY)
-        10 -> inDirection 70   15    (-5) (-3-5*widthMult)   (centreX, centreY)
-        8 -> inDirection  70   15    (-5) (3+5*widthMult)    (centreX, centreY)
-        11 -> inDirection 85   20    (7)  (-5-5*widthMult)   (centreX, centreY)
-        7 -> inDirection  85   20    (7)  (5+5*widthMult)    (centreX, centreY)
-        9 -> inDirection  90   25    (9)  0                  (centreX, centreY)
-        _ -> inDirection  105  0     0    0                  (centreX, centreY)
-
-  let pos' = 
-        case attackingDirection' of
-          AttackingLeftToRight -> pos
-          AttackingRightToLeft -> (pitchLength pitch' - fst pos, pitchWidth pitch' - snd pos)
-
-  clampPitch pos'
-  where
-    inDirection maxX minX diffX diffY (x, y) = (max minX $ min maxX $ x+diffX, y+diffY)
+      horizontalCompactness = min halfPitchLength centreX / halfPitchLength
+  pos <- outOfPossessionFormationRelativeTo 1 horizontalCompactness player (pCentreX, pCentreY)
+  clampPitch pos
 
 inPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 inPossessionDesiredPosition player = do

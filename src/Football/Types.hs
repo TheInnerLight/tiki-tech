@@ -17,6 +17,7 @@ data PlayerIntention
   | ThrowIntention Player (Double, Double) (V3 Double)
   | TakeCornerIntention PassTarget (Double, Double) (V3 Double)
   | TakeGoalKickIntention PassTarget (Double, Double) (V3 Double)
+  | TakeKickOffIntention PassTarget (Double, Double) (V3 Double)
   | ShootIntention ShotTarget (Double, Double) (V3 Double)
   | DribbleIntention (Double, Double) (V3 Double)
   | MoveIntoSpace (Double, Double) SystemTime
@@ -75,6 +76,7 @@ data GameState
   | ThrowIn Team (Double, Double)
   | CornerKick Team (Double, Double)
   | GoalKick Team (Double, Double)
+  | KickOff Team
   
 data GameHalf
   = FirstHalf
