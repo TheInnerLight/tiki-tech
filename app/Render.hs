@@ -72,7 +72,7 @@ class Render a where
   render :: S.Renderer -> SDLFont.Font -> a -> IO ()
 
 scaleFactor :: Double
-scaleFactor = 12.0
+scaleFactor = 20.0
 
 
 data Scoreboard =

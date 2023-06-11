@@ -37,8 +37,10 @@ import Football.Intentions.OpenPlay (decideOpenPlayIntention)
 import Data.Map (Map)
 import Football.Understanding.Interception.Data (InterceptionData, InterceptionDataCache)
 import qualified Data.Map as Map
-import Football.Events.OutOfPlay (checkForThrowIn)
+import Football.Events.OutOfPlay (checkForThrowIn, checkForCornerOrGoalKick)
 import Football.Intentions.ThrowIn (decideThrowInIntention)
+import Football.Intentions.Corner (decideCornerIntention)
+import Football.Intentions.GoalKick (decideGoalKickIntention)
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
@@ -123,6 +125,14 @@ enactIntentions = do
             p <- kickBallWith iceptloc mot player
             setGameState OpenPlay
             pure p
+        TakeCornerIntention _ iceptloc mot -> do 
+            p <- kickBallWith iceptloc mot player
+            setGameState OpenPlay
+            pure p
+        TakeGoalKickIntention _ iceptloc mot -> do 
+            p <- kickBallWith iceptloc mot player
+            setGameState OpenPlay
+            pure p
         ShootIntention _ iceptloc mot -> kickBallWith iceptloc mot player
         MoveIntoSpace loc _ -> pure player
         RunToLocation loc _ -> pure player
@@ -146,6 +156,7 @@ updateImpl fps = do
     pure ()
   checkForGoal
   checkForThrowIn
+  checkForCornerOrGoalKick
   ensureBallInPlay
   decideIntentions
   enactIntentions
@@ -190,7 +201,6 @@ decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Rando
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
-    --players' <- traverse updateIntention players
     players' <- mapConcurrently updateIntention players
     atomise $ writeTVar (matchStatePlayers state) players'
   where
@@ -201,6 +211,8 @@ decideIntentions = do
         (Just endTime, _) | time < endTime -> pure player
         (_, OpenPlay) -> decideOpenPlayIntention player
         (_, ThrowIn loc team) -> decideThrowInIntention loc team player
+        (_, CornerKick loc team) -> decideCornerIntention loc team player
+        (_, GoalKick loc team) -> decideGoalKickIntention loc team player
 
 cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe CentresOfPlay)
 cacheLookupCentreOfPlayImpl () = do

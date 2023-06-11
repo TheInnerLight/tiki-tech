@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Football.Intentions.Corner where
+module Football.Intentions.GoalKick where
 import Football.Match
 import Core (Log, Cache, GetSystemTime (systemTimeNow))
 import Football.Understanding.Space.Data (CentresOfPlayCache)
@@ -12,22 +12,21 @@ import Football.Behaviours.Marking (positionalOrientedZonalMark)
 import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passBallVector))
 
-decideCornerIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, GetSystemTime m) => Team -> (Double, Double) -> Player -> m Player
-decideCornerIntention team cornerLocation player = do
+decideGoalKickIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, GetSystemTime m) => Team -> (Double, Double) -> Player -> m Player
+decideGoalKickIntention team goalKickLoc player = do
   ball <- gameBall
-  closestPlayer <- head . sortOn (distance (V3 (fst cornerLocation) (snd cornerLocation) 0) . playerPositionVector ) <$> teamPlayers team
   newIntention <-
     if playerTeam player /= team then do
       loc <- positionalOrientedZonalMark player
       time <- systemTimeNow
       pure $ RunToLocation loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
-    else if (playerNumber player == playerNumber closestPlayer) && distance (playerPositionVector player) (ballPositionVector ball) >= 0.5 then do
+    else if (playerNumber player == 1) && distance (playerPositionVector player) (ballPositionVector ball) >= 0.5 then do
       time <- systemTimeNow
-      pure $ RunToLocation cornerLocation $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
-    else if playerNumber player == playerNumber closestPlayer then do
+      pure $ RunToLocation goalKickLoc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
+    else if playerNumber player == 1 then do
       -- FIX ME
       goalKickPass <- head <$> safestPassingOptions player
-      pure $ TakeCornerIntention (passTarget goalKickPass) cornerLocation (passBallVector goalKickPass)
+      pure $ TakeGoalKickIntention (passTarget goalKickPass) goalKickLoc (passBallVector goalKickPass)
     else  do
       nearbySpace <- optimalNearbySpace player
       targetLoc <- clampPitch nearbySpace
