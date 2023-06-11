@@ -1,7 +1,6 @@
 # Tiki Tech
 
-[sample.webm](https://github.com/TheInnerLight/tiki-tech/assets/13356716/f3ceb52c-45c7-43ee-a6bd-9cb0f094b2fd)
-
+https://github.com/TheInnerLight/tiki-tech/assets/13356716/e8bd86a2-f193-4102-9ffe-be06a42fcfdd
 
 Tiki Tech is a football simulation engine/game that attempts to simulate the game of football from first principles. That is to say that this project begins with a representation of the physics of the motion of players and the ball and hope that, when coupled with an understanding of how to play the game and any relevant tactics, something that resembles the game of football will emerge.
 
