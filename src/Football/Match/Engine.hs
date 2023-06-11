@@ -161,7 +161,6 @@ updateImpl fps = do
     pure ()
   checkForThrowIn
   checkedCrossedGoalLine
-  ensureBallInPlay
   decideIntentions
   enactIntentions
   atomise $ do
@@ -183,23 +182,6 @@ gameBallImpl :: (Monad m, Has m MatchState, Atomise m) => m Ball
 gameBallImpl = do 
   (state :: MatchState) <- has
   atomise $ readTVar $ matchStateBall state
-
-ensureBallInPlay :: (Monad m, Match m, Has m MatchState, Atomise m) => m ()
-ensureBallInPlay = do 
-  (state :: MatchState) <- has
-  gs <- getGameState
-  atomise $ do 
-    ball <- readTVar $ matchStateBall state
-    case gs of
-      ThrowIn _ _ -> pure ()
-      _  -> do
-        let bpv = ballPositionVector ball
-            ball' = 
-              if (bpv ^. _x < 0.0 || bpv ^. _x > 105.0 || bpv ^. _y < 0.0 || bpv ^. _y > 68.0) then
-                ball { ballPositionVector = V3 55 34 0 }
-              else
-                ball
-        writeTVar (matchStateBall state) ball'
 
 decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, GetSystemTime m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => m ()
 decideIntentions = do
