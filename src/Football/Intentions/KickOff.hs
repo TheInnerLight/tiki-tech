@@ -21,7 +21,7 @@ decideKickOffIntention team player = do
   ball <- gameBall
   pitch' <- pitch
   let kickOffLocation = (pitchLength pitch' / 2, pitchWidth pitch' / 2)
-  releventPlayers <- filter (\p -> playerTeam p /= team && playerNumber p /= 9) <$> allPlayers
+  releventPlayers <- filter (\p -> playerTeam p /= team  || (playerTeam p == team && playerNumber p /= 9)) <$> allPlayers
   notInHalf <- filterM (fmap not . isInOwnHalf) releventPlayers
   newIntention <-
     if playerTeam player /= team then do
