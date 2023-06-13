@@ -4,6 +4,7 @@
 
 module Football.Understanding.Space where
 
+import Control.Lens ((^.))
 import Voronoi.JCVoronoi (JCVPoly (polyIndex), jcvSites2, findPoly)
 import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
 import Football.Match (Match (..), clampPitch, AttackingDirection (..), teamPlayers)
@@ -19,6 +20,8 @@ import Data.Ord (comparing, Down(..))
 import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
 import Core (Cache, cached, CacheKeyValue (CacheKey, CacheValue))
 import Football.Player (playerControlCentre)
+import Linear.V3 (_x)
+import Data.Function (on)
 
 createSpaceMap :: (Match m, Monad m) => m SpaceMap
 createSpaceMap = do
@@ -68,11 +71,18 @@ calcCentresOfPlay = do
     , centresOfPlayTeam2 = t2CofP
     }
 
-
 centresOfPlay :: (Match m, Monad m, Cache m CentresOfPlayCache) => m CentresOfPlay
 centresOfPlay = do
   cached (const calcCentresOfPlay) ()
 
+mostAdvancedPlayer :: (Match m, Monad m) => Team -> m Player
+mostAdvancedPlayer team = do
+  teamPlayers' <- teamPlayers team
+  attackingDirection' <- attackingDirection team
+  let px p = playerPositionVector p ^. _x
+  pure $ case attackingDirection' of
+    AttackingLeftToRight -> maximumBy (compare `on` px) teamPlayers'
+    AttackingRightToLeft -> minimumBy (compare `on` px) teamPlayers'
 
 offsideLine :: (Match m, Monad m) => Team -> m Double
 offsideLine team  = do

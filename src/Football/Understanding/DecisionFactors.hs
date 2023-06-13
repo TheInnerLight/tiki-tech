@@ -48,7 +48,7 @@ checkClosestPlayer player = do
   case safestInterceptionOption interceptionOptions of
     Just iceptLoc -> do
       let iceptLoc2D = locate2D (interceptionDataBallLocation iceptLoc)
-      otherIceptTime <- interceptionTimePlayersBallRK teamPlayers' ball
+      otherIceptTime <- interceptionTimePlayersBallRK False teamPlayers' ball
       if otherIceptTime >= interceptionDataTime iceptLoc then
         pure $ Just $ ClosestPlayerToBall iceptLoc2D  (interceptionDataTime iceptLoc)
       else

@@ -1,6 +1,7 @@
 module Football.Maths where
 import Linear (V3 (V3), normalize, Metric (dot, quadrance, norm, distance), cross)
 
+-- | Calculate intersection between line and plane using a point on the line (l0), the direction vector of the line (l), a point on the plane (p0) and the vector normal to the plane (n)
 linePlaneIntersection :: (V3 Double, V3 Double) -> (V3 Double, V3 Double) -> Maybe (V3 Double)
 linePlaneIntersection (l0, l) (p0, n) =
   let l' = normalize l

@@ -36,8 +36,8 @@ shortThrowOptions player = do
         let t = timeForPassTo ball $ locate2D p1 
             ball' = ball { ballMotionVector = motionVectorForPassTo ball $ locate2D (playerPositionVector p1 + playerMotionVector p1 * pure t) } 
         
-        trd <- interceptionTimePlayerBallRK p1 ball'
-        oid <- interceptionTimePlayersBallRK oppositionPlayers' ball'
+        trd <- interceptionTimePlayerBallRK False p1 ball'
+        oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
         let z1 = (oid - trd) / sqrt 2
             a = 4.68
             b = 0.48

@@ -63,8 +63,8 @@ crossedGoalLine = do
   ball <- gameBall
   pitch' <- pitch
   let ballNow = ballPositionVector ball
-  let ballPrev = ballPositionVector ball - ballMotionVector ball / 30
-  let ballDir = normalize (ballNow - ballPrev)
+  let ballPrev = ballPositionVector ball - 0.1 * ballMotionVector ball
+  let ballDir = normalize (ballPrev - ballNow)
 
   let (goal1Min, goal1Max) = leftGoalLine pitch'
   let goal1Pos = (goal1Min + goal1Max)/2
@@ -81,8 +81,8 @@ crossedGoalLine = do
           AttackingLeftToRight -> (Team2, Team1)
           AttackingRightToLeft -> (Team1, Team2)
 
-  let intersecPoint1 = linePlaneIntersection (ballPrev, ballDir) (goal1Pos, goal1Normal)
-  let intersecPoint2 = linePlaneIntersection (ballPrev, ballDir) (goal2Pos, goal2Normal)
+  let intersecPoint1 = linePlaneIntersection (ballNow, ballDir) (goal1Pos, goal1Normal)
+  let intersecPoint2 = linePlaneIntersection (ballNow, ballDir) (goal2Pos, goal2Normal)
   case (intersecPoint1, intersecPoint2, ltp) of
     (Just ip, _, Just lastTouch) | ballPrev ^. _x >= goal1Min ^. _x && ballNow  ^. _x < goal1Max ^. _x && ip ^. _y < goal1Min ^. _y -> 
       if playerTeam lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (5, goal1Pos ^. _y) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (0, 0) leftGoalScoredTeam

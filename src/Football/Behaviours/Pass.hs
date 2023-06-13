@@ -44,9 +44,8 @@ toFeetPassingOptions player = do
         let t = timeForPassTo ball $ locate2D p1 
             ball' = ball { ballMotionVector = motionVectorForPassTo ball $ locate2D (playerPositionVector p1 + playerMotionVector p1 * pure t) } 
             --trd = interceptionTimePlayersBallRK teamPlayers' ball'
-        
-        trd <- interceptionTimePlayerBallRK p1 ball'
-        oid <- interceptionTimePlayersBallRK oppositionPlayers' ball'
+        trd <- interceptionTimePlayerBallRK False p1 ball'
+        oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
         let z1 = (oid - trd) / sqrt 2
             a = 4.68
             b = 0.48
@@ -82,8 +81,8 @@ throughBallPassingOptions player = do
         let playerLocIn2S = playerPositionVector p1 + playerMotionVector p1 * 2
             ball' = ball { ballMotionVector = motionVectorForPassToArrivalSpeed (norm $ playerMotionVector p1) ball $ locate2D playerLocIn2S }
             --trd = interceptionTimePlayersBallRK teamPlayers' ball'
-        trd <- interceptionTimePlayerBallRK p1 ball'
-        oid <- interceptionTimePlayersBallRK oppositionPlayers' ball'
+        trd <- interceptionTimePlayerBallRK False p1 ball'
+        oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
         let z1 = (oid - trd) / sqrt 2
             a = 4.68
             b = 0.48
@@ -115,8 +114,8 @@ toSpacePassingOptions player = do
   let calcToSpaceDesirability v1 = do
         let (centreX, centreY) = polyPoint $ spacePolyJCV v1
             ball' = ball { ballMotionVector = motionVectorForPassToMedium ball (centreX, centreY) }
-        trd <- interceptionTimePlayerBallRK (spacePolyPlayer v1) ball'
-        oid <- interceptionTimePlayersBallRK oppositionPlayers' ball'
+        trd <- interceptionTimePlayerBallRK False (spacePolyPlayer v1) ball'
+        oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
         let z1 = (oid - trd) / sqrt 2
             a = 4.68
             b = 0.48

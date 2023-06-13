@@ -90,3 +90,6 @@ intentionCooldown (ControlBallIntention _ t) = Just t
 intentionCooldown (MoveIntoSpace _ t) = Just t
 intentionCooldown (RunToLocation _ t) = Just t
 intentionCooldown _                     = Nothing
+
+isGoalKeeper :: Player -> Bool
+isGoalKeeper player = playerNumber player == 1

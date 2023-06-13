@@ -17,21 +17,21 @@ import Core (Cache, cached)
 zipAdj :: (a -> b) -> [a] -> [(a, b)]
 zipAdj f x = zip x $ fmap f (tail x)
 
-interceptionTimePlayerBallRK :: (Match m, Monad m) => Player -> Ball -> m Double
-interceptionTimePlayerBallRK player ball = snd <$> interceptionInfoPlayerBallRK player ball
+interceptionTimePlayerBallRK :: (Match m, Monad m) => Bool -> Player -> Ball -> m Double
+interceptionTimePlayerBallRK includeOutOfBounds player ball = snd <$> interceptionInfoPlayerBallRK includeOutOfBounds player ball
 
-interceptionInfoPlayerBallRK :: (Match m, Monad m) => Player -> Ball -> m (V3 Double, Double)
-interceptionInfoPlayerBallRK player ball = do
+interceptionInfoPlayerBallRK :: (Match m, Monad m) => Bool -> Player -> Ball -> m (V3 Double, Double)
+interceptionInfoPlayerBallRK includeOutOfBounds player ball = do
   pitch' <- pitch
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
       dt = 0.015
       dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && (distanceToTargetAfter (bpv', bmv') t' player > 0.5)
       (t, (fbpv, fbmv)) = head $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) dt ballMotionEq
---  if isInPitchBounds fbpv pitch' then
-  pure (fbpv, t)
-  -- else 
-  --   pure (fbpv, 1/0)
+  if isInPitchBounds fbpv pitch' || includeOutOfBounds then
+    pure (fbpv, t)
+  else 
+    pure (fbpv, 1/0)
 
 -- outOfPlayTime :: (Match m, Monad m) =>  Ball -> m (V3 Double, Double)
 -- outOfPlayTime ball = do
@@ -85,17 +85,20 @@ fastestInterceptionOption (i:icepts) =
 fastestInterceptionOption [] = 
   Nothing
 
-interceptionTimePlayersBallRK :: (Match m, Monad m) =>  [Player] -> Ball -> m Double
-interceptionTimePlayersBallRK players ball = snd <$> interceptionInfoPlayersBallRK players ball
+interceptionTimePlayersBallRK :: (Match m, Monad m) => Bool -> [Player] -> Ball -> m Double
+interceptionTimePlayersBallRK includeOutOfBounds players ball = snd <$> interceptionInfoPlayersBallRK includeOutOfBounds players ball
 
-interceptionInfoPlayersBallRK :: (Match m, Monad m) =>  [Player] -> Ball -> m (V3 Double, Double)
-interceptionInfoPlayersBallRK players ball = do
+interceptionInfoPlayersBallRK :: (Match m, Monad m) => Bool -> [Player] -> Ball -> m (V3 Double, Double)
+interceptionInfoPlayersBallRK includeOutOfBounds players ball = do
   pitch' <- pitch
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
       dt = 0.015
       dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch' && all (\p -> distanceToTargetAfter (bpv', bmv') t' p > 0.5) players
       (t, (fbpv, fbmv)) = head $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) dt ballMotionEq
-  pure (fbpv, t)
+  if isInPitchBounds fbpv pitch' || includeOutOfBounds then
+    pure (fbpv, t)
+  else 
+    pure (fbpv, 1/0)
 
 

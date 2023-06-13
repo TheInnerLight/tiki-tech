@@ -212,14 +212,19 @@ renderIntention r pos i = pure ()
 --   --let kickLoc = coordinateTransV (ip + p)
 --   SP.line r iceptLoc pos cyan
 --   --SP.line r kickLoc pos cyan
--- renderIntention r pos (MoveIntoSpace p) = do
+-- renderIntention r pos (MoveIntoSpace p _) = do
 --   let spaceLoc = coordinateTransPV p
 --   SP.line r spaceLoc pos orange
 -- renderIntention r pos (ControlBallIntention p _) = do
 --   let spaceLoc = coordinateTransPV p
 --   SP.line r spaceLoc pos pink
 -- renderIntention r pos (IntentionCooldown _) = pure ()
--- renderIntention r pos DoNothing            = pure ()
+-- renderIntention r pos (RunToLocation loc _) = do
+--   let spaceLoc = coordinateTransPV loc
+--   SP.line r spaceLoc pos cyan
+-- renderIntention r pos DoNothing             = pure ()
+-- renderIntention r pos _                     = pure ()
+
 
 
 
