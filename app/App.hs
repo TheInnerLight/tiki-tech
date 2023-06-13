@@ -17,6 +17,7 @@ import qualified Control.Concurrent.Async as Async
 import Football.Understanding.Space.Data (CentresOfPlayCache)
 import Football.Understanding.Interception.Data (InterceptionDataCache)
 import System.Random (randomRIO)
+import Football.Understanding.Zones.Types (ZoneCache)
 
 newtype AppM a = 
   AppM {unAppM :: ReaderT MatchState IO a}
@@ -66,6 +67,10 @@ instance Cache AppM CentresOfPlayCache where
 instance Cache AppM InterceptionDataCache where
   cacheLookup = cacheLookupInterceptionDataImpl
   cacheInsert = cacheInsertInterceptionDataImpl
+
+instance Cache AppM ZoneCache where
+  cacheLookup = cacheLookupZoneDataImpl
+  cacheInsert = cacheInsertZoneDataImpl
 
 
 runAppM :: AppM a -> MatchState -> IO a

@@ -18,12 +18,6 @@ import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
 import Football.Types
 import Football.Understanding.Space.Data (CentresOfPlayCache, CentresOfPlay (centresOfPlayBothTeams, centresOfPlayTeam1, centresOfPlayTeam2))
 
-data PositionSphere = PositionEllipse
-    { positionEllipseCentre :: (Double, Double)
-    , positionEllipseXAxis :: Double
-    , positionEllipseYAxis :: Double
-    }
-
 outOfPossessionFormationRelativeTo :: (Monad m, Match m) => Double -> Double -> Player -> (Double, Double) -> m (Double, Double)
 outOfPossessionFormationRelativeTo verticalCompactness horizontalCompactness player (uCentreX, uCentreY) = do
   attackingDirection' <- attackingDirection (playerTeam player)
@@ -31,16 +25,16 @@ outOfPossessionFormationRelativeTo verticalCompactness horizontalCompactness pla
   let (centreX, centreY) = invertIfNeeded pitch' attackingDirection' (uCentreX, uCentreY)
   let pos = case playerNumber player of
         1 -> inDirection  25   1     (-25*verticalCompactness) 0                              (centreX, centreY)
-        2 -> inDirection  62.5 5     (-15*verticalCompactness) (8+5*horizontalCompactness)    (centreX, centreY)
-        3 -> inDirection  62.5 5     (-15*verticalCompactness) (-8-5*horizontalCompactness)   (centreX, centreY)
-        4 -> inDirection  52.5 5     (-15*verticalCompactness) (3+5*horizontalCompactness)    (centreX, centreY)
-        5 -> inDirection  52.5 5     (-15*verticalCompactness) (-3-5*horizontalCompactness)   (centreX, centreY)
-        6 -> inDirection  65   10    (-10*verticalCompactness) 0                              (centreX, centreY)
-        10 -> inDirection 70   15    (-5*verticalCompactness)  (-3-5*horizontalCompactness)   (centreX, centreY)
-        8 -> inDirection  70   15    (-5*verticalCompactness)  (3+5*horizontalCompactness)    (centreX, centreY)
-        11 -> inDirection 85   20    (7*verticalCompactness)   (-5-5*horizontalCompactness)   (centreX, centreY)
-        7 -> inDirection  85   20    (7*verticalCompactness)   (5+5*horizontalCompactness)    (centreX, centreY)
-        9 -> inDirection  90   25    (9*verticalCompactness)   0                              (centreX, centreY)
+        2 -> inDirection  77.5 5     (-15*verticalCompactness) (8+5*horizontalCompactness)    (centreX, centreY)
+        3 -> inDirection  77.5 5     (-15*verticalCompactness) (-8-5*horizontalCompactness)   (centreX, centreY)
+        4 -> inDirection  62.5 5     (-15*verticalCompactness) (3+5*horizontalCompactness)    (centreX, centreY)
+        5 -> inDirection  62.5 5     (-15*verticalCompactness) (-3-5*horizontalCompactness)   (centreX, centreY)
+        6 -> inDirection  75   10    (-10*verticalCompactness) 0                              (centreX, centreY)
+        10 -> inDirection 90   15    (-5*verticalCompactness)  (-3-5*horizontalCompactness)   (centreX, centreY)
+        8 -> inDirection  90   15    (-5*verticalCompactness)  (3+5*horizontalCompactness)    (centreX, centreY)
+        11 -> inDirection 100   20    (7*verticalCompactness)   (-5-5*horizontalCompactness)   (centreX, centreY)
+        7 -> inDirection  100   20    (7*verticalCompactness)   (5+5*horizontalCompactness)    (centreX, centreY)
+        9 -> inDirection  105   25    (9*verticalCompactness)   0                              (centreX, centreY)
         _ -> inDirection  105  0     0    0                                                   (centreX, centreY)
   pure $ invertIfNeeded pitch' attackingDirection' pos
   where
