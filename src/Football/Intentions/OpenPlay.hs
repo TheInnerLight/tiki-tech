@@ -8,12 +8,14 @@ import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Football.Intentions.OnTheBall
 import Football.Match
 import Core (GetSystemTime(systemTimeNow), Log (logOutput), Cache, Random)
-import Football.Behaviours.Marking (positionalOrientedZonalMark, playerMarkClosestOppositionPlayer)
+import Football.Behaviours.Marking (positionalOrientedZonalMark, playerMarkClosestOppositionPlayer, playerOrientedZonalMark)
 import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Understanding.Space.Data (CentresOfPlayCache)
 import Football.Understanding.Interception.Data (InterceptionDataCache)
+import Football.Understanding.Zones.Types (ZoneCache)
+import Football.Behaviours.Press (coverShadowOfPlayerOrientedZonalMark)
 
-decideOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache) => Player -> m Player
+decideOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
 decideOpenPlayIntention player = do
   decisionFactors <- calculateDecisionFactors player
   newIntention <- case decisionFactors of
@@ -27,11 +29,11 @@ decideOpenPlayIntention player = do
       let timestep = max 0.1 $ min 0.5 (0.5*t)
       pure $ ControlBallIntention targetLoc $ time { systemNanoseconds = systemNanoseconds time + floor (timestep*100000000) }
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = DefensiveTransitionPhase } -> do
-      loc <- playerMarkClosestOppositionPlayer player
+      loc <- coverShadowOfPlayerOrientedZonalMark player
       time <- systemTimeNow
       pure $ RunToLocation loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = OutOfPossessionPhase } -> do
-      loc <- positionalOrientedZonalMark player
+      loc <- playerOrientedZonalMark player
       time <- systemTimeNow
       pure $ RunToLocation loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
     DecisionFactors { dfHasControlOfBall = True } -> do

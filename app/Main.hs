@@ -352,6 +352,7 @@ loopFor r fonts fpsm = do
   icache <- newEmptyTMVarIO
   gametimer <- newTVarIO $ GameTime FirstHalf 0
   gamestate <- newTVarIO $ KickOff Team1
+  zonecache <- newEmptyTMVarIO
   let initialState = 
         MatchState 
           { matchStateBall = bt
@@ -366,6 +367,7 @@ loopFor r fonts fpsm = do
           , matchStateInterceptionCache = icache
           , matchStateGameTime = gametimer
           , matchStateGameState = gamestate
+          , matchStateZoneCache = zonecache
           }
   _ <- forkIO $ runAppM (processLoop processFps) initialState
   runAppM loop' initialState

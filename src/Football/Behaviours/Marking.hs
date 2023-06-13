@@ -3,6 +3,8 @@
 
 module Football.Behaviours.Marking where
 
+import Control.Lens ((^.))
+import Linear (V3(..), R1 (_x), R3 (_z), R2 (_y))
 import Football.Ball
 import Football.Player
 import Football.Match
@@ -19,18 +21,17 @@ import Data.Maybe (isNothing)
 import Football.Understanding.Space (centresOfPlay)
 import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 import Football.Types
+import Football.Behaviours.Marking.Zonal (mostDangerousPlayerInZone)
+import Football.Understanding.Zones.Types (ZoneCache)
+import Football.Understanding.Team (inTeamCoordinateSystem, toTeamCoordinateSystem)
 
 playerMarkClosestOppositionPlayer :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 playerMarkClosestOppositionPlayer player = do
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   teamPlayers' <- teamPlayers (playerTeam player)
   let matchUp = foldl' (folder teamPlayers') Map.empty oppositionPlayers'
-  attackingDirection' <- attackingDirection (playerTeam player)
-  let offset = case attackingDirection' of
-        AttackingLeftToRight -> V3 (-2) 0 0
-        AttackingRightToLeft -> V3 2 0 0
   case Map.lookup player matchUp of
-    Just p | playerNumber player /= 1 -> pure $ locate2D $ playerPositionVector p + offset
+    Just p | playerNumber player /= 1 -> locate2D <$> inTeamCoordinateSystem (playerTeam player) (playerPositionVector p) (+ V3 (-2) 0 0)
     _ -> outOfPossessionDesiredPosition player
   where 
     folder teamPlayers' acc p =
@@ -41,4 +42,11 @@ playerMarkClosestOppositionPlayer player = do
 positionalOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 positionalOrientedZonalMark player = do
   outOfPossessionDesiredPosition player
+
+playerOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache, Cache m ZoneCache) => Player -> m (Double, Double)
+playerOrientedZonalMark player = do
+  maybeMarkedPlayer <- mostDangerousPlayerInZone player
+  case maybeMarkedPlayer of
+    Just markedPlayer -> locate2D <$> inTeamCoordinateSystem (playerTeam player) (playerPositionVector markedPlayer) (+ V3 (-2) 0 0)
+    Nothing           -> outOfPossessionDesiredPosition player
 

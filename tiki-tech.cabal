@@ -68,6 +68,7 @@ library
         Football.Behaviours.FindSpace
         Football.Behaviours.Kick
         Football.Behaviours.Marking
+        Football.Behaviours.Marking.Zonal
         Football.Behaviours.Pass
         Football.Behaviours.Press
         Football.Behaviours.Shoot
@@ -93,6 +94,9 @@ library
         Football.Understanding.Shape
         Football.Understanding.Space
         Football.Understanding.Space.Data
+        Football.Understanding.Team
+        Football.Understanding.Zones
+        Football.Understanding.Zones.Types
         Voronoi.JCVoronoi
         Core
 
