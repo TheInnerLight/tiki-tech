@@ -4,6 +4,7 @@ import Football.Match
 import Football.Locate2D (Locate2D (locate2D))
 import Football.Pitch (Pitch(pitchLength, pitchWidth), isInPitchBounds)
 import Football.Types
+import Football.Understanding.Team (toTeamCoordinateSystem)
 
 xgValue :: Double -> Double
 xgValue distance =
@@ -12,14 +13,13 @@ xgValue distance =
 locationXG :: (Match m, Monad m, Locate2D l) => Team -> l -> m Double
 locationXG team l = do
   pitch' <- pitch
-  let lengthOfPitch = pitchLength pitch'
-      halfWidthOfPitch = pitchWidth pitch' / 2
+  let halfLengthOfPitch = pitchLength pitch' / 2
   attackingDirection' <- attackingDirection team
   let (x, y) = locate2D l
   if isInPitchBounds (x, y) pitch' then 
     pure $ case attackingDirection' of
-      AttackingLeftToRight -> xgValue (sqrt ((lengthOfPitch-x)**2.0 + (halfWidthOfPitch-y) **2.0))
-      AttackingRightToLeft -> xgValue (sqrt (x**2.0                 + (halfWidthOfPitch-y) **2.0))
+      AttackingLeftToRight -> xgValue (sqrt ((x + halfLengthOfPitch)**2.0 + y **2.0))
+      AttackingRightToLeft -> xgValue (sqrt ((halfLengthOfPitch - x)**2.0 + y **2.0))
   else
     pure 0
 

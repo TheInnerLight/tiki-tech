@@ -11,7 +11,7 @@ import SDL.Vect             (V2(..), V3(..), V4(..))
 import Football.Player
 import Football.Ball
 import Control.Lens ((^.))
-import Linear.V3 (_xy)
+import Linear.V3 (_xy, _x, _y)
 import qualified Data.Vector.Storable as V
 import Voronoi.JCVoronoi (JCVPoly(..), JCVEdge (jcvEdgePoint1), voronoiPolygonArea)
 import SDL.Primitive (Pos)
@@ -84,17 +84,18 @@ data Scoreboard =
 
 coordinateTransV :: (Integral b, S.R2 t) => t Double -> V2 b
 coordinateTransV v = 
-  fmap floor $ (v ^. _xy ) * pure scaleFactor + pure scaleFactor * V2 5.0 2.5
+  V2 (floor $ (v ^. _x +57.5)*scaleFactor) (floor $ (v ^. _y+36.5) * scaleFactor) 
+  --fmap floor $ (v ^. _xy ) * pure scaleFactor + pure scaleFactor * V2 5.0 2.5
 
 
 coordinateTransP :: (Integral a, Integral b) => (Double, Double) -> (a, b)
 coordinateTransP (x, y) = 
-  (floor $ (x+5)*scaleFactor, floor $ (y+2.5) * scaleFactor) 
+  (floor $ (x+57.5)*scaleFactor, floor $ (y+36.5) * scaleFactor) 
 
 
 coordinateTransPV :: Integral a => (Double, Double) -> V2 a
 coordinateTransPV (x, y) = 
-  V2 (floor $ (x+5)*scaleFactor) (floor $ (y+2.5) * scaleFactor) 
+  V2 (floor $ (x+57.5)*scaleFactor) (floor $ (y+36.5) * scaleFactor) 
 
 instance Render Player where
   render :: S.Renderer -> SDLFont.Font -> Player -> IO ()
@@ -153,31 +154,31 @@ instance Render SpacePoly where
 
 instance Render Pitch where
   render r _ (Pitch length width) = do
-    let pMin = coordinateTransPV            (0, 0)
-    let pMax = coordinateTransPV            (length,        width)
-    let halfwayMin = coordinateTransPV      (length/2,      0)
-    let halfwayMax = coordinateTransPV      (length/2,      width)
-    let centreSpot = coordinateTransPV      (length/2,      width/2)
-    let goal1Min = coordinateTransPV        (-2.4,          width/2-7.32/2)
-    let goal1Max = coordinateTransPV        (0,             width/2+7.32/2)
-    let goalArea1Min = coordinateTransPV    (0,             width/2-7.32/2-5.5)
-    let goalArea1Max = coordinateTransPV    (5.5,           width/2+7.32/2+5.5)
-    let penaltyArea1Min = coordinateTransPV (0,             width/2-7.32/2-5.5-11)
-    let penaltyArea1Max = coordinateTransPV (5.5+11,        width/2+7.32/2+5.5+11)
-    let penalltySpot1 = coordinateTransPV   (11,            width/2)
-    let goal2Min = coordinateTransPV        (length+2.4,    width/2-7.32/2)
-    let goal2Max = coordinateTransPV        (length,        width/2+7.32/2)
-    let goalArea2Min = coordinateTransPV    (length-5.5,    width/2-7.32/2-5.5)
-    let goalArea2Max = coordinateTransPV    (length,        width/2+7.32/2+5.5)
-    let penaltyArea2Min = coordinateTransPV (length-5.5-11, width/2-7.32/2-5.5-11)
-    let penaltyArea2Max = coordinateTransPV (length,        width/2+7.32/2+5.5+11)
-    let penalltySpot2 = coordinateTransPV   (length-11,     width/2)
-    let cornerTL = coordinateTransPV        (0,             0)
-    let cornerTR = coordinateTransPV        (length,        0)
-    let cornerBL = coordinateTransPV        (0,             width)
-    let cornerBR = coordinateTransPV        (length,        width)
-    let outerPMin = coordinateTransPV       (-5,            -2.5)
-    let outerPMax = coordinateTransPV       (length+5,      width+2.5)
+    let pMin = coordinateTransPV            (-length/2,         -width/2)
+    let pMax = coordinateTransPV            (length/2,          width/2)
+    let halfwayMin = coordinateTransPV      (0,                 -width/2)
+    let halfwayMax = coordinateTransPV      (0,                 width/2)
+    let centreSpot = coordinateTransPV      (0,                 0)
+    let goal1Min = coordinateTransPV        (-length/2-2.4,     -7.32/2)
+    let goal1Max = coordinateTransPV        (-length/2,         7.32/2)
+    let goalArea1Min = coordinateTransPV    (-length/2,         -7.32/2-5.5)
+    let goalArea1Max = coordinateTransPV    (-length/2+5.5,     7.32/2+5.5)
+    let penaltyArea1Min = coordinateTransPV (-length/2,         -7.32/2-5.5-11)
+    let penaltyArea1Max = coordinateTransPV (-length/2+5.5+11,  7.32/2+5.5+11)
+    let penalltySpot1 = coordinateTransPV   (-length/2+11,      0)
+    let goal2Min = coordinateTransPV        (length/2+2.4,      -7.32/2)
+    let goal2Max = coordinateTransPV        (length/2,          7.32/2)
+    let goalArea2Min = coordinateTransPV    (length/2-5.5,      -7.32/2-5.5)
+    let goalArea2Max = coordinateTransPV    (length/2,          7.32/2+5.5)
+    let penaltyArea2Min = coordinateTransPV (length/2-5.5-11,   -7.32/2-5.5-11)
+    let penaltyArea2Max = coordinateTransPV (length/2,          7.32/2+5.5+11)
+    let penalltySpot2 = coordinateTransPV   (length/2-11,       0)
+    let cornerTL = coordinateTransPV        (-length/2,         -width/2)
+    let cornerTR = coordinateTransPV        (length/2,          -width/2)
+    let cornerBL = coordinateTransPV        (-length/2,         width/2)
+    let cornerBR = coordinateTransPV        (length/2,          width/2)
+    let outerPMin = coordinateTransPV       (-length/2-5,       -width/2-2.5)
+    let outerPMax = coordinateTransPV       (length/2+5,        width/2+2.5)
     SP.fillRectangle r outerPMin outerPMax green
     SP.rectangle r pMin pMax white
     SP.line r halfwayMin halfwayMax white

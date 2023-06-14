@@ -99,7 +99,7 @@ playerDefaultMaxSpeed = 7.8
 
 player :: Player
 player = Player 
-  { playerPositionVector = V3 2.0 34.0 0
+  { playerPositionVector = V3 (-50) 0 0
   , playerNumber = 1
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -109,7 +109,7 @@ player = Player
 
 player2 :: Player
 player2 = Player 
-  { playerPositionVector = V3 15.0 56.0 0
+  { playerPositionVector = V3 (-35) 20 0
   , playerNumber = 2
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -119,7 +119,7 @@ player2 = Player
 
 player3 :: Player
 player3 = Player 
-  { playerPositionVector = V3 15.0 11.0 0
+  { playerPositionVector = V3 (-35) (-20) 0
   , playerNumber = 3
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -129,7 +129,7 @@ player3 = Player
 
 player4 :: Player
 player4 = Player 
-  { playerPositionVector = V3 15.0 41.0 0
+  { playerPositionVector = V3 (-35) 10 0
   , playerNumber = 4
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -139,7 +139,7 @@ player4 = Player
 
 player5 :: Player
 player5 = Player 
-  { playerPositionVector = V3 15.0 26.0 0
+  { playerPositionVector = V3 (-35) (-10) 0
   , playerNumber = 5
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -149,7 +149,7 @@ player5 = Player
 
 player6 :: Player
 player6 = Player 
-  { playerPositionVector = V3 25.0 34.0 0
+  { playerPositionVector = V3 (-30.0) 0 0
   , playerNumber = 6
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -160,7 +160,7 @@ player6 = Player
 
 player8 :: Player
 player8 = Player 
-  { playerPositionVector = V3 34.0 43.0 0
+  { playerPositionVector = V3 (-25) 5 0
   , playerNumber = 8
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -170,7 +170,7 @@ player8 = Player
 
 player10 :: Player
 player10 = Player 
-  { playerPositionVector = V3 36.0 23.0 0 -- V3 55.0 34.0 0
+  { playerPositionVector = V3 (-26) (-6) 0
   , playerNumber = 10
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -180,7 +180,7 @@ player10 = Player
 
 player7 :: Player
 player7 = Player 
-  { playerPositionVector = V3 50.0 44.0 0
+  { playerPositionVector = V3 (-15) 10 0
   , playerNumber = 7
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -190,7 +190,7 @@ player7 = Player
 
 player9 :: Player
 player9 = Player 
-  { playerPositionVector = V3 50.0 34.0 0
+  { playerPositionVector = V3 (-15) 0 0
   , playerNumber = 9
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -200,7 +200,7 @@ player9 = Player
 
 player11 :: Player
 player11 = Player 
-  { playerPositionVector = V3 50.0 24.0 0
+  { playerPositionVector = V3 (-15) (-10) 0
   , playerNumber = 11
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -210,7 +210,7 @@ player11 = Player
 
 player1B :: Player
 player1B = Player 
-  { playerPositionVector = V3 103.0 34.0 0
+  { playerPositionVector = V3 (50) 0 0
   , playerNumber = 1
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -220,7 +220,7 @@ player1B = Player
 
 player2B :: Player
 player2B = Player 
-  { playerPositionVector = V3 90.0 11.0 0
+  { playerPositionVector = V3 35 (-20) 0
   , playerNumber = 2
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -230,7 +230,7 @@ player2B = Player
 
 player3B :: Player
 player3B = Player 
-  { playerPositionVector = V3 90.0 56.0 0
+  { playerPositionVector = V3 35 20 0
   , playerNumber = 3
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -240,7 +240,7 @@ player3B = Player
 
 player4B :: Player
 player4B = Player 
-  { playerPositionVector = V3 90.0 26.0 0
+  { playerPositionVector = V3 35 10 0
   , playerNumber = 4
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -250,7 +250,7 @@ player4B = Player
 
 player5B :: Player
 player5B = Player 
-  { playerPositionVector = V3 90.0 41.0 0
+  { playerPositionVector = V3 35 (-10) 0
   , playerNumber = 5
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -260,7 +260,7 @@ player5B = Player
 
 player6B :: Player
 player6B = Player 
-  { playerPositionVector = V3 80.0 34.0 0
+  { playerPositionVector = V3 30.0 0 0
   , playerNumber = 6
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -270,7 +270,7 @@ player6B = Player
 
 player8B :: Player
 player8B = Player 
-  { playerPositionVector = V3 70.0 24.0 0
+  { playerPositionVector = V3 25 (-5) 0
   , playerNumber = 8
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -280,7 +280,7 @@ player8B = Player
 
 player10B :: Player
 player10B = Player 
-  { playerPositionVector = V3 70.0 44.0 0 --
+  { playerPositionVector = V3 26 6 0
   , playerNumber = 10
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -290,7 +290,7 @@ player10B = Player
 
 player7B :: Player
 player7B = Player 
-  { playerPositionVector = V3 55.0 22.0 0 --V3 70.0 44.0 0
+  { playerPositionVector = V3 15 (-10) 0
   , playerNumber = 7
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -300,7 +300,7 @@ player7B = Player
 
 player9B :: Player
 player9B = Player 
-  { playerPositionVector = V3 65.0 34.0 0
+  { playerPositionVector = V3 15 0 0
   , playerNumber = 9
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -310,7 +310,7 @@ player9B = Player
 
 player11B :: Player
 player11B = Player 
-  { playerPositionVector = V3 55.0 46.0 0
+  { playerPositionVector = V3 15 10 0
   , playerNumber = 11
   , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
   , playerMotionVector = V3 0.0 0.0 0.0 
@@ -319,7 +319,7 @@ player11B = Player
   }
 
 ball :: Ball
-ball = Ball { ballPositionVector = V3 52.5 34.0 0, ballMotionVector = V3 0.0 0.0 0.0 }
+ball = Ball { ballPositionVector = V3 0 0 0, ballMotionVector = V3 0.0 0.0 0.0 }
 
 processLoop :: Int -> AppM ()
 processLoop desiredFps = do

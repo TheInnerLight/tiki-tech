@@ -15,7 +15,7 @@ import Control.Monad (when)
 import Voronoi.JCVoronoi (JCVPoly)
 import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (spacePolyPlayer))
 import qualified Data.Map as Map
-import Football.Pitch (Pitch)
+import Football.Pitch (Pitch, pitchHalfLengthX, pitchHalfWidthY)
 import Data.Foldable (find)
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Types
@@ -70,8 +70,8 @@ spaceMapForOpposition t = mapper <$> spaceMap
   where
     mapper (SpaceMap m) = filter(\p -> getTeam (spacePolyPlayer p) /= getTeam t ) $ snd <$> Map.toList m
 
-
-clampPitch :: (Applicative m, Match m) => (Double, Double) -> m (Double, Double)
-clampPitch (x, y) = pure (max 0 $ min 105 x, max 0 $ min 68 y)
-
   
+clampPitch :: (Monad m, Match m) => (Double, Double) -> m (Double, Double)
+clampPitch (x, y) = do
+  pitch' <- pitch
+  pure (max (-pitchHalfLengthX pitch') $ min (pitchHalfLengthX pitch') x, max (-pitchHalfWidthY pitch') $ min (pitchHalfWidthY pitch') y)

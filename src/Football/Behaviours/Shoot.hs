@@ -12,6 +12,7 @@ import qualified Data.Ord
 import Data.List (sortOn)
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Types
+import Football.Understanding.Team (fromTeamCoordinateSystem)
 
 data ShotDesirability =
   ShotDesirability
@@ -23,16 +24,9 @@ data ShotDesirability =
 
 centreShotOption :: (Monad m, Match m, Log m) => Player -> m ShotDesirability
 centreShotOption player = do
-  teamPlayers' <- teammates player
-  oppositionPlayers' <- oppositionPlayers (playerTeam player)
-  ball <- gameBall
-  attackingDirection' <- attackingDirection (playerTeam player)
   pitch' <- pitch
-  let targetLoc = 
-        case attackingDirection' of
-          AttackingLeftToRight -> V3 (pitchLength pitch')  (pitchWidth pitch' / 2) 0
-          AttackingRightToLeft -> V3 0                     (pitchWidth pitch' / 2) 0
-      shotVec = 31 * normalize (targetLoc - playerPositionVector player)
+  targetLoc <- fromTeamCoordinateSystem (playerTeam player) $ V3 (pitchHalfLengthX pitch') 0 0
+  let shotVec = 31 * normalize (targetLoc - playerPositionVector player)
   xg <- locationXG (playerTeam player) player
   pure $ ShotDesirability
     { shotTarget = CentreShot $ locate2D targetLoc

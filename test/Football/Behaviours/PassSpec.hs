@@ -74,7 +74,7 @@ easyPassingOptionTeammate =
 farAwayOpposition1 :: Player
 farAwayOpposition1 = 
   Player 
-    { playerPositionVector = V3 100 0 0
+    { playerPositionVector = V3 51 0 0
     , playerMotionVector = V3 0 0 0
     , playerNumber = 8
     , playerSpeed = defaultPlayerSpeed
@@ -85,7 +85,7 @@ farAwayOpposition1 =
 farAwayOpposition2 :: Player
 farAwayOpposition2 = 
   Player 
-    { playerPositionVector = V3 110 0 0
+    { playerPositionVector = V3 50 0 0
     , playerMotionVector = V3 0 0 0
     , playerNumber = 10
     , playerSpeed = defaultPlayerSpeed
@@ -96,7 +96,7 @@ farAwayOpposition2 =
 farAwayTeammate :: Player
 farAwayTeammate = 
   Player 
-    { playerPositionVector = V3 90 0 0
+    { playerPositionVector = V3 45 0 0
     , playerMotionVector = V3 0 0 0
     , playerNumber = 9
     , playerSpeed = defaultPlayerSpeed
@@ -171,7 +171,7 @@ passTests = testGroup "Pass Tests" [passToFeetTests, throughBallTests]
 
 passToFeetTests :: TestTree
 passToFeetTests = testGroup "Passing to feet tests"
-  [ testCase "One stationary player will see one teammate as a passing option" $ do
+  [ testCase "A stationary player will see a teammate as a passing option" $ do
       let testContext =
             PassSpecContext
               { psPlayers = [playerWithBallAtOrigin, easyPassingOptionTeammate, farAwayOpposition1, farAwayOpposition2]
@@ -183,7 +183,7 @@ passToFeetTests = testGroup "Passing to feet tests"
       
       passTarget (head res) @?= PlayerTarget easyPassingOptionTeammate
 
-  , testCase "One stationary player will see closer opponent further from opposition as safest passing option" $ do
+  , testCase "A stationary player with two passing options will see the closer teammate further from opposition as the safest passing option" $ do
       let testContext =
             PassSpecContext
               { psPlayers = [playerWithBallAtOrigin, easyPassingOptionTeammate, farAwayTeammate, farAwayOpposition1, farAwayOpposition2]
@@ -192,11 +192,11 @@ passToFeetTests = testGroup "Passing to feet tests"
       
       res <- runPassSpecM testContext $ do
         sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
-      
+     
       passTarget (head res) @?= PlayerTarget easyPassingOptionTeammate
       passTarget (last res) @?= PlayerTarget farAwayTeammate
 
-  , testCase "One stationary player will see approximately 61% chance of pass completion when equidistant teammate and opponent" $ do
+  , testCase "A stationary player will see approximately 61% chance of pass completion when equidistant teammate and opponent" $ do
     -- Odds are not 50/50 due to b term in 1 / 1 + exp (-(az+b)) : Space evaluation in football games via field weighting based on tracking data
       let testContext =
             PassSpecContext
@@ -211,7 +211,7 @@ passToFeetTests = testGroup "Passing to feet tests"
       passSafetyCoeff (head res) `compare` 0.62 @?= GT
       passSafetyCoeff (head res) `compare` 0.65 @?= LT
 
-  , testCase "One stationary player will see lower chance of pass completion with equidistant teammate and opponent running toward the ball" $ do
+  , testCase "A stationary player will see lower chance of pass completion with equidistant teammate and opponent running toward the ball" $ do
     let diff = normalize (playerPositionVector . equidistantOpponent $ V3 0 0 0 - playerPositionVector playerWithBallAtOrigin)
         testContext =
           PassSpecContext
@@ -225,7 +225,7 @@ passToFeetTests = testGroup "Passing to feet tests"
     passTarget (head res) @?= PlayerTarget (equidistantTeammate $ V3 0 0 0)
     passSafetyCoeff (head res) `compare` 0.45 @?= LT
 
-  , testCase "One stationary player will see higher chance of pass completion with equidistant teammate and opponent running away from the ball" $ do
+  , testCase "A stationary player will see higher chance of pass completion with equidistant teammate and opponent running away from the ball" $ do
     let diff = normalize (playerPositionVector . equidistantOpponent $ V3 0 0 0 - playerPositionVector playerWithBallAtOrigin)
         testContext =
           PassSpecContext

@@ -111,7 +111,7 @@ instance Storable JCVDiagramI where
 jcVoronoi :: [(Double, Double)] -> IO JCVoronoiDiagram
 jcVoronoi items = do
   rect <- malloc
-  poke rect $  JCVRectI (JCVPoint (-10) (-10)) (JCVPoint 115 78)
+  poke rect $  JCVRectI (JCVPoint (-65) (-39)) (JCVPoint 65 39)
   let numItems = length items
   ptr <- newArray $ pointToJCVPoint <$> items
   jcvd <- JCVoronoiDiagram <$> generate_from_points numItems rect ptr
@@ -155,11 +155,11 @@ jcvSites2 items = unsafePerformIO $  do
       pure $ JCVEdge { jcvEdgePoint1 = (jcvPointX pt1, jcvPointY pt1), jcvEdgePoint2 = (jcvPointX pt2, jcvPointY pt2) }
     avg xs = sum xs / (fromIntegral $ length xs)
     
-clipPitchX :: (Ord a, Num a) => a -> a
-clipPitchX x = max 0 $ min 105 x
+clipPitchX :: (Ord a, Num a, Fractional a) => a -> a
+clipPitchX x = max (-52.5) $ min 52.5 x
 
 clipPitchY :: (Ord a, Num a) => a -> a
-clipPitchY y = max 0 $ min 68 y
+clipPitchY y = max (-34) $ min 34 y
   
 
 siteToEdges :: JCVSite -> IO [JCVEdgeI]

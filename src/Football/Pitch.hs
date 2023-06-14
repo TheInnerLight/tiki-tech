@@ -10,17 +10,25 @@ data Pitch = Pitch
   }
 
 pitchHalfwayLineX :: Pitch -> Double
-pitchHalfwayLineX pitch = pitchLength pitch / 2
+pitchHalfwayLineX _ = 0
+
+pitchHalfLengthX :: Pitch -> Double
+pitchHalfLengthX pitch = pitchLength pitch / 2
+
+pitchHalfWidthY :: Pitch -> Double
+pitchHalfWidthY pitch = pitchWidth pitch / 2
 
 isInPitchBounds :: (Locate2D x) => x -> Pitch -> Bool
 isInPitchBounds l pitch = 
   let (x, y) = locate2D l
-  in x >= 0 && y >= 0 && x <= pitchLength pitch && y <= pitchWidth pitch
+  in x >= -pitchHalfLengthX pitch && y >= -pitchHalfWidthY pitch && x <= pitchHalfLengthX pitch && y <= pitchHalfWidthY pitch
   
 leftGoalLine :: Pitch -> (V3 Double, V3 Double)
 leftGoalLine pitch =
-  (V3 0 (pitchWidth pitch / 2 - 3.66) 0, V3 0 (pitchWidth pitch / 2 + 3.66) 2.44)
+  (V3 (-pitchHalfLengthX pitch) (-3.66) 0, V3 (-pitchHalfLengthX pitch) 3.66 2.44)
 
 rightGoalLine :: Pitch -> (V3 Double, V3 Double)
 rightGoalLine pitch =
-  (V3 (pitchLength pitch) (pitchWidth pitch / 2 - 3.66) 0, V3 (pitchLength pitch) (pitchWidth pitch / 2 + 3.66) 2.44)
+  (V3 (pitchHalfLengthX pitch) (-3.66) 0, V3 (pitchHalfLengthX pitch) 3.66 2.44)
+
+
