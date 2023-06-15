@@ -77,6 +77,7 @@ data GameState
   | CornerKick Team (Double, Double)
   | GoalKick Team (Double, Double)
   | KickOff Team
+  deriving Eq
   
 data GameHalf
   = FirstHalf

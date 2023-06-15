@@ -17,8 +17,8 @@ wentForThrowIn = do
   ball <- gameBall
   pitch' <- pitch
   let ballNow = ballPositionVector ball
-  let ballPrev = ballPositionVector ball - ballMotionVector ball / 30
-  let ballDir = normalize (ballNow - ballPrev)
+  let ballPrev = ballPositionVector ball - 0.1 * ballMotionVector ball
+  let ballDir = normalize (ballPrev - ballNow)
 
   let (leftTouchLineMin, leftTouchLineMax) = (V3 (-pitchHalfLengthX pitch') (-pitchHalfWidthY pitch') 0, V3 (pitchHalfLengthX pitch') (-pitchHalfWidthY pitch') 0)
   let leftTouchLineNormal = V3 0 1 0
@@ -31,14 +31,16 @@ wentForThrowIn = do
   lte <- listToMaybe <$> touchEvents
   let ltp = touchOfBallPlayer <$> lte
 
-  let intersecPoint1 = linePlaneIntersection (ballPrev, ballDir) (leftTouchLineCentre, leftTouchLineNormal)
-  let intersecPoint2 = linePlaneIntersection (ballPrev, ballDir) (rightTouchLineCentre, rightTouchLineNormal)
-  case (intersecPoint1, intersecPoint2, ltp) of
-    (Just ip, _, Just lastTouch) | ballPrev ^. _y >= leftTouchLineMin ^. _y && ballNow  ^. _y < leftTouchLineMax ^. _y && ip ^. _x >= leftTouchLineMin ^. _x && ip ^. _x <= leftTouchLineMax ^. _x -> 
+  gs <- getGameState
+
+  let intersecPoint1 = linePlaneIntersection (ballNow, ballDir) (leftTouchLineCentre, leftTouchLineNormal)
+  let intersecPoint2 = linePlaneIntersection (ballNow, ballDir) (rightTouchLineCentre, rightTouchLineNormal)
+  case (intersecPoint1, intersecPoint2, ltp, gs) of
+    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _y < leftTouchLineMax ^. _y && ip ^. _x >= leftTouchLineMin ^. _x && ip ^. _x <= leftTouchLineMax ^. _x -> 
       let lastTouchTeam = playerTeam lastTouch
           touchLineLoc = locate2D ball
       in pure $ Just (oppositionTeam lastTouchTeam, touchLineLoc)
-    (_, Just ip, Just lastTouch) | ballPrev ^. _y <= rightTouchLineMin ^. _y && ballNow  ^. _y > rightTouchLineMax ^. _y && ip ^. _x >= rightTouchLineMin ^. _x && ip ^. _x <= rightTouchLineMax ^. _x -> 
+    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _y > rightTouchLineMax ^. _y && ip ^. _x >= rightTouchLineMin ^. _x && ip ^. _x <= rightTouchLineMax ^. _x -> 
       let lastTouchTeam = playerTeam lastTouch
           touchLineLoc = locate2D ball
       in pure $ Just (oppositionTeam lastTouchTeam, touchLineLoc)
@@ -84,19 +86,20 @@ crossedGoalLine = do
   let intersecPoint1 = linePlaneIntersection (ballNow, ballDir) (goal1Pos, goal1Normal)
   let intersecPoint2 = linePlaneIntersection (ballNow, ballDir) (goal2Pos, goal2Normal)
 
+  gs <- getGameState
 
-  case (intersecPoint1, intersecPoint2, ltp) of
-    (Just ip, _, Just lastTouch) | ballPrev ^. _x >= goal1Min ^. _x && ballNow  ^. _x < goal1Max ^. _x && ip ^. _y < goal1Min ^. _y -> 
+  case (intersecPoint1, intersecPoint2, ltp, gs) of
+    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y < goal1Min ^. _y -> 
       if playerTeam lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (-pitchHalfLengthX pitch' + 5, goal1Pos ^. _y) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (-pitchHalfLengthX pitch', -pitchHalfWidthY pitch') leftGoalScoredTeam
-    (Just ip, _, Just lastTouch) | ballPrev ^. _x >= goal1Min ^. _x && ballNow  ^. _x < goal1Max ^. _x && ip ^. _y > goal1Max ^. _y -> 
+    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y > goal1Max ^. _y -> 
       if playerTeam lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (-pitchHalfLengthX pitch' + 5, goal1Pos ^. _y) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (-pitchHalfLengthX pitch', pitchHalfWidthY pitch') leftGoalScoredTeam
-    (_, Just ip, Just lastTouch) | ballPrev ^. _x <= goal2Min ^. _x && ballNow  ^. _x > goal2Max ^. _x && ip ^. _y < goal2Min ^. _y -> 
+    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y < goal2Min ^. _y -> 
       if playerTeam lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (pitchHalfLengthX pitch' - 5, goal2Pos ^. _y) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (pitchHalfLengthX pitch', -pitchHalfWidthY pitch') rightGoalScoredTeam
-    (_, Just ip, Just lastTouch) | ballPrev ^. _x <= goal2Min ^. _x && ballNow  ^. _x > goal2Max ^. _x && ip ^. _y > goal2Max ^. _y -> 
+    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y > goal2Max ^. _y -> 
       if playerTeam lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (pitchHalfLengthX pitch' - 5, goal2Pos ^. _y) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (pitchHalfLengthX pitch', pitchHalfWidthY pitch') rightGoalScoredTeam
-    (Just ip, _, Just lastTouch) | ballPrev ^. _x >= goal1Min ^. _x && ballNow  ^. _x < goal1Max ^. _x && ip ^. _y >= goal1Min ^. _y && ip ^. _y <= goal1Max ^. _y && ip ^. _z >= goal1Min ^. _z && ip ^. _z <= goal1Max ^. _z  -> 
+    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y >= goal1Min ^. _y && ip ^. _y <= goal1Max ^. _y && ip ^. _z >= goal1Min ^. _z && ip ^. _z <= goal1Max ^. _z  -> 
       pure $ Just $ CrossedForGoal $ Goal leftGoalScoredTeam lastTouch time
-    (_, Just ip, Just lastTouch) | ballPrev ^. _x <= goal2Min ^. _x && ballNow  ^. _x > goal2Max ^. _x && ip ^. _y >= goal2Min ^. _y && ip ^. _y <= goal2Max ^. _y && ip ^. _z >= goal2Min ^. _z && ip ^. _z <= goal2Max ^. _z  -> 
+    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y >= goal2Min ^. _y && ip ^. _y <= goal2Max ^. _y && ip ^. _z >= goal2Min ^. _z && ip ^. _z <= goal2Max ^. _z  -> 
       pure $ Just $ CrossedForGoal $ Goal rightGoalScoredTeam lastTouch time
     _ -> pure Nothing
   

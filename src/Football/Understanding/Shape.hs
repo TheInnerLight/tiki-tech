@@ -72,7 +72,7 @@ inPossessionDesiredPosition player = do
       horizontalCompactness = min halfPitchLength (halfPitchLength + centreX) / halfPitchLength
     
   let pos = case playerNumber player of
-            1 -> inDirection                                    25 (-30) 0                           (centreX, centreY)
+            1 -> inDirection  (-20)                            (-25) 0                           (centreX, centreY)
             2 -> inDirection  offsideLineX'                     (5) 30                               (centreX, centreY)
             3 -> inDirection  offsideLineX'                     (5) (-30)                            (centreX, centreY)
             4 -> inDirection  (pitchHalfwayLineX pitch' + 10)   (-15) 10                             (centreX, centreY)

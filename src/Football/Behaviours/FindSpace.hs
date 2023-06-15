@@ -29,6 +29,7 @@ import Control.Monad (filterM)
 import Data.Maybe (listToMaybe)
 import Football.Understanding.Shape (inPossessionDesiredPosition)
 import Data.Foldable (foldrM,find)
+import qualified Data.Ord
 
 
 data EdgeInd = EdgeInd Int Int
@@ -45,12 +46,20 @@ data BlockOfSpace = BlockOfSpace
 
 meanOn :: (Fractional a, Foldable t) => (x -> a) -> t x -> a
 meanOn f polys =
-  let (n, area) = foldl' (\(c, area) p -> (c+1, f p + area)) (0, 0) polys
+  let (n, area) = foldl' (\(c, area') p -> (c+1, f p + area')) (0, 0) polys
   in (area/n)
 
+voronoiPolygonAdjustedArea :: Team -> SpacePoly -> Double
+voronoiPolygonAdjustedArea team poly  =
+  let spacePoly = spacePolyJCV poly
+      polyPlayer = spacePolyPlayer poly
+  in if playerTeam polyPlayer == team then
+    voronoiPolygonArea spacePoly
+  else
+    voronoiPolygonArea spacePoly / 4
 
-findEdgeSpaces :: (Monad m, Match m) => m [BlockOfSpace]
-findEdgeSpaces = do
+findEdgeSpaces :: (Monad m, Match m) => Team -> m [BlockOfSpace]
+findEdgeSpaces team = do
   (SpaceMap spaceMap') <- spaceMap
   let edgeMaker idx polyEdge =
         let (ep1X, ep1Y) = jcvEdgePoint1 polyEdge
@@ -69,7 +78,7 @@ findEdgeSpaces = do
         in Map.union nm acc
   let indexedEdgeSpaces = Map.foldr spaceFolder Map.empty spaceMap'
       mappedSpaces = Map.map (foldl' (\acc i -> case Map.lookup i spaceMap' of Just p -> p:acc; Nothing -> acc) [] . Set.toList) indexedEdgeSpaces
-  pure $ fmap (\(loc,polys) -> BlockOfSpace loc (meanOn (voronoiPolygonArea . spacePolyJCV) polys) ) $ Map.toList mappedSpaces
+  pure $ (\(loc,polys) -> BlockOfSpace loc (meanOn (voronoiPolygonAdjustedArea team) polys) ) <$> Map.toList mappedSpaces
 
 
 findPolySpaces :: (Monad m, Match m) => Player -> m [BlockOfSpace]
@@ -84,9 +93,9 @@ findPolySpaces player = do
 optimalNearbySpace :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
 optimalNearbySpace player = do
     polySpaces <- findPolySpaces player
-    polyEdges' <- findEdgeSpaces
-    let allSpaces  = polySpaces ++ polyEdges'
+    polyEdges' <- findEdgeSpaces (playerTeam player)
 
+    let allSpaces  = polySpaces ++ polyEdges'
     let filterPitchArea p = do
           let (x, y) = blockOfSpaceCentre p
           (desiredX, desiredY) <- inPossessionDesiredPosition player
@@ -94,15 +103,14 @@ optimalNearbySpace player = do
           pure $ r <= 10
 
     shapePosition <- inPossessionDesiredPosition player
-
     teammates' <- teammates player
 
     let buildAssignments p (assignments, spaces) = do
           filtered <- filterM filterPitchArea spaces
           (desiredX, desiredY) <- inPossessionDesiredPosition player
           let r (x, y) = sqrt((desiredX-x)**2.0 + (desiredY-y)**2.0)
-          let sorted = reverse $ sortOn (\p -> (blockOfSpaceArea p) / (r $ blockOfSpaceCentre p) ** 1.5) filtered
-          pure $ case (listToMaybe $ blockOfSpaceCentre <$> sorted) of
+          let sorted = sortOn (Data.Ord.Down . (\p' -> blockOfSpaceArea p' / r (blockOfSpaceCentre p') ** 1.5)) filtered
+          pure $ case listToMaybe $ blockOfSpaceCentre <$> sorted of
             Just c -> (Map.insert p c assignments, tail sorted)
             Nothing -> (Map.insert p shapePosition assignments, sorted)
 
@@ -112,8 +120,9 @@ optimalNearbySpace player = do
 nearestSpace :: (Monad m, Match m, Log m) => Player -> m (Double, Double)
 nearestSpace player = do
   (SpaceMap spaceMap') <- spaceMap
-  case (find (\p -> spacePolyPlayer p == player) spaceMap') of
-    Just p -> pure $ polyPoint $ spacePolyJCV p
+  case find (\p -> spacePolyPlayer p == player) spaceMap' of
+    Just p  -> pure $ polyPoint $ spacePolyJCV p
+    Nothing -> error "Supplied player did not have an assigned voronoi polygon (this should never occur!)"
 
 findClosestOpposition :: (Monad m, Match m) => Player ->  m Player
 findClosestOpposition player = do
