@@ -33,6 +33,8 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
+    - name: Install native dependencies
+      run: sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev
     - name: Install dependencies
       run: |
         cabal update
