@@ -2,13 +2,14 @@
 
 module Voronoi.JCVoronoi where
 
+import Control.Lens ((^.))
 
 import Foreign.Storable
 import Data.Proxy (Proxy(..))
 import Foreign (Ptr, newArray, peekArray, IntPtr, free, nullPtr, malloc)
 import Foreign.C (CInt)
 import GHC.IO (unsafePerformIO)
-import Linear (V3 (V3), cross)
+import Linear (V3 (V3), cross, V2 (V2), _x, _y)
 import Data.Foldable (find)
 
 foreign import ccall "generate_from_points" generate_from_points :: Int -> Ptr JCVRectI -> Ptr JCVPoint -> IO (Ptr JCVDiagramI)
@@ -49,14 +50,14 @@ data JCVSite = JCVSite
   } deriving Show
 
 data JCVEdge = JCVEdge
-  { jcvEdgePoint1 :: !(Double, Double)
-  , jcvEdgePoint2 :: !(Double, Double)
+  { jcvEdgePoint1 :: !(V2 Double)
+  , jcvEdgePoint2 :: !(V2 Double)
   -- , jcvEdgeSiteIndex1 :: !Int
   -- , jcvEdgeSiteIndex2 :: !Int
   } deriving Show
 
 data JCVPoly = JCVPoly
-  { polyPoint :: !(Double, Double)
+  { polyPoint :: !(V2 Double)
   , polyIndex :: !Int
   , polyEdges :: ![JCVEdge]
   } deriving Show
@@ -108,7 +109,7 @@ instance Storable JCVDiagramI where
     pokeByteOff ptr 28 maxP
 
 
-jcVoronoi :: [(Double, Double)] -> IO JCVoronoiDiagram
+jcVoronoi :: [V2 Double] -> IO JCVoronoiDiagram
 jcVoronoi items = do
   rect <- malloc
   poke rect $  JCVRectI (JCVPoint (-65) (-39)) (JCVPoint 65 39)
@@ -119,7 +120,7 @@ jcVoronoi items = do
   free rect
   pure jcvd
   where
-    pointToJCVPoint (x,y) = JCVPoint x y
+    pointToJCVPoint (V2 x y) = JCVPoint x y
 
 
 jcvSites :: JCVoronoiDiagram -> IO [JCVSite]
@@ -130,7 +131,7 @@ jcvSites (JCVoronoiDiagram vPtr) = do
   pure a
 
 
-jcvSites2 :: [(Double, Double)] -> [JCVPoly]
+jcvSites2 :: [V2 Double] -> [JCVPoly]
 jcvSites2 items = unsafePerformIO $  do
   jcv <- jcVoronoi items
   sites <- jcvSites jcv
@@ -143,7 +144,7 @@ jcvSites2 items = unsafePerformIO $  do
       edges <- siteToEdges site
       es <- traverse e2e edges
       pure JCVPoly
-        { polyPoint =  (clipPitchX $ avg $ fmap (fst . jcvEdgePoint1) es, clipPitchY $ avg $ fmap (snd . jcvEdgePoint1) es)
+        { polyPoint = V2 (clipPitchX $ avg $ fmap (\j -> jcvEdgePoint1 j ^. _x) es) (clipPitchY $ avg $ fmap (\j -> jcvEdgePoint1 j ^. _y) es)
         , polyIndex = fromIntegral $ jcvSiteIndex site
         , polyEdges = es
         }
@@ -152,7 +153,7 @@ jcvSites2 items = unsafePerformIO $  do
           pt2 = jcvEdgeIPoint2 edge
       s1 <- peek $ jcvEdgeISite1 edge
       s2 <- peek $ jcvEdgeISite1 edge
-      pure $ JCVEdge { jcvEdgePoint1 = (jcvPointX pt1, jcvPointY pt1), jcvEdgePoint2 = (jcvPointX pt2, jcvPointY pt2) }
+      pure $ JCVEdge { jcvEdgePoint1 = V2 (jcvPointX pt1) (jcvPointY pt1), jcvEdgePoint2 = V2 (jcvPointX pt2)  (jcvPointY pt2) }
     avg xs = sum xs / (fromIntegral $ length xs)
     
 clipPitchX :: (Ord a, Num a, Fractional a) => a -> a
@@ -177,10 +178,10 @@ voronoiPolygonArea :: JCVPoly -> Double
 voronoiPolygonArea vp =
   sum $ fmap polygonSegmentArea $ polyEdges vp
   where
-    (vcx, vcy) = polyPoint vp
+    (V2 vcx vcy) = polyPoint vp
     polygonSegmentArea (JCVEdge pt1 pt2) = 
-      let (e1x, e1y) = pt1
-          (e2x, e2y) = pt2
+      let (V2 e1x e1y) = pt1
+          (V2 e2x e2y) = pt2
           a = sqrt ((e1x - e2x) ** 2.0 + (e1y - e2y) **2.0)
           b = sqrt ((vcx - e2x) ** 2.0 + (vcy - e2y) **2.0)
           c = sqrt ((vcx - e1x) ** 2.0 + (vcy - e1y) **2.0)
@@ -190,9 +191,9 @@ voronoiPolygonArea vp =
 
 lineEdgeIntersection ::  (Double, Double) -> JCVEdge -> Bool
 lineEdgeIntersection  (x3, y3) edge =  
-    let (x1, y1) = jcvEdgePoint1 edge
-        (x2, y2) = jcvEdgePoint2 edge
-        (x4, y4) = (-100, -100)
+    let (V2 x1 y1) = jcvEdgePoint1 edge
+        (V2 x2 y2) = jcvEdgePoint2 edge
+        (V2 x4 y4) = V2 (-100) (-100)
         t =  ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4))
         u =  ((x1-x3)*(y1-y2) - (y1-y3)*(x1-x2))
         d =  (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
@@ -208,10 +209,10 @@ lineEdgeIntersection  (x3, y3) edge =
 (=~=) :: (Ord a, Fractional a, Num a) => a -> a -> Bool
 (=~=) x y = abs (x - y) < 1e-7
 
-lineEdgeIntersection2 ::  (Double, Double) -> JCVEdge -> Bool
-lineEdgeIntersection2  (x3, y3) edge =  
-    let (x1, y1) = jcvEdgePoint1 edge
-        (x2, y2) = jcvEdgePoint2 edge
+lineEdgeIntersection2 ::  V2 Double -> JCVEdge -> Bool
+lineEdgeIntersection2  (V2 x3 y3) edge =
+    let (V2 x1 y1) = jcvEdgePoint1 edge
+        (V2 x2 y2) = jcvEdgePoint2 edge
         d = (y1 - y2)
     in 
       if x2 =~= x3 && y2 =~= y3 then 
@@ -247,11 +248,11 @@ lineEdgeIntersection2  (x3, y3) edge =
 -- findPoly polys point = find (pointInPoly point) polys
 
 
-pointInPoly :: (Double, Double) -> JCVPoly -> Bool
+pointInPoly :: V2 Double -> JCVPoly -> Bool
 pointInPoly p poly = 
   odd $ length $ filter (lineEdgeIntersection2 p) (polyEdges poly)
 
-findPoly :: [JCVPoly] -> (Double, Double) -> Maybe JCVPoly
+findPoly :: [JCVPoly] -> V2 Double -> Maybe JCVPoly
 findPoly polys point = 
   find (pointInPoly point) polys
 

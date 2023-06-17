@@ -3,7 +3,7 @@ module Football.Behaviours.Pass where
 import Football.Ball
 import Football.Player
 import Football.Match
-import Linear (normalize, V3 (V3), Metric (dot, norm))
+import Linear (normalize, V3 (V3), Metric (dot, norm), V2 (V2))
 import Data.List (sortOn, minimumBy, reverse)
 import qualified Data.Ord
 import Voronoi.JCVoronoi (JCVPoly(..))
@@ -15,7 +15,7 @@ import Football.Behaviours.Kick (motionVectorForPassTo, motionVectorForPassToArr
 import Football.Understanding.Space (offsideLine, isOnside)
 import Control.Monad (filterM)
 import Football.Understanding.ExpectedGoals (locationXG)
-import Football.Pitch (Pitch(Pitch))
+import Football.Pitch
 import Football.Understanding.Interception (interceptionTimePlayerBallRK, interceptionTimePlayersBallRK)
 import Football.Types
 
@@ -112,8 +112,8 @@ toSpacePassingOptions player = do
   originalOppXG <- locationXG (oppositionTeam $ playerTeam player) player
   teamSpaceMap <- spaceMapForTeam player
   let calcToSpaceDesirability v1 = do
-        let (centreX, centreY) = polyPoint $ spacePolyJCV v1
-            ball' = ball { ballMotionVector = motionVectorForPassToMedium ball (centreX, centreY) }
+        let (V2 centreX centreY) = polyPoint $ spacePolyJCV v1
+            ball' = ball { ballMotionVector = motionVectorForPassToMedium ball (V2 centreX centreY) }
         trd <- interceptionTimePlayerBallRK False (spacePolyPlayer v1) ball'
         oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
         let z1 = (oid - trd) / sqrt 2
@@ -123,7 +123,7 @@ toSpacePassingOptions player = do
         newXG <- locationXG (playerTeam player) (centreX, centreY)
         newOppXG <- locationXG (oppositionTeam $ playerTeam player) (centreX, centreY)
         pure $  PassDesirability 
-          { passTarget = SpaceTarget (centreX, centreY)
+          { passTarget = SpaceTarget (V2 centreX centreY)
           , passBallVector = ballMotionVector ball'
           , passOppositionInterceptionDistance = oid
           , passTeammateReceptionDistance = trd

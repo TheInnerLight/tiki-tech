@@ -5,7 +5,7 @@ module Football.Behaviours.Press where
 import Football.Ball
 import Football.Player
 import Football.Match
-import Linear (normalize, V3 (V3), Metric (dot, norm, distance))
+import Linear (normalize, V3 (V3), Metric (dot, norm, distance), V2)
 import Data.List (sortOn, minimumBy, reverse, foldl', find)
 import qualified Data.Ord
 import Voronoi.JCVoronoi (JCVPoly(..))
@@ -20,7 +20,7 @@ import Football.Types (Player (playerTeam, playerPositionVector), Ball (ballPosi
 import Football.Behaviours.Marking.Zonal (mostDangerousPlayerInZone)
 import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 
-coverShadowOfPlayerOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache, Cache m ZoneCache) => Player -> m (Double, Double)
+coverShadowOfPlayerOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache, Cache m ZoneCache) => Player -> m (V2 Double)
 coverShadowOfPlayerOrientedZonalMark player = do
   maybeMarkedPlayer <- mostDangerousPlayerInZone player
   ball <- gameBall

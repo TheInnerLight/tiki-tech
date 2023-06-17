@@ -28,7 +28,6 @@ import Data.Foldable (foldlM)
 import Football.Behaviours.Marking (playerMarkClosestOppositionPlayer, positionalOrientedZonalMark)
 import Football.Intentions.OnTheBall (determineOnTheBallIntention, OnTheBallCriteria (OnTheBallCriteria))
 import Football.Understanding.ExpectedGoals (locationXG)
-import Football.Pitch (Pitch)
 import Football.Types
 import Football.Events.Goal (checkForGoal)
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))

@@ -13,7 +13,6 @@ import Core (Log (logOutput))
 import Data.List (sortOn)
 import qualified Data.Ord
 import Football.Types
-import Football.Pitch (Pitch(..))
 
 defaultPlayerSpeed :: PlayerSpeed
 defaultPlayerSpeed =

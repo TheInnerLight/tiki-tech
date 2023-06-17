@@ -8,7 +8,7 @@ import Linear (V3(..), R1 (_x), R3 (_z), R2 (_y))
 import Football.Ball
 import Football.Player
 import Football.Match
-import Linear (normalize, V3 (V3), Metric (dot, norm, distance))
+import Linear (normalize, V3 (V3), Metric (dot, norm, distance), V2)
 import Data.List (sortOn, minimumBy, reverse, foldl', find)
 import qualified Data.Ord
 import Voronoi.JCVoronoi (JCVPoly(..))
@@ -25,7 +25,7 @@ import Football.Behaviours.Marking.Zonal (mostDangerousPlayerInZone)
 import Football.Understanding.Zones.Types (ZoneCache)
 import Football.Understanding.Team (inTeamCoordinateSystem, toTeamCoordinateSystem)
 
-playerMarkClosestOppositionPlayer :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
+playerMarkClosestOppositionPlayer :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 playerMarkClosestOppositionPlayer player = do
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   teamPlayers' <- teamPlayers (playerTeam player)
@@ -39,11 +39,11 @@ playerMarkClosestOppositionPlayer player = do
         Just teamP -> Map.insert teamP p acc
         Nothing -> acc
 
-positionalOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
+positionalOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 positionalOrientedZonalMark player = do
   outOfPossessionDesiredPosition player
 
-playerOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache, Cache m ZoneCache) => Player -> m (Double, Double)
+playerOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache, Cache m ZoneCache) => Player -> m (V2 Double)
 playerOrientedZonalMark player = do
   maybeMarkedPlayer <- mostDangerousPlayerInZone player
   case maybeMarkedPlayer of

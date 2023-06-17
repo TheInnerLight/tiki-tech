@@ -1,6 +1,6 @@
 module Football.Types where
 
-import Linear (V3(..))
+import Linear (V3(..), V2)
 import Data.Time.Clock.System (SystemTime)
 
 data Team
@@ -13,16 +13,16 @@ oppositionTeam Team1 = Team2
 oppositionTeam Team2 = Team1
 
 data PlayerIntention
-  = PassIntention PassTarget (Double, Double) (V3 Double)
-  | ThrowIntention Player (Double, Double) (V3 Double)
-  | TakeCornerIntention PassTarget (Double, Double) (V3 Double)
-  | TakeGoalKickIntention PassTarget (Double, Double) (V3 Double)
-  | TakeKickOffIntention PassTarget (Double, Double) (V3 Double)
-  | ShootIntention ShotTarget (Double, Double) (V3 Double)
-  | DribbleIntention (Double, Double) (V3 Double)
-  | MoveIntoSpace (Double, Double) SystemTime
-  | RunToLocation (Double, Double) SystemTime
-  | ControlBallIntention (Double, Double) SystemTime
+  = PassIntention PassTarget (V2 Double) (V3 Double)
+  | ThrowIntention Player (V2 Double) (V3 Double)
+  | TakeCornerIntention PassTarget (V2 Double) (V3 Double)
+  | TakeGoalKickIntention PassTarget (V2 Double) (V3 Double)
+  | TakeKickOffIntention PassTarget (V2 Double) (V3 Double)
+  | ShootIntention ShotTarget (V2 Double) (V3 Double)
+  | DribbleIntention (V2 Double) (V3 Double)
+  | MoveIntoSpace (V2 Double) SystemTime
+  | RunToLocation (V2 Double) SystemTime
+  | ControlBallIntention (V2 Double) SystemTime
   | IntentionCooldown SystemTime
   | DoNothing
   deriving (Eq, Ord, Show)
@@ -51,11 +51,11 @@ data Ball = Ball
 data PassTarget
   = PlayerTarget Player
   | AheadOfTarget Player
-  | SpaceTarget (Double, Double)
+  | SpaceTarget (V2 Double)
   deriving (Eq, Ord, Show)
 
 data ShotTarget 
-  = CentreShot (Double, Double)
+  = CentreShot (V2 Double)
   deriving (Eq, Ord, Show)
 
 data Goal = Goal
@@ -73,9 +73,9 @@ data PhaseOfPlay
 
 data GameState
   = OpenPlay
-  | ThrowIn Team (Double, Double)
-  | CornerKick Team (Double, Double)
-  | GoalKick Team (Double, Double)
+  | ThrowIn Team (V2 Double)
+  | CornerKick Team (V2 Double)
+  | GoalKick Team (V2 Double)
   | KickOff Team
   deriving Eq
   
@@ -96,5 +96,11 @@ data TouchOfBall = TouchOfBall
 data MatchLogEntry
   = GoalLogEntry Goal
   | TouchLogEntry TouchOfBall
+
+
+data Pitch = Pitch
+  { pitchLength :: Double
+  , pitchWidth :: Double
+  }
 
 

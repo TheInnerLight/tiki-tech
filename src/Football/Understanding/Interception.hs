@@ -2,7 +2,7 @@
 
 module Football.Understanding.Interception where
 
-import Football.Pitch (Pitch, isInPitchBounds)
+import Football.Pitch (isInPitchBounds)
 import Football.Player 
 import Football.Ball
 import Football.Types

@@ -5,7 +5,7 @@ import Football.Match
 import Football.Types (Goal(..), Ball (ballPositionVector, ballMotionVector), Team (..), MatchLogEntry (GoalLogEntry), TouchOfBall (TouchOfBall, touchOfBallPlayer))
 import Linear (normalize, V3 (V3), _x, _y, _z)
 import Football.Maths (linePlaneIntersection)
-import Football.Pitch (Pitch(pitchWidth), leftGoalLine, rightGoalLine)
+import Football.Pitch (leftGoalLine, rightGoalLine)
 import Data.Maybe (fromJust, listToMaybe)
 import Core (Log(logOutput))
 import Data.List (partition)

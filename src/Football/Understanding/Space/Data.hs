@@ -6,6 +6,7 @@ import Data.Map (Map)
 import Voronoi.JCVoronoi (JCVPoly)
 import Football.Types
 import Core (CacheKeyValue (CacheKey, CacheValue))
+import Linear (V2)
 
 newtype SpaceMap = SpaceMap (Map Int SpacePoly)
 
@@ -26,9 +27,9 @@ data HorizontalZone
   deriving (Eq, Ord, Show)
 
 data CentresOfPlay = CentresOfPlay
-  { centresOfPlayBothTeams :: (Double, Double)
-  , centresOfPlayTeam1 :: (Double, Double)
-  , centresOfPlayTeam2 :: (Double, Double)
+  { centresOfPlayBothTeams :: V2 Double
+  , centresOfPlayTeam1 :: V2 Double
+  , centresOfPlayTeam2 :: V2 Double
   }
 
 data CentresOfPlayCache = CentresOfPlayCache

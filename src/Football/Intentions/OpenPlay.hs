@@ -2,6 +2,7 @@
 
 module Football.Intentions.OpenPlay where
 
+import Control.Lens ((^.))
 import Football.Types
 import Football.Understanding.DecisionFactors
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
@@ -16,6 +17,9 @@ import Football.Understanding.Zones.Types (ZoneCache)
 import Football.Behaviours.Press (coverShadowOfPlayerOrientedZonalMark)
 import Football.Player (isGoalKeeper)
 import Football.Understanding.Shape (outOfPossessionDesiredPosition)
+import Football.Locate2D (Locate2D(locate2D))
+import Football.Understanding.Pitch (ownGoalVector)
+import Linear (R1(_x), R2 (_y), V3 (V3), Metric (norm), normalize)
 
 
 
@@ -26,8 +30,6 @@ decideOpenPlayIntention player =
   else
     decideOutfieldOpenPlayIntention player
     
-
-
 decideOutfieldOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
 decideOutfieldOpenPlayIntention player = do
   decisionFactors <- calculateDecisionFactors player
@@ -64,7 +66,6 @@ decideOutfieldOpenPlayIntention player = do
     _  -> pure DoNothing
   pure player { playerIntention = newIntention }
 
-
 decideGoalKeeperOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
 decideGoalKeeperOpenPlayIntention player = do
   decisionFactors <- calculateDecisionFactors player
@@ -83,9 +84,18 @@ decideGoalKeeperOpenPlayIntention player = do
       time <- systemTimeNow
       pure $ RunToLocation loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = OutOfPossessionPhase } -> do
+      ball <- gameBall
       loc <- outOfPossessionDesiredPosition player
+      ogVev <- ownGoalVector (playerTeam player)
+      let ballFromGoal = ballPositionVector ball - ogVev
+          desiredDistanceFromGoal = norm  (V3 (loc ^. _x) (loc ^. _y) 0 - ogVev )
+      let dest = locate2D $ 
+            if norm ballFromGoal < desiredDistanceFromGoal then
+              ogVev + ballFromGoal - (normalize ballFromGoal * 2.5)
+            else 
+              ogVev + (normalize ballFromGoal * pure desiredDistanceFromGoal)
       time <- systemTimeNow
-      pure $ RunToLocation loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
+      pure $ RunToLocation dest $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
     DecisionFactors { dfHasControlOfBall = True } -> do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
     DecisionFactors { dfHasControlOfBall = False, dfGamePhase = AttackingTransitionPhase } -> do

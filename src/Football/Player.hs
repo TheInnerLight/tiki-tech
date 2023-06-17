@@ -2,7 +2,7 @@ module Football.Player where
 
 import Linear.V3
 import Control.Lens ((^.))
-import Linear (Metric(norm, signorm, dot, quadrance, distance), normalize, project)
+import Linear (Metric(norm, signorm, dot, quadrance, distance), normalize, project, V2 (V2))
 import Football.Ball
 import Data.List (sort)
 import Data.Time.Clock.System (SystemTime)
@@ -16,8 +16,8 @@ updatePlayer dt player =
       pmv = playerMotionVector player
       desired = 
         case playerDesiredLocation' player of
-          Just (desX, desY) -> V3 desX desY 0
-          Nothing           -> ppv
+          Just (V2 desX desY) -> V3 desX desY 0
+          Nothing             -> ppv
       desiredMotion = pure (playerSpeedMax $ playerSpeed player) * normalize (desired - ppv)
       direction = if norm(desiredMotion - pmv) > 0 then normalize (desiredMotion - pmv) else normalize desiredMotion
       (ppv', pmv') = rk2 (1.0/dt) (playerMotionEq direction (playerSpeed player)) (ppv, pmv)
@@ -67,7 +67,7 @@ distanceToTargetAfter (target, targetVector) t p =
     -- fst (movingObjectAndPointClosestInterceptWithinTimeStep (-dt) (target, targetVector) st2) - rt
     norm st - rt
 
-playerDesiredLocation' :: Player -> Maybe (Double, Double)
+playerDesiredLocation' :: Player -> Maybe (V2 Double)
 playerDesiredLocation' p =
   intentionToLocation (playerIntention p)
   where

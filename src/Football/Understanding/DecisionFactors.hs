@@ -8,7 +8,7 @@ module Football.Understanding.DecisionFactors where
 import Football.Match
 import Football.Locate2D (Locate2D(locate2D))
 import Control.Monad (filterM, join)
-import Linear (Metric(norm, distance))
+import Linear (Metric(norm, distance), V2)
 import Data.Foldable (find, Foldable (foldMap'))
 import Data.Maybe (maybe, isJust, listToMaybe, catMaybes)
 import Data.List (sort)
@@ -19,7 +19,6 @@ import Voronoi.JCVoronoi (voronoiPolygonArea)
 import Football.Behaviours.FindSpace (findClosestOpposition)
 import Football.Understanding.Interception.Data
 import Football.Understanding.Interception (interceptionInfoPlayerBallRK, interceptionTimePlayersBallRK, interceptionInfoPlayerBallRKI, safestInterceptionOption)
-import Football.Pitch (Pitch(Pitch))
 import Core (Log (logOutput), Cache)
 import Football.Types
 import Football.Behaviours.Kick (canKick)
@@ -35,7 +34,7 @@ data DecisionFactors = DecisionFactors
   } deriving Show
 
 data ClosestPlayerToBall = ClosestPlayerToBall
-  { closestPlayerToBallInterceptionLocation :: (Double, Double)
+  { closestPlayerToBallInterceptionLocation :: V2 Double
   , closestPlayerToBallInterceptionTime :: Double
   } deriving Show
 

@@ -10,7 +10,7 @@ import Data.List.NonEmpty ( NonEmpty, fromList )
 
 import Linear.V3
 import Control.Lens ((^.))
-import Linear (Metric(norm, signorm, dot, quadrance, distance))
+import Linear (Metric(norm, signorm, dot, quadrance, distance), V2 (V2))
 import Football.Ball
 import Football.Player
 import Data.List (foldl', sort, sortOn)
@@ -40,7 +40,7 @@ edge i j =
   EdgeInd (min i j) (max i j)
 
 data BlockOfSpace = BlockOfSpace
-  { blockOfSpaceCentre :: (Double, Double)
+  { blockOfSpaceCentre :: V2 Double
   , blockOfSpaceArea :: Double
   } deriving Show
 
@@ -62,9 +62,9 @@ findEdgeSpaces :: (Monad m, Match m) => Team -> m [BlockOfSpace]
 findEdgeSpaces team = do
   (SpaceMap spaceMap') <- spaceMap
   let edgeMaker idx polyEdge =
-        let (ep1X, ep1Y) = jcvEdgePoint1 polyEdge
-            (ep2X, ep2Y) = jcvEdgePoint2 polyEdge
-        in ((ep1X, ep1Y), (ep2X, ep2Y), Set.fromList [idx])
+        let (V2 ep1X ep1Y) = jcvEdgePoint1 polyEdge
+            (V2 ep2X ep2Y) = jcvEdgePoint2 polyEdge
+        in (V2 ep1X ep1Y, V2 ep2X ep2Y, Set.fromList [idx])
   let edgeFolder acc (e1, e2, sites) =
         case (Map.lookup e1 acc, Map.lookup e2 acc) of
           (Just v, Just v2) -> Map.insert e1 (Set.union v sites) $ Map.insert e2 (Set.union v2 sites) acc
@@ -90,15 +90,15 @@ findPolySpaces player = do
   pure $ (\(_, poly) -> polyToBlock poly) <$> Map.toList spaceMap''
   
 
-optimalNearbySpace :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
+optimalNearbySpace :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 optimalNearbySpace player = do
     polySpaces <- findPolySpaces player
     polyEdges' <- findEdgeSpaces (playerTeam player)
 
     let allSpaces  = polySpaces ++ polyEdges'
     let filterPitchArea p = do
-          let (x, y) = blockOfSpaceCentre p
-          (desiredX, desiredY) <- inPossessionDesiredPosition player
+          let (V2 x y) = blockOfSpaceCentre p
+          (V2 desiredX desiredY) <- inPossessionDesiredPosition player
           let r = sqrt((desiredX-x)**2.0 + (desiredY-y)**2.0)
           pure $ r <= 10
 
@@ -107,8 +107,8 @@ optimalNearbySpace player = do
 
     let buildAssignments p (assignments, spaces) = do
           filtered <- filterM filterPitchArea spaces
-          (desiredX, desiredY) <- inPossessionDesiredPosition player
-          let r (x, y) = sqrt((desiredX-x)**2.0 + (desiredY-y)**2.0)
+          desiredPos <- inPossessionDesiredPosition player
+          let r v = distance v desiredPos
           let sorted = sortOn (Data.Ord.Down . (\p' -> blockOfSpaceArea p' / r (blockOfSpaceCentre p') ** 1.5)) filtered
           pure $ case listToMaybe $ blockOfSpaceCentre <$> sorted of
             Just c -> (Map.insert p c assignments, tail sorted)
@@ -117,7 +117,7 @@ optimalNearbySpace player = do
     assignments <- fst <$> foldrM buildAssignments (Map.empty, allSpaces) (player : teammates')
     pure $ assignments ! player
 
-nearestSpace :: (Monad m, Match m, Log m) => Player -> m (Double, Double)
+nearestSpace :: (Monad m, Match m, Log m) => Player -> m (V2 Double)
 nearestSpace player = do
   (SpaceMap spaceMap') <- spaceMap
   case find (\p -> spacePolyPlayer p == player) spaceMap' of

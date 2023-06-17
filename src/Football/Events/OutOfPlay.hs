@@ -3,16 +3,16 @@ module Football.Events.OutOfPlay where
 import Control.Lens ((^.))
 import Football.Match
 import Football.Types
-import Linear (normalize, V3 (V3), _x, _y, _z)
+import Linear (normalize, V3 (V3), _x, _y, _z, V2 (V2))
 import Football.Maths (linePlaneIntersection)
-import Football.Pitch (Pitch(pitchWidth, pitchLength), leftGoalLine, rightGoalLine, pitchHalfLengthX, pitchHalfWidthY)
+import Football.Pitch (leftGoalLine, rightGoalLine, pitchHalfLengthX, pitchHalfWidthY)
 import Data.Maybe (fromJust, listToMaybe)
 import Core (Log(logOutput))
 import Data.List (partition)
 import Football.Events (touchEvents)
 import Football.Locate2D (Locate2D(locate2D))
 
-wentForThrowIn :: (Match m, Monad m) => m (Maybe (Team, (Double, Double)))
+wentForThrowIn :: (Match m, Monad m) => m (Maybe (Team, V2 Double))
 wentForThrowIn = do
   ball <- gameBall
   pitch' <- pitch
@@ -51,13 +51,13 @@ checkForThrowIn = do
   maybeThrow <- wentForThrowIn
   case maybeThrow of
     Just (team, loc) -> do
-      _ <- setBallMotionParams (V3 (fst loc) (snd loc) 0) (V3 0 0 0)
+      _ <- setBallMotionParams (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
       setGameState $ ThrowIn team loc
     Nothing -> pure ()
 
 data CrossedGoalLine 
-  = CrossedForCorner (Double, Double) Team
-  | CrossedForGoalKick (Double, Double) Team
+  = CrossedForCorner (V2 Double) Team
+  | CrossedForGoalKick (V2 Double) Team
   | CrossedForGoal Goal
 
 crossedGoalLine :: (Match m, Monad m) => m (Maybe CrossedGoalLine)
@@ -90,13 +90,13 @@ crossedGoalLine = do
 
   case (intersecPoint1, intersecPoint2, ltp, gs) of
     (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y < goal1Min ^. _y -> 
-      if playerTeam lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (-pitchHalfLengthX pitch' + 5, goal1Pos ^. _y) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (-pitchHalfLengthX pitch', -pitchHalfWidthY pitch') leftGoalScoredTeam
+      if playerTeam lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (V2 (-pitchHalfLengthX pitch' + 5) (goal1Pos ^. _y)) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (V2 (-pitchHalfLengthX pitch') (-pitchHalfWidthY pitch')) leftGoalScoredTeam
     (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y > goal1Max ^. _y -> 
-      if playerTeam lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (-pitchHalfLengthX pitch' + 5, goal1Pos ^. _y) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (-pitchHalfLengthX pitch', pitchHalfWidthY pitch') leftGoalScoredTeam
+      if playerTeam lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (V2 (-pitchHalfLengthX pitch' + 5) (goal1Pos ^. _y)) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (V2 (-pitchHalfLengthX pitch') (pitchHalfWidthY pitch')) leftGoalScoredTeam
     (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y < goal2Min ^. _y -> 
-      if playerTeam lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (pitchHalfLengthX pitch' - 5, goal2Pos ^. _y) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (pitchHalfLengthX pitch', -pitchHalfWidthY pitch') rightGoalScoredTeam
+      if playerTeam lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (V2 (pitchHalfLengthX pitch' - 5) (goal2Pos ^. _y)) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (V2 (pitchHalfLengthX pitch') (-pitchHalfWidthY pitch')) rightGoalScoredTeam
     (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y > goal2Max ^. _y -> 
-      if playerTeam lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (pitchHalfLengthX pitch' - 5, goal2Pos ^. _y) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (pitchHalfLengthX pitch', pitchHalfWidthY pitch') rightGoalScoredTeam
+      if playerTeam lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (V2 (pitchHalfLengthX pitch' - 5) (goal2Pos ^. _y)) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (V2 (pitchHalfLengthX pitch') (pitchHalfWidthY pitch')) rightGoalScoredTeam
     (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y >= goal1Min ^. _y && ip ^. _y <= goal1Max ^. _y && ip ^. _z >= goal1Min ^. _z && ip ^. _z <= goal1Max ^. _z  -> 
       pure $ Just $ CrossedForGoal $ Goal leftGoalScoredTeam lastTouch time
     (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y >= goal2Min ^. _y && ip ^. _y <= goal2Max ^. _y && ip ^. _z >= goal2Min ^. _z && ip ^. _z <= goal2Max ^. _z  -> 
@@ -109,10 +109,10 @@ checkedCrossedGoalLine = do
   pitch' <- pitch
   case maybeCrossedLine of
     Just (CrossedForCorner loc team) -> do
-      _ <- setBallMotionParams (V3 (fst loc) (snd loc) 0) (V3 0 0 0)
+      _ <- setBallMotionParams (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
       setGameState $ CornerKick team loc
     Just (CrossedForGoalKick loc team) -> do
-      _ <- setBallMotionParams (V3 (fst loc) (snd loc) 0) (V3 0 0 0)
+      _ <- setBallMotionParams (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
       setGameState $ GoalKick team loc
     Just (CrossedForGoal goal) -> do
       _ <- setBallMotionParams (V3 0 0 0) (V3 0 0 0)

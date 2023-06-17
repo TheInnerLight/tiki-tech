@@ -18,7 +18,6 @@ import SDL.Primitive (Pos)
 import Football.Understanding.Space.Data (SpacePoly(..))
 import Foreign.C (CInt)
 import qualified Data.Vector as VE
-import Football.Pitch (Pitch(..))
 import Football.Types
 import qualified Data.Text as T
 import qualified SDL.Video.Renderer as SVR
@@ -88,8 +87,8 @@ coordinateTransV v =
   --fmap floor $ (v ^. _xy ) * pure scaleFactor + pure scaleFactor * V2 5.0 2.5
 
 
-coordinateTransP :: (Integral a, Integral b) => (Double, Double) -> (a, b)
-coordinateTransP (x, y) = 
+coordinateTransP :: (Integral a, Integral b) => (V2 Double) -> (a, b)
+coordinateTransP (V2 x y) = 
   (floor $ (x+57.5)*scaleFactor, floor $ (y+36.5) * scaleFactor) 
 
 

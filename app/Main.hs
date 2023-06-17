@@ -26,7 +26,6 @@ import Control.Monad.IO.Class
 import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO, newEmptyTMVarIO)
 import Football.Match
 import Football.Match.Engine
-import Football.Pitch (Pitch(..))
 import Football.Types
 import Data.Foldable (traverse_)
 import Voronoi.JCVoronoi

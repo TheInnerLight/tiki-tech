@@ -1,23 +1,25 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Football.Intentions.ThrowIn where
+
+import Control.Lens ((^.))
 import Football.Match
 import Core (Log, GetSystemTime (systemTimeNow), Cache)
 import Football.Types
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Football.Behaviours.Marking (positionalOrientedZonalMark)
 import Football.Understanding.Space.Data (CentresOfPlayCache)
-import Linear (Metric(distance), V3 (V3))
+import Linear (Metric(distance), V3 (V3), V2, R1 (_x), R2 (_y))
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Throw (throwOptions, ThrowDesirability (throwTarget, throwBallVector))
 import Data.List (sortOn)
 
 
-decideThrowInIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, GetSystemTime m) => Team -> (Double, Double) -> Player -> m Player
+decideThrowInIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, GetSystemTime m) => Team -> V2 Double -> Player -> m Player
 decideThrowInIntention team throwLocation player = do
   ball <- gameBall
-  closestPlayer <- head . sortOn (distance (V3 (fst throwLocation) (snd throwLocation) 0) . playerPositionVector ) <$> teamPlayers team
+  closestPlayer <- head . sortOn (distance (V3 (throwLocation ^. _x) (throwLocation ^. _y) 0) . playerPositionVector ) <$> teamPlayers team
   newIntention <-
     if playerTeam player /= team then do
       loc <- positionalOrientedZonalMark player

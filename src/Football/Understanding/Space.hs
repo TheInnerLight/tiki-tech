@@ -7,7 +7,7 @@ module Football.Understanding.Space where
 import Control.Lens ((^.))
 import Voronoi.JCVoronoi (JCVPoly (polyIndex), jcvSites2, findPoly)
 import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
-import Football.Match (Match (..), clampPitch, AttackingDirection (..), teamPlayers)
+import Football.Match (Match (..), AttackingDirection (..), teamPlayers, clampPitch)
 import Football.Types
 import Data.Maybe (mapMaybe)
 import Data.Map (Map, (!))
@@ -17,11 +17,12 @@ import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), Horizont
 import qualified Data.Vector as Vec
 import Statistics.Quantile (median, medianUnbiased)
 import Data.Ord (comparing, Down(..))
-import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
+import Football.Pitch (pitchHalfwayLineX)
 import Core (Cache, cached, CacheKeyValue (CacheKey, CacheValue))
 import Football.Player (playerControlCentre)
 import Linear.V3 (_x)
 import Data.Function (on)
+import Linear (V2(V2))
 
 createSpaceMap :: (Match m, Monad m) => m SpaceMap
 createSpaceMap = do
@@ -37,7 +38,7 @@ createSpaceMap = do
 
 pitchHorizontalZone :: (Match m, Monad m, Locate2D x) => Team -> x -> m HorizontalZone
 pitchHorizontalZone team x = do
-  let (_, y) = locate2D x
+  let (V2 _ y) = locate2D x
   attackingDirection' <- attackingDirection team
   pure $
     if y <= 13.84 then
@@ -59,12 +60,12 @@ pitchHorizontalZone team x = do
 calcCentresOfPlay :: (Match m, Monad m) => m CentresOfPlay
 calcCentresOfPlay = do
   players' <- allPlayers
-  let (xs, ys) = unzip $ locate2D <$> players'
-  let (t1xs, t1ys) = unzip $ locate2D <$> filter (\p -> playerTeam p == Team1) players'
-  let (t2xs, t2ys) = unzip $ locate2D <$> filter (\p -> playerTeam p == Team2) players'
-  let allPlayersCofP = (median medianUnbiased $ Vec.fromList xs, median medianUnbiased $ Vec.fromList ys)
-  let t1CofP = (median medianUnbiased $ Vec.fromList t1xs, median medianUnbiased $ Vec.fromList t1ys)
-  let t2CofP = (median medianUnbiased $ Vec.fromList t2xs, median medianUnbiased $ Vec.fromList t2ys)
+  let (xs, ys) = unzip $ fmap (\(V2 x y) -> (x, y)) $ locate2D <$> players'
+  let (t1xs, t1ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeam p == Team1) players'
+  let (t2xs, t2ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeam p == Team2) players'
+  let allPlayersCofP = V2 (median medianUnbiased $ Vec.fromList xs) (median medianUnbiased $ Vec.fromList ys)
+  let t1CofP = V2 (median medianUnbiased $ Vec.fromList t1xs) (median medianUnbiased $ Vec.fromList t1ys)
+  let t2CofP = V2 (median medianUnbiased $ Vec.fromList t2xs) (median medianUnbiased $ Vec.fromList t2ys)
   pure CentresOfPlay
     { centresOfPlayBothTeams = allPlayersCofP
     , centresOfPlayTeam1 = t1CofP
@@ -89,22 +90,22 @@ offsideLine team  = do
   pitch' <- pitch
   teamPlayers' <- teamPlayers $ otherTeam team
   attackingDirection' <- attackingDirection team
-  (ballX, _) <- locate2D <$> gameBall
+  (V2 ballX _) <- locate2D <$> gameBall
   pure $ case attackingDirection' of
        AttackingLeftToRight -> min (pitchLength pitch')  $ max ballX                      $ max (pitchHalfwayLineX pitch') $ xPos (sortOn (Data.Ord.Down . xPos) teamPlayers' !! 1)
        AttackingRightToLeft -> min ballX                 $ min (pitchHalfwayLineX pitch') $ max 0                          $ xPos (sortOn xPos teamPlayers' !! 1                  ) 
   where 
     otherTeam Team1 = Team2
     otherTeam Team2 = Team1
-    xPos player = fst $ locate2D player
+    xPos player = locate2D player ^. _x
 
 isOffide :: (Match m, Monad m, Locate2D x) => Team -> x -> m Bool
 isOffide team x = do
   offsideLine' <- offsideLine team
   attackingDirection' <- attackingDirection team
   pure $ case attackingDirection' of
-    AttackingLeftToRight -> fst (locate2D x) > offsideLine'
-    AttackingRightToLeft -> fst (locate2D x) < offsideLine'
+    AttackingLeftToRight -> locate2D x ^. _x > offsideLine'
+    AttackingRightToLeft -> locate2D x ^. _x < offsideLine'
 
 isOnside :: (Match m, Monad m, Locate2D x) => Team -> x -> m Bool
 isOnside team x = not <$> isOffide team x
@@ -114,8 +115,8 @@ isInOwnHalf player = do
   attackingDirection' <- attackingDirection (playerTeam player)
   pitch' <- pitch
   pure $ case attackingDirection' of
-    AttackingLeftToRight -> fst (locate2D player) < pitchHalfwayLineX pitch'
-    AttackingRightToLeft -> fst (locate2D player) > pitchHalfwayLineX pitch'
+    AttackingLeftToRight -> locate2D player ^. _x < pitchHalfwayLineX pitch'
+    AttackingRightToLeft -> locate2D player ^. _x > pitchHalfwayLineX pitch'
 
 
 

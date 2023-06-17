@@ -5,9 +5,8 @@ module Football.Match where
 
 import Linear.V3
 import Control.Lens ((^.))
-import Linear (Metric(norm, dot, quadrance, distance), normalize)
+import Linear (Metric(norm, dot, quadrance, distance), normalize, V2 (V2))
 import Football.Ball
-import Football.Player
 import Core
 import Control.Concurrent.STM.TVar
 import Control.Concurrent.STM.TMVar
@@ -15,11 +14,11 @@ import Control.Monad (when)
 import Voronoi.JCVoronoi (JCVPoly)
 import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (spacePolyPlayer))
 import qualified Data.Map as Map
-import Football.Pitch (Pitch, pitchHalfLengthX, pitchHalfWidthY)
 import Data.Foldable (find)
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Types
 import Data.List (groupBy, partition)
+import Football.Pitch (pitchHalfLengthX, pitchHalfWidthY)
 
 data AttackingDirection 
   = AttackingLeftToRight
@@ -49,8 +48,6 @@ instance HasTeam Team where
 instance HasTeam Player where
   getTeam = playerTeam
 
-
-
 oppositionPlayers :: (Functor m, Match m) => Team -> m [Player]
 oppositionPlayers team = filter (\p -> playerTeam p /= team) <$> allPlayers
 
@@ -69,9 +66,10 @@ spaceMapForOpposition :: (Functor m, Match m, HasTeam t) => t -> m [SpacePoly]
 spaceMapForOpposition t = mapper <$> spaceMap
   where
     mapper (SpaceMap m) = filter(\p -> getTeam (spacePolyPlayer p) /= getTeam t ) $ snd <$> Map.toList m
-
-  
-clampPitch :: (Monad m, Match m) => (Double, Double) -> m (Double, Double)
-clampPitch (x, y) = do
+ 
+clampPitch :: (Monad m, Match m) => V2 Double -> m (V2 Double)
+clampPitch (V2 x y) = do
   pitch' <- pitch
-  pure (max (-pitchHalfLengthX pitch') $ min (pitchHalfLengthX pitch') x, max (-pitchHalfWidthY pitch') $ min (pitchHalfWidthY pitch') y)
+  let x' = max (-pitchHalfLengthX pitch') $ min (pitchHalfLengthX pitch') x
+  let y' = max (-pitchHalfWidthY pitch') $ min (pitchHalfWidthY pitch') y
+  pure $ V2 x' y'

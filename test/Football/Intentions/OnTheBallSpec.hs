@@ -17,7 +17,7 @@ onTheBallTests :: TestTree
 onTheBallTests = testGroup "Desirability calculation tests"
     [ testCase "A very unreliable pass should have low desirability" $ do
         let unreliablePass = PassDesirability
-              { passTarget = SpaceTarget (0, 0)
+              { passTarget = SpaceTarget (V2 0 0)
               , passBallVector = V3 1 1 1
               , passOppositionInterceptionDistance = 1
               , passTeammateReceptionDistance = 20
@@ -31,7 +31,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         coeff @?= 6.538370545137032e-7
     , testCase "A very reliable pass should have high desirability" $ do
         let reliablePass = PassDesirability
-              { passTarget = SpaceTarget (0, 0)
+              { passTarget = SpaceTarget (V2 0 0)
               , passBallVector = V3 1 1 1
               , passOppositionInterceptionDistance = 20
               , passTeammateReceptionDistance = 1
@@ -45,7 +45,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         coeff @?= 0.8661346500472701
     , testCase "A very reliable pass with high XG should have very high desirability" $ do
         let reliablePass = PassDesirability
-              { passTarget = SpaceTarget (0, 0)
+              { passTarget = SpaceTarget (V2 0 0)
               , passBallVector = V3 1 1 1
               , passOppositionInterceptionDistance = 20
               , passTeammateReceptionDistance = 1
@@ -59,7 +59,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         coeff @?= 0.999999869586897
     , testCase "A very unreliable pass with high XG should have medium desirability" $ do
         let reliablePass = PassDesirability
-              { passTarget = SpaceTarget (0, 0)
+              { passTarget = SpaceTarget (V2 0 0)
               , passBallVector = V3 1 1 1
               , passOppositionInterceptionDistance = 20
               , passTeammateReceptionDistance = 1

@@ -3,10 +3,11 @@
 
 module Football.Understanding.Shape where
 
+import Control.Lens ((^.))
 import Football.Ball
 import Football.Player
 import Football.Match
-import Linear (normalize, V3 (V3), Metric (dot, norm, distance))
+import Linear (normalize, V3 (V3), Metric (dot, norm, distance), R1 (_x), R2 (_y), V2 (V2))
 import Data.List (sortOn, minimumBy, reverse, foldl', find)
 import qualified Data.Ord
 import Voronoi.JCVoronoi (JCVPoly(..))
@@ -14,14 +15,14 @@ import Football.Locate2D (Locate2D(locate2D))
 import qualified Data.Map as Map
 import Core (Log(..), Cache)
 import Football.Understanding.Space (centresOfPlay, offsideLine)
-import Football.Pitch (Pitch(pitchLength, pitchWidth), pitchHalfwayLineX)
+import Football.Pitch (pitchHalfwayLineX)
 import Football.Types
 import Football.Understanding.Space.Data (CentresOfPlayCache, CentresOfPlay (centresOfPlayBothTeams, centresOfPlayTeam1, centresOfPlayTeam2))
 import Football.Understanding.Team (toTeamCoordinateSystem2D, fromTeamCoordinateSystem2D, inTeamCoordinateSystem, toTeamCoordinateSystem)
 
-outOfPossessionFormationRelativeTo :: (Monad m, Match m) => Double -> Double -> Player -> (Double, Double) -> m (Double, Double)
-outOfPossessionFormationRelativeTo verticalCompactness horizontalCompactness player (uCentreX, uCentreY) = do
-  (centreX, centreY) <- toTeamCoordinateSystem2D (playerTeam player) (uCentreX, uCentreY)
+outOfPossessionFormationRelativeTo :: (Monad m, Match m) => Double -> Double -> Player -> V2 Double -> m (V2 Double)
+outOfPossessionFormationRelativeTo verticalCompactness horizontalCompactness player centrePos = do
+  (V2 centreX centreY) <- toTeamCoordinateSystem2D (playerTeam player) centrePos
   let pos = case playerNumber player of
         1 -> inDirection  (-25)   (-52.5) (-25*verticalCompactness) 0                              (centreX, centreY)
         2 -> inDirection  27.5    (-52)   (-15*verticalCompactness) (8+5*horizontalCompactness)    (centreX, centreY)
@@ -37,32 +38,32 @@ outOfPossessionFormationRelativeTo verticalCompactness horizontalCompactness pla
         _ -> inDirection  52      0  0                              0                              (centreX, centreY)
   fromTeamCoordinateSystem2D (playerTeam player) pos
   where
-    inDirection maxX minX diffX diffY (x, y) = (max minX $ min maxX $ x+diffX, y+diffY)
+    inDirection maxX minX diffX diffY (x, y) = V2 (max minX $ min maxX $ x+diffX) (y+diffY)
 
 
-outOfPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
+outOfPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 outOfPossessionDesiredPosition player = do
-  (pCentreX, pCentreY) <- case oppositionTeam (playerTeam player) of
+  (V2 pCentreX pCentreY) <- case oppositionTeam (playerTeam player) of
     Team1 -> centresOfPlayTeam1 <$> centresOfPlay
     Team2 -> centresOfPlayTeam2 <$> centresOfPlay
-  (ballX, ballY) <- locate2D <$> gameBall
+  (V2 ballX ballY) <- locate2D <$> gameBall
   pitch' <- pitch
 
   let (tCentreX, tCentreY) = (0.55*pCentreX+0.45*ballX, max (-15) $ min 15 $ 0.85*pCentreY+ 0.15*ballY)
       halfPitchLength = 0.5 * pitchLength pitch'
       horizontalCompactness = min halfPitchLength (halfPitchLength + tCentreX) / halfPitchLength
-  pos <- outOfPossessionFormationRelativeTo 1 horizontalCompactness player (pCentreX, pCentreY)
+  pos <- outOfPossessionFormationRelativeTo 1 horizontalCompactness player (V2 pCentreX pCentreY)
   clampPitch pos
 
-inPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (Double, Double)
+inPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 inPossessionDesiredPosition player = do
-  (pCentreX, pCentreY) <- centresOfPlayBothTeams <$> centresOfPlay
-  (ballX, ballY) <- locate2D <$> gameBall
+  (V2 pCentreX pCentreY) <- centresOfPlayBothTeams <$> centresOfPlay
+  ballXY <- locate2D <$> gameBall
   pitch' <- pitch
   offsideLineX <- offsideLine (playerTeam player)
   attackingDirection' <- attackingDirection (playerTeam player)
 
-  (centreX, centreY) <- toTeamCoordinateSystem2D (playerTeam player) (0.6*pCentreX+0.4*ballX, max (-15) $ min 15 $ 0.85*pCentreY + 0.15*ballY)
+  (V2 centreX centreY) <- toTeamCoordinateSystem2D (playerTeam player) $ V2 (0.6*pCentreX+0.4*(ballXY ^. _x)) (max (-15) $ min 15 $ 0.85*pCentreY + 0.15*(ballXY ^. _y))
 
   let offsideLineX' =
         case attackingDirection' of
@@ -72,7 +73,7 @@ inPossessionDesiredPosition player = do
       horizontalCompactness = min halfPitchLength (halfPitchLength + centreX) / halfPitchLength
     
   let pos = case playerNumber player of
-            1 -> inDirection  (-20)                            (-25) 0                           (centreX, centreY)
+            1 -> inDirection  (-20)                             (-25) 0                              (centreX, centreY)
             2 -> inDirection  offsideLineX'                     (5) 30                               (centreX, centreY)
             3 -> inDirection  offsideLineX'                     (5) (-30)                            (centreX, centreY)
             4 -> inDirection  (pitchHalfwayLineX pitch' + 10)   (-15) 10                             (centreX, centreY)
@@ -88,4 +89,4 @@ inPossessionDesiredPosition player = do
   pos' <- fromTeamCoordinateSystem2D (playerTeam player) pos
   clampPitch pos'
   where
-    inDirection maxX diffX diffY (x, y) = (min maxX $ x+diffX, y+diffY)
+    inDirection maxX diffX diffY (x, y) = V2 (min maxX $ x+diffX) (y+diffY)

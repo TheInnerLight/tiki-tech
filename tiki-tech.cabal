@@ -91,6 +91,7 @@ library
         Football.Understanding.ExpectedGoals
         Football.Understanding.Interception
         Football.Understanding.Interception.Data
+        Football.Understanding.Pitch
         Football.Understanding.Shape
         Football.Understanding.Space
         Football.Understanding.Space.Data

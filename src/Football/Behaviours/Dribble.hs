@@ -1,6 +1,6 @@
 module Football.Behaviours.Dribble where
 
-import Linear (V3(..), normalize)
+import Linear (V3(..), normalize, V2 (V2))
 import Football.Match
 import Core (Log)
 import Football.Player
@@ -18,7 +18,7 @@ import qualified Statistics.Distribution.Normal as ND
 import Statistics.Distribution (Distribution(cumulative))
 
 data DribbleTarget 
-  = DribbleAwayFromOpponents (Double, Double)
+  = DribbleAwayFromOpponents (V2 Double)
   | DribbleTowardsTouchline (V3 Double)
   | DribbleTowardsGoal (V3 Double)
   deriving Show
@@ -34,7 +34,7 @@ data DribbleDesirability =
 
 awayFromOppositionDribbleOptions :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
 awayFromOppositionDribbleOptions player = do
-  (nsX, nsY) <- nearestSpace player
+  (V2 nsX nsY) <- nearestSpace player
   let diff = playerPositionVector player - V3 nsX nsY 0
       ns = locate2D $ pure 2.5 * normalize diff
   curXG <- locationXG (playerTeam player) player

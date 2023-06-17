@@ -1,18 +1,20 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Football.Intentions.GoalKick where
+
+import Control.Lens ((^.))
 import Football.Match
 import Core (Log, Cache, GetSystemTime (systemTimeNow))
 import Football.Understanding.Space.Data (CentresOfPlayCache)
 import Football.Types
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Data.List (sortOn)
-import Linear (Metric(distance), V3 (V3))
+import Linear (Metric(distance), V3 (V3), V2)
 import Football.Behaviours.Marking (positionalOrientedZonalMark)
 import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passBallVector))
 
-decideGoalKickIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, GetSystemTime m) => Team -> (Double, Double) -> Player -> m Player
+decideGoalKickIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, GetSystemTime m) => Team -> V2 Double -> Player -> m Player
 decideGoalKickIntention team goalKickLoc player = do
   ball <- gameBall
   newIntention <-
