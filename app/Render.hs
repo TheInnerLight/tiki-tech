@@ -206,6 +206,7 @@ renderIntention r pos (PassIntention t ip p _) = do
   case t of
     PlayerTarget tp -> SP.line r pos (coordinateTransV $ locate2D tp) pink
     SpaceTarget st -> SP.line r pos (coordinateTransV $ locate2D st) darkRed
+    AheadOfTarget at -> SP.line r pos (coordinateTransV $ locate2D at) orange
     _               -> pure ()
 renderIntention r pos i = pure ()
 -- renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()

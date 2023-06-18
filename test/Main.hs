@@ -6,9 +6,10 @@ import Test.Tasty.Ingredients.ConsoleReporter (consoleTestReporter)
 import Football.Behaviours.PassSpec (passTests)
 import Football.MathsSpec (mathsTests)
 import Football.Intentions.OnTheBallSpec (onTheBallTests)
+import Football.Understanding.ExpectedGoalsSpec (expectedGoalsSpecTests)
 
 main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [spaceSpecTests, passTests, mathsTests, onTheBallTests]
+tests = testGroup "Tests" [spaceSpecTests, passTests, mathsTests, onTheBallTests, expectedGoalsSpecTests]

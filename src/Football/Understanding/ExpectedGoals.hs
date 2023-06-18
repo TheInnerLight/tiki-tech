@@ -19,8 +19,8 @@ locationXG team l = do
   let (V2 x y) = locate2D l
   if isInPitchBounds (x, y) pitch' then 
     pure $ case attackingDirection' of
-      AttackingLeftToRight -> xgValue (sqrt ((x + halfLengthOfPitch)**2.0 + y **2.0))
-      AttackingRightToLeft -> xgValue (sqrt ((halfLengthOfPitch - x)**2.0 + y **2.0))
+      AttackingLeftToRight -> xgValue (sqrt ((halfLengthOfPitch - x)**2.0 + y **2.0))
+      AttackingRightToLeft -> xgValue (sqrt ((x + halfLengthOfPitch)**2.0 + y **2.0))
   else
     pure 0
 

@@ -186,6 +186,7 @@ test-suite tiki-tech-test
     other-modules:
       Football.Behaviours.PassSpec
       Football.Intentions.OnTheBallSpec
+      Football.Understanding.ExpectedGoalsSpec
       Football.Understanding.SpaceSpec
       Football.MathsSpec
 

@@ -118,7 +118,7 @@ motionVectorForPassTo ball (V2 targetX targetY) =
 
 motionVectorForPassToMedium :: Ball -> V2 Double -> V3 Double
 motionVectorForPassToMedium ball (V2 targetX targetY) = 
-  maxMag 31 $ ballDirection * pure (8.18 * exp (0.0287 * dist)) - ballMotionVector ball
+  maxMag 16 $ ballDirection * pure (8.18 * exp (0.0287 * dist)) - ballMotionVector ball
   where
     targetVector = V3 targetX targetY 0
     ballDirection = normalize (targetVector - ballPositionVector ball)
