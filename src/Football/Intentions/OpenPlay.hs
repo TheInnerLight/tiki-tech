@@ -8,7 +8,7 @@ import Football.Understanding.DecisionFactors
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Football.Intentions.OnTheBall
 import Football.Match
-import Core (GetSystemTime(systemTimeNow), Log (logOutput), Cache, Random)
+import Core (Log (logOutput), Cache, Random)
 import Football.Behaviours.Marking (positionalOrientedZonalMark, playerMarkClosestOppositionPlayer, playerOrientedZonalMark)
 import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Understanding.Space.Data (CentresOfPlayCache)
@@ -20,18 +20,20 @@ import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Understanding.Pitch (ownGoalVector)
 import Linear (R1(_x), R2 (_y), V3 (V3), Metric (norm), normalize)
+import Football.GameTime (gameTimeAddSeconds)
 
 
 
-decideOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
+decideOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
 decideOpenPlayIntention player =
   if isGoalKeeper player then
     decideGoalKeeperOpenPlayIntention player
   else
     decideOutfieldOpenPlayIntention player
     
-decideOutfieldOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
+decideOutfieldOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
 decideOutfieldOpenPlayIntention player = do
+  time <- currentGameTime
   decisionFactors <- calculateDecisionFactors player
   newIntention <- case decisionFactors of
     DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
@@ -40,35 +42,31 @@ decideOutfieldOpenPlayIntention player = do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
     DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False } -> do
       targetLoc <- clampPitch loc
-      time <- systemTimeNow
       let timestep = max 0.1 $ min 0.5 (0.5*t)
-      pure $ ControlBallIntention targetLoc $ time { systemNanoseconds = systemNanoseconds time + floor (timestep*100000000) }
+      pure $ ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = DefensiveTransitionPhase } -> do
       loc <- coverShadowOfPlayerOrientedZonalMark player
-      time <- systemTimeNow
-      pure $ RunToLocation loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
+      pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = OutOfPossessionPhase } -> do
       loc <- playerOrientedZonalMark player
-      time <- systemTimeNow
-      pure $ RunToLocation loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
+      pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
     DecisionFactors { dfHasControlOfBall = True } -> do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
     DecisionFactors { dfHasControlOfBall = False, dfGamePhase = AttackingTransitionPhase } -> do
       nearbySpace <- optimalNearbySpace player
       targetLoc <- clampPitch nearbySpace
-      time <- systemTimeNow
-      pure $ MoveIntoSpace targetLoc $ time { systemNanoseconds = systemNanoseconds time }
+      pure $ MoveIntoSpace targetLoc time
     DecisionFactors { dfHasControlOfBall = False, dfGamePhase = InPossessionPhase } -> do
       nearbySpace <- optimalNearbySpace player
       targetLoc <- clampPitch nearbySpace
-      time <- systemTimeNow
-      pure $ MoveIntoSpace targetLoc $ time { systemNanoseconds = systemNanoseconds time }
+      pure $ MoveIntoSpace targetLoc time
     _  -> pure DoNothing
   pure player { playerIntention = newIntention }
 
-decideGoalKeeperOpenPlayIntention :: (Match m, Monad m, Log m, GetSystemTime m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
+decideGoalKeeperOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Player -> m Player
 decideGoalKeeperOpenPlayIntention player = do
   decisionFactors <- calculateDecisionFactors player
+  time <- currentGameTime
   newIntention <- case decisionFactors of
     DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.75) Nothing) player
@@ -76,13 +74,11 @@ decideGoalKeeperOpenPlayIntention player = do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
     DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False } -> do
       targetLoc <- clampPitch loc
-      time <- systemTimeNow
       let timestep = max 0.1 $ min 0.5 (0.5*t)
-      pure $ ControlBallIntention targetLoc $ time { systemNanoseconds = systemNanoseconds time + floor (timestep*100000000) }
+      pure $ ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = DefensiveTransitionPhase } -> do
       loc <- outOfPossessionDesiredPosition player
-      time <- systemTimeNow
-      pure $ RunToLocation loc $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
+      pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = OutOfPossessionPhase } -> do
       ball <- gameBall
       loc <- outOfPossessionDesiredPosition player
@@ -94,19 +90,16 @@ decideGoalKeeperOpenPlayIntention player = do
               ogVev + ballFromGoal - (normalize ballFromGoal * 2.5)
             else 
               ogVev + (normalize ballFromGoal * pure desiredDistanceFromGoal)
-      time <- systemTimeNow
-      pure $ RunToLocation dest $ time { systemNanoseconds = systemNanoseconds time + 100000000 }
+      pure $ RunToLocation dest $ gameTimeAddSeconds time 0.1
     DecisionFactors { dfHasControlOfBall = True } -> do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
     DecisionFactors { dfHasControlOfBall = False, dfGamePhase = AttackingTransitionPhase } -> do
       nearbySpace <- optimalNearbySpace player
       targetLoc <- clampPitch nearbySpace
-      time <- systemTimeNow
-      pure $ MoveIntoSpace targetLoc $ time { systemNanoseconds = systemNanoseconds time }
+      pure $ MoveIntoSpace targetLoc time
     DecisionFactors { dfHasControlOfBall = False, dfGamePhase = InPossessionPhase } -> do
       nearbySpace <- optimalNearbySpace player
       targetLoc <- clampPitch nearbySpace
-      time <- systemTimeNow
-      pure $ MoveIntoSpace targetLoc $ time { systemNanoseconds = systemNanoseconds time }
+      pure $ MoveIntoSpace targetLoc time
     _  -> pure DoNothing
   pure player { playerIntention = newIntention }  

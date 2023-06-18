@@ -21,6 +21,7 @@ import qualified Data.Vector as VE
 import Football.Types
 import qualified Data.Text as T
 import qualified SDL.Video.Renderer as SVR
+import Football.Locate2D (Locate2D(locate2D))
 
 white :: SP.Color
 white = V4 255 255 255 255
@@ -199,6 +200,13 @@ instance Render Pitch where
     SP.arc r cornerBR (floor $ scaleFactor * 1) (-180) (-90)  white
 
 renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
+renderIntention r pos (PassIntention t ip p _) = do
+  let iceptLoc = coordinateTransV ip
+  SP.line r iceptLoc pos cyan
+  case t of
+    PlayerTarget tp -> SP.line r pos (coordinateTransV $ locate2D tp) pink
+    SpaceTarget st -> SP.line r pos (coordinateTransV $ locate2D st) darkRed
+    _               -> pure ()
 renderIntention r pos i = pure ()
 -- renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
 -- renderIntention r pos (PassIntention _ ip p) = do

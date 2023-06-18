@@ -42,6 +42,7 @@ import Football.Intentions.Corner (decideCornerIntention)
 import Football.Intentions.GoalKick (decideGoalKickIntention)
 import Football.Intentions.KickOff (decideKickOffIntention)
 import Football.Understanding.Zones.Types (ZoneCache, ZoneMap)
+import Football.GameTime (gameTimeAddSeconds)
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
@@ -112,7 +113,7 @@ setBallMotionParamsImpl ballPos ballMot = do
     writeTVar stBall ball'
     pure ball'
 
-enactIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m) => m ()
+enactIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m) => m ()
 enactIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -122,7 +123,13 @@ enactIntentions = do
     enactIntention player =
       case playerIntention player of
         DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc player
-        PassIntention _ iceptloc mot -> kickBallWith iceptloc mot player
+        PassIntention target iceptloc mot t -> do
+          tNow <- currentGameTime
+          if tNow >= gameTimeAddSeconds t (-0.1) then
+            kickBallWith iceptloc mot player
+          else do
+            ball <- gameBall
+            pure $ player { playerIntention = PassIntention target (locate2D ball) mot t}
         ThrowIntention _ iceptloc mot -> do 
             p <- kickBallWith iceptloc mot player
             setGameState OpenPlay
@@ -146,7 +153,7 @@ enactIntentions = do
         IntentionCooldown _ -> pure player
         DoNothing -> pure player
       
-updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, GetSystemTime m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Int -> m ()
+updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
   team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team1
@@ -185,7 +192,7 @@ gameBallImpl = do
   (state :: MatchState) <- has
   atomise $ readTVar $ matchStateBall state
 
-decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, GetSystemTime m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => m ()
+decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => m ()
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -193,7 +200,7 @@ decideIntentions = do
     atomise $ writeTVar (matchStatePlayers state) players'
   where
     updateIntention player = do
-      time <- systemTimeNow
+      time <- currentGameTime
       gameState <- getGameState
       case (intentionCooldown (playerIntention player), gameState) of
         (Just endTime, _) | time < endTime -> pure player

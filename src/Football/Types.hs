@@ -1,7 +1,6 @@
 module Football.Types where
 
 import Linear (V3(..), V2)
-import Data.Time.Clock.System (SystemTime)
 
 data Team
   = Team1
@@ -13,17 +12,17 @@ oppositionTeam Team1 = Team2
 oppositionTeam Team2 = Team1
 
 data PlayerIntention
-  = PassIntention PassTarget (V2 Double) (V3 Double)
-  | ThrowIntention Player (V2 Double) (V3 Double)
-  | TakeCornerIntention PassTarget (V2 Double) (V3 Double)
-  | TakeGoalKickIntention PassTarget (V2 Double) (V3 Double)
-  | TakeKickOffIntention PassTarget (V2 Double) (V3 Double)
-  | ShootIntention ShotTarget (V2 Double) (V3 Double)
-  | DribbleIntention (V2 Double) (V3 Double)
-  | MoveIntoSpace (V2 Double) SystemTime
-  | RunToLocation (V2 Double) SystemTime
-  | ControlBallIntention (V2 Double) SystemTime
-  | IntentionCooldown SystemTime
+  = PassIntention         PassTarget    (V2 Double)   (V3 Double)   GameTime
+  | ThrowIntention        Player        (V2 Double)   (V3 Double)
+  | TakeCornerIntention   PassTarget    (V2 Double)   (V3 Double)
+  | TakeGoalKickIntention PassTarget    (V2 Double)   (V3 Double)
+  | TakeKickOffIntention  PassTarget    (V2 Double)   (V3 Double)
+  | ShootIntention        ShotTarget    (V2 Double)   (V3 Double)
+  | DribbleIntention      (V2 Double)   (V3 Double)
+  | MoveIntoSpace         (V2 Double)   GameTime
+  | RunToLocation         (V2 Double)   GameTime
+  | ControlBallIntention  (V2 Double)   GameTime
+  | IntentionCooldown     GameTime
   | DoNothing
   deriving (Eq, Ord, Show)
 

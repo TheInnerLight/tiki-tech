@@ -71,7 +71,7 @@ playerDesiredLocation' :: Player -> Maybe (V2 Double)
 playerDesiredLocation' p =
   intentionToLocation (playerIntention p)
   where
-    intentionToLocation (PassIntention _ loc _) = Just loc
+    intentionToLocation (PassIntention _ loc _ _) = Just loc
     intentionToLocation (ThrowIntention _ loc _) = Just loc
     intentionToLocation (TakeCornerIntention _ loc _) = Just loc
     intentionToLocation (TakeGoalKickIntention _ loc _) = Just loc
@@ -84,12 +84,13 @@ playerDesiredLocation' p =
     intentionToLocation (IntentionCooldown _) = Nothing
     intentionToLocation DoNothing = Nothing
 
-intentionCooldown :: PlayerIntention -> Maybe SystemTime
-intentionCooldown (IntentionCooldown t) = Just t
+intentionCooldown :: PlayerIntention -> Maybe GameTime
+intentionCooldown (IntentionCooldown t)      = Just t
 intentionCooldown (ControlBallIntention _ t) = Just t
-intentionCooldown (MoveIntoSpace _ t) = Just t
-intentionCooldown (RunToLocation _ t) = Just t
-intentionCooldown _                     = Nothing
+intentionCooldown (MoveIntoSpace _ t)        = Just t
+intentionCooldown (RunToLocation _ t)        = Just t
+intentionCooldown (PassIntention _ _ _ t)    = Just t
+intentionCooldown _                          = Nothing
 
 isGoalKeeper :: Player -> Bool
 isGoalKeeper player = playerNumber player == 1

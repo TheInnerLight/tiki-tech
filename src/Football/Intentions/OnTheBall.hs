@@ -20,6 +20,8 @@ import qualified Data.Vector as Vector
 import qualified Statistics.Distribution.Normal as ND
 import Statistics.Distribution (Distribution(cumulative))
 import Linear (V2(V2), project, normalize, Metric (dot), V3 (V3))
+import Data.Time.Clock.System (SystemTime(systemNanoseconds))
+import Football.GameTime (gameTimeAddSeconds)
 
 data OnTheBallCriteria =
   OnTheBallCriteria
@@ -58,6 +60,7 @@ onTheBallOptionDesirabilityCoeff (ShotOption sd) =
 determineOnTheBallIntention :: (Monad m, Match m, Log m, Random m) => OnTheBallCriteria -> Player -> m PlayerIntention
 determineOnTheBallIntention otbc player = do
   ball <- gameBall
+  time <- currentGameTime
   safePassingOptions <- safestPassingOptions player
   dribbleOptions <- desirableDribbleOptions player
   shotOptions <- filter (\so -> shotXG so >= 0.04) <$> desirableShotOptions player
@@ -69,7 +72,7 @@ determineOnTheBallIntention otbc player = do
 
   pure $ case chosenOption of
     DribbleOption dd -> DribbleIntention (locate2D ball) (dribbleDirection dd)
-    PassOption pd    -> PassIntention (passTarget pd) (locate2D ball) (passBallVector pd)
+    PassOption pd    -> PassIntention (passTarget pd) (locate2D ball) (passBallVector pd) $ gameTimeAddSeconds time 0.35
     ShotOption sd    -> ShootIntention (shotTarget sd) (locate2D ball) (shotBallVector sd)
   where
     minPassSafety = fromMaybe 0 $ otbcMinimumPassSafetyCoeff otbc

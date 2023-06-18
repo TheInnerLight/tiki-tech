@@ -8,11 +8,12 @@ import Football.Player
 import Data.List (sort)
 import Football.Match
 import Control.Monad (when, void)
-import Core (GetSystemTime (systemTimeNow), Random (randomNormalMeanStd, randomRange), Log (logOutput))
+import Core (Random (randomNormalMeanStd, randomRange), Log (logOutput))
 import Data.Time.Clock.System (SystemTime(..))
 import Football.Types
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Maths
+import Football.GameTime (gameTimeAddSeconds)
 
 canKick :: (Monad m, Match m, Log m) => Player -> m (Maybe (V3 Double))
 canKick player = do
@@ -26,7 +27,7 @@ canKick player = do
     else
       pure Nothing
 
-kickBallWith :: (Monad m, Match m, GetSystemTime m, Log m) => V2 Double -> V3 Double -> Player -> m Player
+kickBallWith :: (Monad m, Match m, Log m) => V2 Double -> V3 Double -> Player -> m Player
 kickBallWith iceptLoc desiredBallMotion player = do
   ballInRange <- canKick player
   case ballInRange of
@@ -37,11 +38,11 @@ kickBallWith iceptLoc desiredBallMotion player = do
     Nothing -> pure player
   where
     kickSuccess kickLoc player' = do
-      time <- systemTimeNow
+      time <- currentGameTime
       void $ kickBall player kickLoc desiredBallMotion
-      pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + 300000000 } }
+      pure $ player' { playerIntention = IntentionCooldown $ gameTimeAddSeconds time 0.3 }
 
-dribbleToLocation :: (Monad m, Match m, GetSystemTime m, Log m) => V2 Double -> V3 Double -> Player -> m Player
+dribbleToLocation :: (Monad m, Match m, Log m) => V2 Double -> V3 Double -> Player -> m Player
 dribbleToLocation iceptLoc diff player = do
   ballInRange <- canKick player
   case ballInRange of
@@ -52,14 +53,13 @@ dribbleToLocation iceptLoc diff player = do
     Nothing -> pure player
   where
     kickSuccess kickLoc player' = do
-      time <- systemTimeNow
+      time <- currentGameTime
       ball' <- kickBall player' kickLoc diff
       let cooldownTime = 0.3
-      let cooldownTS = floor $ cooldownTime * 1e9
       let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
-      pure $ player' { playerIntention = RunToLocation (locate2D eBallPos) $ time { systemNanoseconds = systemNanoseconds time + cooldownTS } }
+      pure $ player' { playerIntention = RunToLocation (locate2D eBallPos) $ gameTimeAddSeconds time cooldownTime }
 
-controlBall :: (Monad m, Match m, GetSystemTime m, Random m, Log m) => V2 Double -> Player -> m Player
+controlBall :: (Monad m, Match m, Random m, Log m) => V2 Double -> Player -> m Player
 controlBall loc player = do
   ballInRange <- canKick player
   case ballInRange of
@@ -73,11 +73,10 @@ controlBall loc player = do
       ball <- gameBall
       mult <- randomNormalMeanStd 1.0 0.1
       ball' <- kickBall player kickLoc $ (- ballMotionVector ball + playerMotionVector player') * pure mult
-      time <- systemTimeNow
+      time <- currentGameTime
       let cooldownTime = 0.1
-      let cooldownTS = floor $ cooldownTime * 1e9
       let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
-      pure $ player' { playerIntention = IntentionCooldown $ time { systemNanoseconds = systemNanoseconds time + cooldownTS } }
+      pure $ player' { playerIntention = IntentionCooldown $ gameTimeAddSeconds time cooldownTime }
 
 motionVectorForDribble :: Player -> Ball -> V2 Double -> V3 Double
 motionVectorForDribble player ball (V2 targetX targetY) = 
