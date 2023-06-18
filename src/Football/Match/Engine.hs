@@ -13,7 +13,7 @@ import Football.Player
 import Core
 import Control.Concurrent.STM.TVar
 import Control.Concurrent.STM.TMVar
-import Control.Monad (when)
+import Control.Monad (when, void)
 import Football.Match
 import Football.Behaviours.Kick
 import Data.List (sortOn, foldl', find)
@@ -170,6 +170,7 @@ updateImpl fps = do
     pure ()
   checkForThrowIn
   checkedCrossedGoalLine
+  resetBall
   decideIntentions
   enactIntentions
   atomise $ do
@@ -181,6 +182,16 @@ updateImpl fps = do
     writeTVar (matchStatePlayers state) players'
   where
     timeStep = 1000000 `div` fps
+
+resetBall :: (Match m, Monad m, Has m MatchState, Atomise m) => m ()
+resetBall = do
+  st <- getGameState
+  case st of
+    ThrowIn _ loc -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
+    CornerKick _ loc -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
+    GoalKick _ loc -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
+    KickOff _  -> void $ setBallMotionParamsImpl (V3 0 0 0) (V3 0 0 0)
+    OpenPlay -> pure ()
 
 allPlayersImpl :: (Monad m, Has m MatchState, Atomise m) => m [Player]
 allPlayersImpl = do 

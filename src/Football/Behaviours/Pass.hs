@@ -58,8 +58,8 @@ toFeetPassingOptions player = do
           , passOppositionInterceptionDistance = oid
           , passTeammateReceptionDistance = trd
           , passSafetyCoeff = safety
-          , passXGAdded = (newXG - originalXG)*safety
-          , passOppositionXGAdded = (newOppXG - originalOppXG)*(1-safety)
+          , passXGAdded = newXG - originalXG
+          , passOppositionXGAdded = newOppXG - originalOppXG
           }
   onsidePlayers <- filterM (isOnside (playerTeam player)) teamPlayers'
   traverse calcToFeetDesirability onsidePlayers
@@ -95,8 +95,8 @@ throughBallPassingOptions player = do
           , passOppositionInterceptionDistance = oid
           , passTeammateReceptionDistance = trd
           , passSafetyCoeff = safety
-          , passXGAdded = (newXG - originalXG)*safety
-          , passOppositionXGAdded = (newOppXG - originalOppXG)*(1-safety)
+          , passXGAdded = newXG - originalXG
+          , passOppositionXGAdded = newOppXG - originalOppXG
           }
   onsidePlayers <- filterM (isOnside (playerTeam player)) $ filter (/= player) teamPlayers'
   let forwardRunningPlayers = filter (\p -> dot attackingRunVector (playerMotionVector p) > 4) onsidePlayers
@@ -128,8 +128,8 @@ toSpacePassingOptions player = do
           , passOppositionInterceptionDistance = oid
           , passTeammateReceptionDistance = trd
           , passSafetyCoeff = safety
-          , passXGAdded = (newXG - originalXG)*safety
-          , passOppositionXGAdded = (newOppXG - originalOppXG)*(1-safety)
+          , passXGAdded = newXG - originalXG
+          , passOppositionXGAdded = newOppXG - originalOppXG
           }
   onsidePolygons <- filterM (isOnside (playerTeam player) . spacePolyPlayer) $ filter (\p -> spacePolyPlayer p /= player) teamSpaceMap
   spaceDesirability <- traverse calcToSpaceDesirability onsidePolygons

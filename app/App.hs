@@ -46,6 +46,7 @@ instance Match AppM where
 
 instance Log AppM where
   logOutput stuff = liftIO $ print stuff
+  logFile file line = liftIO $ appendFile file (line <> "\n")
 
 instance GetSystemTime AppM where
   systemTimeNow = liftIO getSystemTime

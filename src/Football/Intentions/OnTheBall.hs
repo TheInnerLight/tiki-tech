@@ -10,7 +10,7 @@ import Football.Player
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Behaviours.FindSpace (nearestSpace)
 import Data.Foldable (find, traverse_, Foldable (foldl'), foldlM)
-import Core (Log (logOutput), Random (randomRange, randomNormalMeanStd))
+import Core (Log (logOutput, logFile), Random (randomRange, randomNormalMeanStd))
 import Data.Maybe (fromMaybe, listToMaybe, fromJust)
 import qualified Data.Ord
 import Data.List (sortOn)
@@ -35,20 +35,26 @@ data OnTheBallOption
   | ShotOption ShotDesirability
   deriving Show
 
+cumulativeProbabilityValue :: Double -> Double -> Double -> Double 
+cumulativeProbabilityValue mean sd value =
+  let standardisedDiff = (value - mean) / sd
+      nd = ND.normalDistr mean sd
+  in cumulative nd standardisedDiff
+
 onTheBallOptionDesirabilityCoeff :: OnTheBallOption -> Double
 onTheBallOptionDesirabilityCoeff (DribbleOption dd) =
-  let distXGAdded = (dribbleXGAdded dd - 0.000833333333333) / 0.009
-      distOppXGAdded = (dribbleOppositionXGAdded dd + 0.000833333333333) / 0.05
-      distSafety = (dribbleSafetyCoeff dd - 0.8) / 0.08
-      v = V3 distXGAdded distSafety distOppXGAdded
+  let zXGAdded = min 3.5 $ (dribbleXGAdded dd * dribbleSafetyCoeff dd - 0.000833333333333) / 0.009
+      zOppXGAdded = min 3.5 $ (dribbleOppositionXGAdded dd * (1 - dribbleSafetyCoeff dd) + 0.000833333333333) / 0.05
+      zSafety = min 3.5 $ (dribbleSafetyCoeff dd - 1) / 0.01
+      v = V3 zXGAdded zSafety zOppXGAdded
       proj = (1/sqrt 3) * v `dot` V3 1 1 (-1)
       unitND = ND.normalDistr 0 1
   in cumulative unitND proj
 onTheBallOptionDesirabilityCoeff (PassOption pd) =
-  let distXGAdded = (passXGAdded pd - 0.000833333333333) / 0.01
-      distOppXGAdded = (passOppositionXGAdded pd + 0.000833333333333) / 0.05
-      distSafety = (passSafetyCoeff pd - 0.8) / 0.08
-      v = V3 distXGAdded distSafety distOppXGAdded
+  let zXGAdded = min 3.5 $ (passXGAdded pd * passSafetyCoeff pd - 0.000833333333333) / 0.01
+      zOppXGAdded = min 3.5 $ (passOppositionXGAdded pd * (1 - passSafetyCoeff pd)  +  0.000833333333333) / 0.05
+      zSafety = min 3.5 $ (passSafetyCoeff pd - 0.85) / 0.08
+      v = V3 zXGAdded zSafety zOppXGAdded
       proj = (1/sqrt 3) * v `dot` V3 1 1 (-1)
       unitND = ND.normalDistr 0 1
   in cumulative unitND proj
@@ -68,6 +74,8 @@ determineOnTheBallIntention otbc player = do
       validOptions = filter (not . isNaN . onTheBallOptionDesirabilityCoeff) combinedOptions
       sortedOptions = sortOn (Data.Ord.Down . onTheBallOptionDesirabilityCoeff) validOptions
 
+  logOutput (fmap onTheBallOptionDesirabilityCoeff sortedOptions)
+
   chosenOption <- pickFrom $ cycle sortedOptions
 
   pure $ case chosenOption of
@@ -80,14 +88,15 @@ determineOnTheBallIntention otbc player = do
 
 
 pickFrom :: (Monad m, Match m, Log m, Random m) => [OnTheBallOption] -> m OnTheBallOption
-pickFrom xs = picker $ cycle xs
+pickFrom xs = picker $ take 100 $ cycle xs
   where
+    picker [x] = pure x
     picker (x:opts) = do
       optionVal <- randomRange 0 1
       if optionVal <= onTheBallOptionDesirabilityCoeff x then
         pure x
       else
-        pickFrom opts
+        picker opts
     picker _ = error "Impossible"
 
 

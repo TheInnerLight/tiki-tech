@@ -55,8 +55,8 @@ awayFromOppositionDribbleOptions player = do
     { dribbleTarget = DribbleAwayFromOpponents ns
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
-    , dribbleXGAdded = xgAdded * safety
-    , dribbleOppositionXGAdded = (newOppXG - curOppXG) * (1-safety)
+    , dribbleXGAdded = xgAdded
+    , dribbleOppositionXGAdded = newOppXG - curOppXG
     }
 
 towardsTouchlineDribbleOption :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
@@ -84,8 +84,8 @@ towardsTouchlineDribbleOption player = do
     { dribbleTarget = DribbleTowardsTouchline dribbleLoc
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
-    , dribbleXGAdded = xgAdded * safety
-    , dribbleOppositionXGAdded = (newOppXG - curOppXG) * (1-safety)
+    , dribbleXGAdded = xgAdded
+    , dribbleOppositionXGAdded = newOppXG - curOppXG
     }
 
 towardsGoalDribbleOption :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
@@ -120,8 +120,8 @@ towardsGoalDribbleOption player = do
     { dribbleTarget = DribbleTowardsGoal dribbleLoc
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
-    , dribbleXGAdded = xgAdded * safety
-    , dribbleOppositionXGAdded = (newOppXG - curOppXG) * (1-safety)
+    , dribbleXGAdded = xgAdded
+    , dribbleOppositionXGAdded = newOppXG - curOppXG
     }
 
 desirableDribbleOptions :: (Monad m, Match m, Log m) => Player -> m [DribbleDesirability]

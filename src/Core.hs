@@ -18,6 +18,7 @@ class Atomise m where
 
 class Log m where
   logOutput :: Show a => a -> m ()
+  logFile :: FilePath -> String -> m ()
 
 class GetSystemTime m where
   systemTimeNow :: m SystemTime

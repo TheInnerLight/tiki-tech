@@ -86,7 +86,7 @@ checkInCompressedSpace player = do
 checkIsUnderPressure :: (Match m, Monad m) => Player -> m Bool
 checkIsUnderPressure player = do
   op <- findClosestOpposition player
-  pure $ distance (playerPositionVector player) (playerPositionVector op) <= 3.0
+  pure $ distance (playerPositionVector player) (playerPositionVector op) <= 5.0
 
 calculateDecisionFactors :: (Match m, Monad m, Log m, Cache m InterceptionDataCache) => Player -> m DecisionFactors
 calculateDecisionFactors player = do
