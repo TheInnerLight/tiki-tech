@@ -43,16 +43,16 @@ cumulativeProbabilityValue mean sd value =
 
 onTheBallOptionDesirabilityCoeff :: OnTheBallOption -> Double
 onTheBallOptionDesirabilityCoeff (DribbleOption dd) =
-  let zXGAdded = min 3.5 $ (dribbleXGAdded dd * dribbleSafetyCoeff dd - 0.000833333333333) / 0.009
-      zOppXGAdded = min 3.5 $ (dribbleOppositionXGAdded dd * (1 - dribbleSafetyCoeff dd) + 0.000833333333333) / 0.05
+  let zXGAdded = min 3.5 $ (dribbleXGAdded dd * dribbleSafetyCoeff dd - 0.000833333333333) / 0.09
+      zOppXGAdded = min 3.5 $ (dribbleOppositionXGAdded dd * (1 - dribbleSafetyCoeff dd) + 0.000833333333333) / 0.15
       zSafety = min 3.5 $ (dribbleSafetyCoeff dd - 1) / 0.01
       v = V3 zXGAdded zSafety zOppXGAdded
       proj = (1/sqrt 3) * v `dot` V3 1 1 (-1)
       unitND = ND.normalDistr 0 1
   in cumulative unitND proj
 onTheBallOptionDesirabilityCoeff (PassOption pd) =
-  let zXGAdded = min 3.5 $ (passXGAdded pd * passSafetyCoeff pd - 0.000833333333333) / 0.01
-      zOppXGAdded = min 3.5 $ (passOppositionXGAdded pd * (1 - passSafetyCoeff pd)  +  0.000833333333333) / 0.05
+  let zXGAdded = min 3.5 $ (passXGAdded pd * passSafetyCoeff pd - 0.000833333333333) / 0.1
+      zOppXGAdded = min 3.5 $ (passOppositionXGAdded pd * (1 - passSafetyCoeff pd)  +  0.000833333333333) / 0.15
       zSafety = min 3.5 $ (passSafetyCoeff pd - 0.85) / 0.08
       v = V3 zXGAdded zSafety zOppXGAdded
       proj = (1/sqrt 3) * v `dot` V3 1 1 (-1)

@@ -28,7 +28,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         
         let coeff = onTheBallOptionDesirabilityCoeff $ PassOption unreliablePass
 
-        coeff @?= 6.538370545137032e-7
+        coeff @?= 2.4185240092431006e-8
     , testCase "A very reliable pass should have high desirability" $ do
         let reliablePass = PassDesirability
               { passTarget = SpaceTarget (V2 0 0)
@@ -42,7 +42,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         
         let coeff = onTheBallOptionDesirabilityCoeff $ PassOption reliablePass
 
-        coeff @?= 0.8661346500472701
+        coeff @?= 0.6434279866039837
     , testCase "A very reliable pass with high XG should have very high desirability" $ do
         let reliablePass = PassDesirability
               { passTarget = SpaceTarget (V2 0 0)
@@ -50,27 +50,27 @@ onTheBallTests = testGroup "Desirability calculation tests"
               , passOppositionInterceptionDistance = 20
               , passTeammateReceptionDistance = 1
               , passSafetyCoeff = 0.9
-              , passXGAdded = 0.07
+              , passXGAdded = 0.27
               , passOppositionXGAdded = -3.84819110288071e-2
               }
         
         let coeff = onTheBallOptionDesirabilityCoeff $ PassOption reliablePass
 
-        coeff @?= 0.999999869586897
-    , testCase "A very unreliable pass with high XG should have medium desirability" $ do
+        coeff @?= 0.9616862136978284
+    , testCase "A 50/50 pass with high XG should have medium desirability" $ do
         let reliablePass = PassDesirability
               { passTarget = SpaceTarget (V2 0 0)
               , passBallVector = V3 1 1 1
               , passOppositionInterceptionDistance = 20
               , passTeammateReceptionDistance = 1
-              , passSafetyCoeff = 0.1
-              , passXGAdded = 0.09
+              , passSafetyCoeff = 0.6
+              , passXGAdded = 0.5
               , passOppositionXGAdded = -3.84819110288071e-2
               }
         
         let coeff = onTheBallOptionDesirabilityCoeff $ PassOption reliablePass
 
-        coeff @?= 0.7022744551330404
+        coeff @?= 0.4916464561650526
 
 
     ]
