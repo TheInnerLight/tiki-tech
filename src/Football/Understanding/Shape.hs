@@ -40,7 +40,6 @@ outOfPossessionFormationRelativeTo verticalCompactness horizontalCompactness pla
   where
     inDirection maxX minX diffX diffY (x, y) = V2 (max minX $ min maxX $ x+diffX) (y+diffY)
 
-
 outOfPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 outOfPossessionDesiredPosition player = do
   (V2 pCentreX pCentreY) <- case oppositionTeam (playerTeam player) of

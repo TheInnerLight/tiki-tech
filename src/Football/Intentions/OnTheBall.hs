@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Football.Intentions.OnTheBall where
@@ -10,7 +11,7 @@ import Football.Player
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Behaviours.FindSpace (nearestSpace)
 import Data.Foldable (find, traverse_, Foldable (foldl'), foldlM)
-import Core (Log (logOutput, logFile), Random (randomRange, randomNormalMeanStd))
+import Core (Log (logOutput, logFile), Random (randomRange, randomNormalMeanStd), Cache)
 import Data.Maybe (fromMaybe, listToMaybe, fromJust)
 import qualified Data.Ord
 import Data.List (sortOn)
@@ -22,6 +23,7 @@ import Statistics.Distribution (Distribution(cumulative))
 import Linear (V2(V2), project, normalize, Metric (dot), V3 (V3))
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Football.GameTime (gameTimeAddSeconds)
+import Football.Understanding.Space.Data (SpaceCache)
 
 data OnTheBallCriteria =
   OnTheBallCriteria
@@ -63,7 +65,7 @@ onTheBallOptionDesirabilityCoeff (ShotOption sd) =
       xgPos = cumulative xgND (shotXG sd) 
   in xgPos
 
-determineOnTheBallIntention :: (Monad m, Match m, Log m, Random m) => OnTheBallCriteria -> Player -> m PlayerIntention
+determineOnTheBallIntention :: (Monad m, Match m, Log m, Random m, Cache m SpaceCache) => OnTheBallCriteria -> Player -> m PlayerIntention
 determineOnTheBallIntention otbc player = do
   ball <- gameBall
   time <- currentGameTime

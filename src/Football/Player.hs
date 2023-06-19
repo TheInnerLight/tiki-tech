@@ -18,7 +18,8 @@ updatePlayer dt player =
         case playerDesiredLocation' player of
           Just (V2 desX desY) -> V3 desX desY 0
           Nothing             -> ppv
-      desiredMotion = pure (playerSpeedMax $ playerSpeed player) * normalize (desired - ppv)
+      desiredSpeed = min (playerSpeedMax (playerSpeed player)) $ (dt/2)*norm(desired - ppv)
+      desiredMotion = pure desiredSpeed * normalize (desired - ppv)
       direction = if norm(desiredMotion - pmv) > 0 then normalize (desiredMotion - pmv) else normalize desiredMotion
       (ppv', pmv') = rk2 (1.0/dt) (playerMotionEq direction (playerSpeed player)) (ppv, pmv)
   in player { playerPositionVector = ppv', playerMotionVector = pmv' }

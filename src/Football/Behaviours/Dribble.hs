@@ -1,8 +1,10 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Football.Behaviours.Dribble where
 
 import Linear (V3(..), normalize, V2 (V2))
 import Football.Match
-import Core (Log)
+import Core (Log, Cache)
 import Football.Player
 import Football.Ball
 import Football.Behaviours.FindSpace (nearestSpace)
@@ -16,6 +18,7 @@ import qualified Data.Ord
 import Football.Pitch (rightGoalLine, leftGoalLine)
 import qualified Statistics.Distribution.Normal as ND
 import Statistics.Distribution (Distribution(cumulative))
+import Football.Understanding.Space.Data (SpaceCache)
 
 data DribbleTarget 
   = DribbleAwayFromOpponents (V2 Double)
@@ -32,7 +35,7 @@ data DribbleDesirability =
     , dribbleOppositionXGAdded :: !Double
     } deriving Show
 
-awayFromOppositionDribbleOptions :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
+awayFromOppositionDribbleOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m DribbleDesirability
 awayFromOppositionDribbleOptions player = do
   (V2 nsX nsY) <- nearestSpace player
   let diff = playerPositionVector player - V3 nsX nsY 0
@@ -124,7 +127,7 @@ towardsGoalDribbleOption player = do
     , dribbleOppositionXGAdded = newOppXG - curOppXG
     }
 
-desirableDribbleOptions :: (Monad m, Match m, Log m) => Player -> m [DribbleDesirability]
+desirableDribbleOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m [DribbleDesirability]
 desirableDribbleOptions player = do
   ao <- awayFromOppositionDribbleOptions player
   tt <- towardsTouchlineDribbleOption player

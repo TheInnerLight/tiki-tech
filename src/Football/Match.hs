@@ -31,7 +31,6 @@ class Match m where
   kickBall :: Player -> V3 Double -> V3 Double -> m Ball
   setBallMotionParams :: V3 Double -> V3 Double -> m Ball
   update :: Int -> m ()
-  spaceMap :: m SpaceMap
   pitch :: m Pitch
   currentGameTime :: m GameTime
   matchEventLog :: m [MatchLogEntry]
@@ -56,16 +55,6 @@ teamPlayers team = filter (\p -> playerTeam p == team) <$> allPlayers
 
 teammates :: (Functor m, Match m) => Player -> m [Player]
 teammates player = filter (\p -> playerNumber p /= playerNumber player) <$> teamPlayers (playerTeam player)
-
-spaceMapForTeam :: (Functor m, Match m, HasTeam t) => t -> m [SpacePoly]
-spaceMapForTeam t = mapper <$> spaceMap
-  where
-    mapper (SpaceMap m) = filter(\p -> getTeam (spacePolyPlayer p) == getTeam t ) $ snd <$> Map.toList m
-
-spaceMapForOpposition :: (Functor m, Match m, HasTeam t) => t -> m [SpacePoly]
-spaceMapForOpposition t = mapper <$> spaceMap
-  where
-    mapper (SpaceMap m) = filter(\p -> getTeam (spacePolyPlayer p) /= getTeam t ) $ snd <$> Map.toList m
  
 clampPitch :: (Monad m, Match m) => V2 Double -> m (V2 Double)
 clampPitch (V2 x y) = do

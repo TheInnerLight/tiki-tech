@@ -71,7 +71,7 @@ controlBall loc player = do
   where
     kickSuccess kickLoc player' = do
       ball <- gameBall
-      mult <- randomNormalMeanStd 1.0 0.1
+      mult <- randomNormalMeanStd 1.0 0.05
       ball' <- kickBall player kickLoc $ (- ballMotionVector ball + playerMotionVector player') * pure mult
       time <- currentGameTime
       let cooldownTime = 0.1
@@ -82,7 +82,7 @@ motionVectorForDribble :: Player -> Ball -> V2 Double -> V3 Double
 motionVectorForDribble player ball (V2 targetX targetY) = 
   let ncv = V3 targetX targetY 0
       speedInDir = max 4.0 $ dot (normalize (ncv - ballPositionVector ball)) (playerMotionVector player)
-  in maxMag (speedInDir+0.2) $ ncv - ballPositionVector ball -- - ballMotionVector ball
+  in maxMag (speedInDir+0.5) $ ncv - ballPositionVector ball -- - ballMotionVector ball
 
 -- motionVectorForDribble :: Ball -> (Double, Double) -> V3 Double
 -- motionVectorForDribble ball (targetX, targetY) = 

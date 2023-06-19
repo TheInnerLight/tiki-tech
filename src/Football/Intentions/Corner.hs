@@ -4,7 +4,7 @@ module Football.Intentions.Corner where
 import Control.Lens ((^.))
 import Football.Match
 import Core (Log, Cache)
-import Football.Understanding.Space.Data (CentresOfPlayCache)
+import Football.Understanding.Space.Data (CentresOfPlayCache, SpaceCache)
 import Football.Types
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Data.List (sortOn)
@@ -14,7 +14,7 @@ import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passBallVector))
 import Football.GameTime (gameTimeAddSeconds)
 
-decideCornerIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache) => Team -> V2 Double -> Player -> m Player
+decideCornerIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m Player
 decideCornerIntention team cornerLocation player = do
   ball <- gameBall
   time <- currentGameTime

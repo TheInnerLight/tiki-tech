@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
+
+
 module Football.Behaviours.Pass where
 
 import Football.Ball
@@ -8,11 +11,11 @@ import Data.List (sortOn, minimumBy, reverse)
 import qualified Data.Ord
 import Voronoi.JCVoronoi (JCVPoly(..))
 import Football.Locate2D (Locate2D(locate2D))
-import Football.Understanding.Space.Data (SpacePoly(spacePolyJCV, spacePolyPlayer), SpaceMap (SpaceMap))
+import Football.Understanding.Space.Data (SpacePoly(spacePolyJCV, spacePolyPlayer), SpaceMap (SpaceMap), SpaceCache)
 import qualified Data.Map as Map
-import Core (Log(..))
+import Core (Log(..), Cache)
 import Football.Behaviours.Kick (motionVectorForPassTo, motionVectorForPassToArrivalSpeed, timeForPassTo, motionVectorForPassToMedium)
-import Football.Understanding.Space (offsideLine, isOnside)
+import Football.Understanding.Space (offsideLine, isOnside, getSpaceMapForTeam)
 import Control.Monad (filterM)
 import Football.Understanding.ExpectedGoals (locationXG)
 import Football.Pitch
@@ -103,14 +106,14 @@ throughBallPassingOptions player = do
   throughballDesirability <- traverse calcThroughBallDesirability forwardRunningPlayers
   pure $ filter (\s -> passTeammateReceptionDistance s < 4.0) throughballDesirability
 
-toSpacePassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
+toSpacePassingOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m [PassDesirability]
 toSpacePassingOptions player = do
   pitch' <- pitch
   ball <- gameBall
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   originalXG <- locationXG (playerTeam player) player
   originalOppXG <- locationXG (oppositionTeam $ playerTeam player) player
-  teamSpaceMap <- spaceMapForTeam player
+  (SpaceMap teamSpaceMap) <- getSpaceMapForTeam (playerTeam player)
   let calcToSpaceDesirability v1 = do
         let (V2 centreX centreY) = polyPoint $ spacePolyJCV v1
             ball' = ball { ballMotionVector = motionVectorForPassToMedium ball (V2 centreX centreY) }
@@ -131,11 +134,12 @@ toSpacePassingOptions player = do
           , passXGAdded = newXG - originalXG
           , passOppositionXGAdded = newOppXG - originalOppXG
           }
-  onsidePolygons <- filterM (isOnside (playerTeam player) . spacePolyPlayer) $ filter (\p -> spacePolyPlayer p /= player) teamSpaceMap
+      teamSpacePolys = snd <$> Map.toList teamSpaceMap
+  onsidePolygons <- filterM (isOnside (playerTeam player) . spacePolyPlayer) $ filter (\p -> spacePolyPlayer p /= player) teamSpacePolys
   spaceDesirability <- traverse calcToSpaceDesirability onsidePolygons
   pure $ filter (\s -> passTeammateReceptionDistance s < 4.0) spaceDesirability
 
-safestPassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
+safestPassingOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m [PassDesirability]
 safestPassingOptions player = do
   toFeetPassOptions <- toFeetPassingOptions player
   toSpacePassOptions <- toSpacePassingOptions player

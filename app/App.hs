@@ -14,7 +14,7 @@ import Control.Concurrent.STM (atomically, readTVar, writeTVar, newTVarIO, newEm
 import Data.Time.Clock.System (getSystemTime)
 import Data.Random.Normal (normalIO')
 import qualified Control.Concurrent.Async as Async
-import Football.Understanding.Space.Data (CentresOfPlayCache)
+import Football.Understanding.Space.Data (CentresOfPlayCache, SpaceCache)
 import Football.Understanding.Interception.Data (InterceptionDataCache)
 import System.Random (randomRIO)
 import Football.Understanding.Zones.Types (ZoneCache)
@@ -35,7 +35,6 @@ instance Match AppM where
   allPlayers = allPlayersImpl
   kickBall = kickImpl
   update = updateImpl
-  spaceMap = allPlayersVoronoiMapImpl
   pitch = pitchImpl
   currentGameTime = gameTimeImpl
   matchEventLog = matchEventLogImpl
@@ -72,6 +71,10 @@ instance Cache AppM InterceptionDataCache where
 instance Cache AppM ZoneCache where
   cacheLookup = cacheLookupZoneDataImpl
   cacheInsert = cacheInsertZoneDataImpl
+
+instance Cache AppM SpaceCache where
+  cacheLookup = cacheLookupSpaceDataImpl
+  cacheInsert = cacheInsertSpaceDataImpl
 
 
 runAppM :: AppM a -> MatchState -> IO a

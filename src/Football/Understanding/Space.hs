@@ -13,7 +13,7 @@ import Data.Maybe (mapMaybe)
 import Data.Map (Map, (!))
 import Data.List (foldl', minimumBy, maximumBy, sortOn)
 import qualified Data.Map as Map
-import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone(..), HorizontalHalf (..), CentresOfPlay (centresOfPlayBothTeams, CentresOfPlay, centresOfPlayTeam1, centresOfPlayTeam2), CentresOfPlayCache)
+import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone(..), HorizontalHalf (..), CentresOfPlay (centresOfPlayBothTeams, CentresOfPlay, centresOfPlayTeam1, centresOfPlayTeam2), CentresOfPlayCache, SpaceCache)
 import qualified Data.Vector as Vec
 import Statistics.Quantile (median, medianUnbiased)
 import Data.Ord (comparing, Down(..))
@@ -35,6 +35,28 @@ createSpaceMap = do
           Nothing -> acc
   let map2 = foldl' folder Map.empty $ zip [0..]  players'
   pure $ SpaceMap map2
+
+createSpaceMapForTeam :: (Match m, Monad m) => Team -> m SpaceMap
+createSpaceMapForTeam team = do
+  players' <- teamPlayers team
+  allPlayersVoronoi <- jcvSites2 <$> traverse (clampPitch . locate2D . playerControlCentre 0.1) players'
+  let map1 = Map.fromList $ fmap (\v -> (polyIndex v, v)) allPlayersVoronoi
+  let folder acc (i, p) =
+        case Map.lookup i map1 of
+          Just poly -> Map.insert i (SpacePoly poly p) acc
+          Nothing -> acc
+  let map2 = foldl' folder Map.empty $ zip [0..]  players'
+  pure $ SpaceMap map2
+
+createSpaceMapForMaybeTeam :: (Match m, Monad m) => Maybe Team -> m SpaceMap
+createSpaceMapForMaybeTeam (Just team) = createSpaceMapForTeam team
+createSpaceMapForMaybeTeam Nothing = createSpaceMap
+
+getSpaceMap :: (Match m, Monad m, Cache m SpaceCache) => m SpaceMap
+getSpaceMap = cached createSpaceMapForMaybeTeam Nothing
+
+getSpaceMapForTeam :: (Match m, Monad m, Cache m SpaceCache) => Team -> m SpaceMap
+getSpaceMapForTeam team = cached createSpaceMapForMaybeTeam $ Just team
 
 pitchHorizontalZone :: (Match m, Monad m, Locate2D x) => Team -> x -> m HorizontalZone
 pitchHorizontalZone team x = do

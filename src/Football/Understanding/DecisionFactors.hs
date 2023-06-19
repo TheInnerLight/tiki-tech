@@ -13,7 +13,7 @@ import Data.Foldable (find, Foldable (foldMap'))
 import Data.Maybe (maybe, isJust, listToMaybe, catMaybes)
 import Data.List (sort)
 import qualified Data.Map as Map
-import Football.Understanding.Space.Data (SpaceMap(SpaceMap), SpacePoly (spacePolyJCV, spacePolyPlayer))
+import Football.Understanding.Space.Data (SpaceMap(SpaceMap), SpacePoly (spacePolyJCV, spacePolyPlayer), SpaceCache)
 import qualified Data.Foldable as Map
 import Voronoi.JCVoronoi (voronoiPolygonArea)
 import Football.Behaviours.FindSpace (findClosestOpposition)
@@ -24,6 +24,7 @@ import Football.Types
 import Football.Behaviours.Kick (canKick)
 import Football.Events (touchEvents, turnovers)
 import Football.GameTime (gameTimeSeconds)
+import Football.Understanding.Space (getSpaceMap)
 
 data DecisionFactors = DecisionFactors
   { dfClosestPlayerToBall :: Maybe ClosestPlayerToBall
@@ -76,9 +77,9 @@ checkInPossession player = do
   canKick' <- isJust <$> canKick player
   pure (canKick' && norm (playerMotionVector player - ballMotionVector ball) < 4)
 
-checkInCompressedSpace :: (Match m, Monad m) => Player -> m Bool
+checkInCompressedSpace :: (Match m, Monad m, Cache m SpaceCache) => Player -> m Bool
 checkInCompressedSpace player = do
-  (SpaceMap spaceMap') <- spaceMap
+  (SpaceMap spaceMap') <- getSpaceMap
   pure $ case Map.find (\poly -> spacePolyPlayer poly == player) spaceMap' of
     Just p -> voronoiPolygonArea (spacePolyJCV p) <= 5
     Nothing -> False
@@ -88,7 +89,7 @@ checkIsUnderPressure player = do
   op <- findClosestOpposition player
   pure $ distance (playerPositionVector player) (playerPositionVector op) <= 5.0
 
-calculateDecisionFactors :: (Match m, Monad m, Log m, Cache m InterceptionDataCache) => Player -> m DecisionFactors
+calculateDecisionFactors :: (Match m, Monad m, Log m, Cache m InterceptionDataCache, Cache m SpaceCache) => Player -> m DecisionFactors
 calculateDecisionFactors player = do
   cp <- checkClosestPlayer player
   hcb <- checkInPossession player

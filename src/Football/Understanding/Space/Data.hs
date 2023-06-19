@@ -38,3 +38,8 @@ instance CacheKeyValue CentresOfPlayCache where
   type CacheKey CentresOfPlayCache = ()
   type CacheValue CentresOfPlayCache = CentresOfPlay
 
+data SpaceCache = SpaceCache
+
+instance CacheKeyValue SpaceCache where
+  type CacheKey SpaceCache = Maybe Team
+  type CacheValue SpaceCache = SpaceMap

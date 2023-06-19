@@ -20,11 +20,11 @@ import Football.Types
 import Core
 import Voronoi.JCVoronoi
 import Football.Locate2D (Locate2D(locate2D))
-import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone (HalfSpaceHZ, WingHZ, CentreHZ), HorizontalHalf (LeftHalf, RightHalf), CentresOfPlayCache)
+import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone (HalfSpaceHZ, WingHZ, CentreHZ), HorizontalHalf (LeftHalf, RightHalf), CentresOfPlayCache, SpaceCache)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Map ((!))
-import Football.Understanding.Space (offsideLine, centresOfPlay, pitchHorizontalZone)
+import Football.Understanding.Space (offsideLine, centresOfPlay, pitchHorizontalZone, getSpaceMapForTeam, getSpaceMap)
 import Control.Monad (filterM)
 import Data.Maybe (listToMaybe)
 import Football.Understanding.Shape (inPossessionDesiredPosition)
@@ -58,9 +58,9 @@ voronoiPolygonAdjustedArea team poly  =
   else
     voronoiPolygonArea spacePoly / 4
 
-findEdgeSpaces :: (Monad m, Match m) => Team -> m [BlockOfSpace]
+findEdgeSpaces :: (Monad m, Match m, Cache m SpaceCache) => Team -> m [BlockOfSpace]
 findEdgeSpaces team = do
-  (SpaceMap spaceMap') <- spaceMap
+  (SpaceMap spaceMap') <- getSpaceMapForTeam team
   let edgeMaker idx polyEdge =
         let (V2 ep1X ep1Y) = jcvEdgePoint1 polyEdge
             (V2 ep2X ep2Y) = jcvEdgePoint2 polyEdge
@@ -81,26 +81,26 @@ findEdgeSpaces team = do
   pure $ (\(loc,polys) -> BlockOfSpace loc (meanOn (voronoiPolygonAdjustedArea team) polys) ) <$> Map.toList mappedSpaces
 
 
-findPolySpaces :: (Monad m, Match m) => Player -> m [BlockOfSpace]
+findPolySpaces :: (Monad m, Match m, Cache m SpaceCache) => Player -> m [BlockOfSpace]
 findPolySpaces player = do
-  (SpaceMap spaceMap') <- spaceMap
+  (SpaceMap spaceMap') <- getSpaceMap
   let polyToBlock poly =
         BlockOfSpace (polyPoint $ spacePolyJCV poly) (voronoiPolygonArea $ spacePolyJCV poly)
   let spaceMap'' = Map.filter (\p -> playerTeam (spacePolyPlayer p) /= playerTeam player ) spaceMap'
   pure $ (\(_, poly) -> polyToBlock poly) <$> Map.toList spaceMap''
   
 
-optimalNearbySpace :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
+optimalNearbySpace :: (Monad m, Match m, Log m, Cache m SpaceCache, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 optimalNearbySpace player = do
     polySpaces <- findPolySpaces player
-    polyEdges' <- findEdgeSpaces (playerTeam player)
+    polyEdges' <- findEdgeSpaces (oppositionTeam $ playerTeam player)
 
-    let allSpaces  = polySpaces ++ polyEdges'
+    let allSpaces  = polyEdges' ++ polySpaces
     let filterPitchArea p = do
           let (V2 x y) = blockOfSpaceCentre p
           (V2 desiredX desiredY) <- inPossessionDesiredPosition player
           let r = sqrt((desiredX-x)**2.0 + (desiredY-y)**2.0)
-          pure $ r <= 10
+          pure $ r <= 15
 
     shapePosition <- inPossessionDesiredPosition player
     teammates' <- teammates player
@@ -117,9 +117,9 @@ optimalNearbySpace player = do
     assignments <- fst <$> foldrM buildAssignments (Map.empty, allSpaces) (player : teammates')
     pure $ assignments ! player
 
-nearestSpace :: (Monad m, Match m, Log m) => Player -> m (V2 Double)
+nearestSpace :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m (V2 Double)
 nearestSpace player = do
-  (SpaceMap spaceMap') <- spaceMap
+  (SpaceMap spaceMap') <- getSpaceMap
   case find (\p -> spacePolyPlayer p == player) spaceMap' of
     Just p  -> pure $ polyPoint $ spacePolyJCV p
     Nothing -> error "Supplied player did not have an assigned voronoi polygon (this should never occur!)"

@@ -22,7 +22,7 @@ import Voronoi.JCVoronoi (JCVPoly, jcvSites2)
 import Control.Concurrent.STM (readTMVar, writeTMVar)
 import Football.Locate2D (Locate2D(locate2D), ProjectFuture (ProjectFuture))
 import Football.Understanding.Space (createSpaceMap)
-import Football.Understanding.Space.Data (SpaceMap, CentresOfPlayCache, CentresOfPlay)
+import Football.Understanding.Space.Data (SpaceMap, CentresOfPlayCache, CentresOfPlay, SpaceCache)
 import Football.Understanding.DecisionFactors
 import Data.Foldable (foldlM)
 import Football.Behaviours.Marking (playerMarkClosestOppositionPlayer, positionalOrientedZonalMark)
@@ -54,6 +54,7 @@ data MatchState = MatchState
   , matchStateCentresOfPlay :: TMVar CentresOfPlay
   , matchStateInterceptionCache :: TMVar (Map (Player, Ball) [InterceptionData])
   , matchStateZoneCache :: TMVar (Map Team ZoneMap)
+  , matchStateSpaceCache :: TMVar (Map (Maybe Team) SpaceMap)
   , matchPitch :: Pitch
   , matchStateGameTime :: TVar GameTime
   , matchStateEventLog :: TVar [MatchLogEntry]
@@ -153,7 +154,7 @@ enactIntentions = do
         IntentionCooldown _ -> pure player
         DoNothing -> pure player
       
-updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => Int -> m ()
+updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
   team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team1
@@ -166,6 +167,7 @@ updateImpl fps = do
     _ <- tryTakeTMVar (matchStateCentresOfPlay state)
     _ <- tryTakeTMVar (matchStateInterceptionCache state)
     _ <- tryTakeTMVar (matchStateZoneCache state)
+    _ <- tryTakeTMVar (matchStateSpaceCache state)
     _ <- modifyTVar' (matchStateGameTime state) (\(GameTime h t) -> GameTime h (t+timeStep))
     pure ()
   checkForThrowIn
@@ -203,7 +205,7 @@ gameBallImpl = do
   (state :: MatchState) <- has
   atomise $ readTVar $ matchStateBall state
 
-decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache) => m ()
+decideIntentions :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => m ()
 decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
@@ -263,20 +265,21 @@ cacheInsertZoneDataImpl team v = do
     Just c -> atomise $ writeTMVar (matchStateZoneCache state) $ Map.insert team v c 
     Nothing -> atomise $ writeTMVar (matchStateZoneCache state) (Map.fromList [(team, v)])
 
-team1VoronoiMapImpl :: (Monad m, Has m MatchState, Atomise m) => m [JCVPoly]
-team1VoronoiMapImpl = do
+cacheLookupSpaceDataImpl :: (Monad m, Has m MatchState, Atomise m) => Maybe Team -> m (Maybe SpaceMap)
+cacheLookupSpaceDataImpl team = do
   (state :: MatchState) <- has
-  atomise $ readTMVar $ matchStateTeam1VoronoiMap state
+  cache <- atomise $ tryReadTMVar $ matchStateSpaceCache state
+  case cache of
+    Just c  -> pure $ Map.lookup team c
+    Nothing -> pure Nothing
 
-team2VoronoiMapImpl :: (Monad m, Has m MatchState, Atomise m) => m [JCVPoly]
-team2VoronoiMapImpl = do
+cacheInsertSpaceDataImpl :: (Monad m, Has m MatchState, Atomise m) => Maybe Team -> SpaceMap -> m ()
+cacheInsertSpaceDataImpl team v = do
   (state :: MatchState) <- has
-  atomise $ readTMVar $ matchStateTeam2VoronoiMap state
-
-allPlayersVoronoiMapImpl :: (Monad m, Has m MatchState, Atomise m) => m SpaceMap
-allPlayersVoronoiMapImpl = do
-  (state :: MatchState) <- has
-  atomise $ readTMVar $ matchStateSpaceMap state
+  cache <- atomise $ tryReadTMVar $ matchStateSpaceCache state
+  case cache of
+    Just c -> atomise $ writeTMVar (matchStateSpaceCache state) $ Map.insert team v c 
+    Nothing -> atomise $ writeTMVar (matchStateSpaceCache state) (Map.fromList [(team, v)])
 
 gameTimeImpl :: (Monad m, Has m MatchState, Atomise m) => m GameTime
 gameTimeImpl = do

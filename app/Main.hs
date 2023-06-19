@@ -40,6 +40,9 @@ import Control.Monad.Reader.Class (MonadReader(ask))
 import Data.Text as T
 import qualified Text.Printf as TText
 import Football.Events.Goal (score)
+import Football.Understanding.Zones (getZoneMap)
+import Football.Understanding.Zones.Types (ZoneMap(ZoneMap))
+import Football.Understanding.Space (getSpaceMapForTeam)
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -352,6 +355,7 @@ loopFor r fonts fpsm = do
   gametimer <- newTVarIO $ GameTime FirstHalf 0
   gamestate <- newTVarIO $ KickOff Team1
   zonecache <- newEmptyTMVarIO
+  spacecache <- newEmptyTMVarIO
   let initialState = 
         MatchState 
           { matchStateBall = bt
@@ -367,6 +371,7 @@ loopFor r fonts fpsm = do
           , matchStateGameTime = gametimer
           , matchStateGameState = gamestate
           , matchStateZoneCache = zonecache
+          , matchStateSpaceCache = spacecache
           }
   _ <- forkIO $ runAppM (processLoop processFps) initialState
   runAppM loop' initialState
@@ -392,6 +397,18 @@ loopFor r fonts fpsm = do
 
       -- draw space polygons
       -- (SpaceMap sitesAll) <- spaceMap
+      -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
+
+
+      -- draw team space polygons
+      -- (SpaceMap t1Sites) <- getSpaceMapForTeam Team1
+      -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList t1Sites
+
+      -- (SpaceMap t2Sites) <- getSpaceMapForTeam Team2
+      -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList t2Sites
+
+      -- draw zone polygons
+      -- (ZoneMap sitesAll) <- getZoneMap Team1
       -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
 
       -- draw the scores

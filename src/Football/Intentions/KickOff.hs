@@ -3,7 +3,7 @@
 module Football.Intentions.KickOff where
 import Football.Match
 import Core (Log, Cache)
-import Football.Understanding.Space.Data (CentresOfPlayCache)
+import Football.Understanding.Space.Data (CentresOfPlayCache, SpaceCache)
 import Football.Types
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Data.List (sortOn)
@@ -19,7 +19,7 @@ import Football.Understanding.Team (fromTeamCoordinateSystem)
 import Football.Locate2D (Locate2D(locate2D))
 import Football.GameTime (gameTimeAddSeconds)
 
-decideKickOffIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache) => Team -> Player -> m Player
+decideKickOffIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> Player -> m Player
 decideKickOffIntention team player = do
   ball <- gameBall
   pitch' <- pitch

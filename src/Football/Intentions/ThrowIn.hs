@@ -8,7 +8,7 @@ import Core (Log, Cache)
 import Football.Types
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Football.Behaviours.Marking (positionalOrientedZonalMark)
-import Football.Understanding.Space.Data (CentresOfPlayCache)
+import Football.Understanding.Space.Data (CentresOfPlayCache, SpaceCache)
 import Linear (Metric(distance), V3 (V3), V2, R1 (_x), R2 (_y))
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Behaviours.FindSpace (optimalNearbySpace)
@@ -17,7 +17,7 @@ import Data.List (sortOn)
 import Football.GameTime (gameTimeAddSeconds)
 
 
-decideThrowInIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache) => Team -> V2 Double -> Player -> m Player
+decideThrowInIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m Player
 decideThrowInIntention team throwLocation player = do
   ball <- gameBall
   time <- currentGameTime
