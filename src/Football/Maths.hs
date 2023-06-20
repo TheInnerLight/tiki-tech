@@ -1,5 +1,5 @@
 module Football.Maths where
-import Linear (V3 (V3), normalize, Metric (dot, quadrance, norm, distance), cross)
+import Linear (V3 (V3), normalize, Metric (dot, quadrance, norm, distance), cross, V2 (V2))
 
 -- | Calculate intersection between line and plane using a point on the line (l0), the direction vector of the line (l), a point on the plane (p0) and the vector normal to the plane (n)
 linePlaneIntersection :: (V3 Double, V3 Double) -> (V3 Double, V3 Double) -> Maybe (V3 Double)
@@ -12,6 +12,18 @@ linePlaneIntersection (l0, l) (p0, n) =
     else
       let d = (p0-l0) `dot` n' / l' `dot` n'
       in Just $ l0 + pure d * l'
+
+lineLineIntersection :: (V2 Double, V2 Double) -> (V2 Double, V2 Double) -> Maybe (V2 Double)
+lineLineIntersection (V2 x1 y1, V2 x2 y2) (V2 x3 y3, V2 x4 y4) =
+  let td = (x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)
+      ud = (x1-x3)*(y1-y2) - (y1-y3)*(x1-x2)
+      d  = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
+      t = td/d
+      u = ud/d
+  in  if t >= 0 && t <= 1 && u >= 0 && u <= 1 then
+        pure $ V2 (x1 + t * (x2 - x1)) (y1 + t * (y2 - y1))
+      else
+        Nothing
 
 distanceAndClosestInterceptsWithinTimeStep ::  Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double) -> (Double, V3 Double, V3 Double)
 distanceAndClosestInterceptsWithinTimeStep dt (o1p, o1m) (o2p, o2m) =
