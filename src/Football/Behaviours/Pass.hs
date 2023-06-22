@@ -21,6 +21,7 @@ import Football.Understanding.ExpectedGoals (locationXG)
 import Football.Pitch
 import Football.Understanding.Interception (interceptionTimePlayerBallRK, interceptionTimePlayersBallRK)
 import Football.Types
+import Football.Understanding.LineBreaking (linesBroken)
 
 data PassDesirability = PassDesirability
   { passTarget :: !PassTarget
@@ -33,9 +34,10 @@ data PassDesirability = PassDesirability
   , passXGAdded :: !Double
   -- | Approximate opposition XG added by the pass (useful for judging e.g. how dangerous a backpass is)
   , passOppositionXGAdded :: !Double
+  , passBrokenLines :: !Double
   } deriving (Eq, Show)
 
-toFeetPassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
+toFeetPassingOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m [PassDesirability]
 toFeetPassingOptions player = do
   pitch' <- pitch
   teamPlayers' <- teammates player
@@ -45,7 +47,8 @@ toFeetPassingOptions player = do
   originalOppXG <- locationXG (oppositionTeam $ playerTeam player) player
   let calcToFeetDesirability p1 = do
         let t = timeForPassTo ball $ locate2D p1 
-            ball' = ball { ballMotionVector = motionVectorForPassTo ball $ locate2D (playerPositionVector p1 + playerMotionVector p1 * pure t) } 
+            playerAtT = playerPositionVector p1 + playerMotionVector p1 * pure t
+            ball' = ball { ballMotionVector = motionVectorForPassTo ball $ locate2D playerAtT } 
             --trd = interceptionTimePlayersBallRK teamPlayers' ball'
         trd <- interceptionTimePlayerBallRK False p1 ball'
         oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
@@ -55,6 +58,7 @@ toFeetPassingOptions player = do
             safety = 1 / (1 + exp (-(a * z1 + b))) 
         newXG <- locationXG (playerTeam player) p1
         newOppXG <- locationXG (oppositionTeam $ playerTeam player) p1
+        brokenLines <- linesBroken (playerTeam player) (locate2D ball, locate2D playerAtT)
         pure $ PassDesirability 
           { passTarget = PlayerTarget p1
           , passBallVector = ballMotionVector ball'
@@ -63,11 +67,12 @@ toFeetPassingOptions player = do
           , passSafetyCoeff = safety
           , passXGAdded = newXG - originalXG
           , passOppositionXGAdded = newOppXG - originalOppXG
+          , passBrokenLines = brokenLines
           }
   onsidePlayers <- filterM (isOnside (playerTeam player)) teamPlayers'
   traverse calcToFeetDesirability onsidePlayers
 
-throughBallPassingOptions :: (Monad m, Match m, Log m) => Player -> m [PassDesirability]
+throughBallPassingOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m [PassDesirability]
 throughBallPassingOptions player = do
   pitch' <- pitch
   teamPlayers' <- teammates player
@@ -92,6 +97,7 @@ throughBallPassingOptions player = do
             safety = 1 / (1 + exp (-(a * z1 + b))) 
         newXG <- locationXG (playerTeam player) p1
         newOppXG <- locationXG (oppositionTeam $ playerTeam player) p1
+        brokenLines <- linesBroken (playerTeam player) (locate2D ball, locate2D playerLocIn2S)
         pure $ PassDesirability 
           { passTarget = AheadOfTarget p1
           , passBallVector = ballMotionVector ball'
@@ -100,6 +106,7 @@ throughBallPassingOptions player = do
           , passSafetyCoeff = safety
           , passXGAdded = newXG - originalXG
           , passOppositionXGAdded = newOppXG - originalOppXG
+          , passBrokenLines = brokenLines
           }
   onsidePlayers <- filterM (isOnside (playerTeam player)) $ filter (/= player) teamPlayers'
   let forwardRunningPlayers = filter (\p -> dot attackingRunVector (playerMotionVector p) > 4) onsidePlayers
@@ -125,6 +132,7 @@ toSpacePassingOptions player = do
             safety = 1 / (1 + exp (-(a * z1 + b)))
         newXG <- locationXG (playerTeam player) (centreX, centreY)
         newOppXG <- locationXG (oppositionTeam $ playerTeam player) (centreX, centreY)
+        brokenLines <- linesBroken (playerTeam player) (locate2D ball, V2 centreX centreY)
         pure $  PassDesirability 
           { passTarget = SpaceTarget (V2 centreX centreY)
           , passBallVector = ballMotionVector ball'
@@ -133,6 +141,7 @@ toSpacePassingOptions player = do
           , passSafetyCoeff = safety
           , passXGAdded = newXG - originalXG
           , passOppositionXGAdded = newOppXG - originalOppXG
+          , passBrokenLines = brokenLines
           }
       teamSpacePolys = snd <$> Map.toList teamSpaceMap
   onsidePolygons <- filterM (isOnside (playerTeam player) . spacePolyPlayer) $ filter (\p -> spacePolyPlayer p /= player) teamSpacePolys

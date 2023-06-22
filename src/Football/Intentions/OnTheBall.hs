@@ -20,7 +20,7 @@ import Football.Types
 import qualified Data.Vector as Vector
 import qualified Statistics.Distribution.Normal as ND
 import Statistics.Distribution (Distribution(cumulative))
-import Linear (V2(V2), project, normalize, Metric (dot), V3 (V3))
+import Linear (V2(V2), project, normalize, Metric (dot), V3 (V3), V4 (V4))
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Football.GameTime (gameTimeAddSeconds)
 import Football.Understanding.Space.Data (SpaceCache)
@@ -56,8 +56,9 @@ onTheBallOptionDesirabilityCoeff (PassOption pd) =
   let zXGAdded = min 3.5 $ (passXGAdded pd * passSafetyCoeff pd - 0.000833333333333) / 0.1
       zOppXGAdded = min 3.5 $ (passOppositionXGAdded pd * (1 - passSafetyCoeff pd)  +  0.000833333333333) / 0.15
       zSafety = min 3.5 $ (passSafetyCoeff pd - 0.85) / 0.08
-      v = V3 zXGAdded zSafety zOppXGAdded
-      proj = (1/sqrt 3) * v `dot` V3 1 1 (-1)
+      zLinesBroken = min 3.5 $ (passBrokenLines pd - 0.2) / 0.25
+      v = V4 zXGAdded zSafety zOppXGAdded zLinesBroken
+      proj = (1/sqrt 4) * v `dot` V4 1 1 (-1) 1
       unitND = ND.normalDistr 0 1
   in cumulative unitND proj
 onTheBallOptionDesirabilityCoeff (ShotOption sd) = 
@@ -76,8 +77,7 @@ determineOnTheBallIntention otbc player = do
       validOptions = filter (not . isNaN . onTheBallOptionDesirabilityCoeff) combinedOptions
       sortedOptions = sortOn (Data.Ord.Down . onTheBallOptionDesirabilityCoeff) validOptions
 
-  logOutput (fmap onTheBallOptionDesirabilityCoeff sortedOptions)
-
+  
   chosenOption <- pickFrom $ cycle sortedOptions
 
   pure $ case chosenOption of

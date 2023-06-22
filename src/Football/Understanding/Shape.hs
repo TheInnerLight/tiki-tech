@@ -29,12 +29,12 @@ outOfPossessionFormationRelativeTo verticalCompactness horizontalCompactness pla
         3 -> inDirection  27.5    (-52)   (-15*verticalCompactness) (-8-5*horizontalCompactness)   (centreX, centreY)
         4 -> inDirection  12.5    (-52)   (-15*verticalCompactness) (3+5*horizontalCompactness)    (centreX, centreY)
         5 -> inDirection  12.5    (-52)   (-15*verticalCompactness) (-3-5*horizontalCompactness)   (centreX, centreY)
-        6 -> inDirection  25      (-52)   (-10*verticalCompactness) 0                              (centreX, centreY)
-        10 -> inDirection 37      (-52)   (-5*verticalCompactness)  (-3-5*horizontalCompactness)   (centreX, centreY)
-        8 -> inDirection  37      (-52)   (-5*verticalCompactness)  (3+5*horizontalCompactness)    (centreX, centreY)
-        11 -> inDirection 47      (-52)   (7*verticalCompactness)   (-5-5*horizontalCompactness)   (centreX, centreY)
-        7 -> inDirection  47      (-52)   (7*verticalCompactness)   (5+5*horizontalCompactness)    (centreX, centreY)
-        9 -> inDirection  52      (-52)   (9*verticalCompactness)   0                              (centreX, centreY)
+        6 -> inDirection  25      (-52)   (-7.5*verticalCompactness) 0                              (centreX, centreY)
+        10 -> inDirection 37      (-52)   (0)                       (-3-5*horizontalCompactness)   (centreX, centreY)
+        8 -> inDirection  37      (-52)   (0)                       (3+5*horizontalCompactness)    (centreX, centreY)
+        11 -> inDirection 47      (-52)   (10*verticalCompactness)   (-5-5*horizontalCompactness)   (centreX, centreY)
+        7 -> inDirection  47      (-52)   (10*verticalCompactness)   (5+5*horizontalCompactness)    (centreX, centreY)
+        9 -> inDirection  52      (-52)   (10*verticalCompactness)   0                              (centreX, centreY)
         _ -> inDirection  52      0  0                              0                              (centreX, centreY)
   fromTeamCoordinateSystem2D (playerTeam player) pos
   where

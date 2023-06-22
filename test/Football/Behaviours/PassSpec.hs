@@ -9,10 +9,12 @@ import Football.Match (Match(..), AttackingDirection (AttackingLeftToRight, Atta
 import Football.Behaviours.Pass
 import Linear (V3(V3), normalize)
 import Control.Monad.Reader (ReaderT (runReaderT), MonadIO (liftIO), MonadReader (..), asks)
-import Core (Log (logOutput))
+import Core
 import Data.List (sortOn)
 import qualified Data.Ord
 import Football.Types
+import Football.Understanding.Space.Data (SpaceCache)
+import Data.Maybe (Maybe(Nothing))
 
 defaultPlayerSpeed :: PlayerSpeed
 defaultPlayerSpeed =
@@ -37,7 +39,6 @@ instance MonadReader PassSpecContext PassSpecM where
   ask = PassSpecM ask
   local f (PassSpecM x) = PassSpecM $ local f x
 
-
 instance Match PassSpecM where
   attackingDirection Team1 = pure AttackingLeftToRight
   attackingDirection Team2 = pure AttackingRightToLeft
@@ -47,6 +48,10 @@ instance Match PassSpecM where
 
 instance Log PassSpecM where
   logOutput stuff = liftIO $ print stuff
+
+instance Cache PassSpecM SpaceCache where
+  cacheLookup _ = pure Nothing
+  cacheInsert _ _ = pure ()
 
 playerWithBallAtOrigin :: Player
 playerWithBallAtOrigin = 

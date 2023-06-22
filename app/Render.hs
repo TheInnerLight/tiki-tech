@@ -2,6 +2,8 @@
 module Render  
   ( Render(..)
   , Pitch(..)
+  , OffsideLine(..)
+  , DefLine(..)
   ) where
 
 import qualified SDL as S
@@ -239,5 +241,21 @@ renderIntention r pos i = pure ()
 
 
 
+newtype OffsideLine = OffsideLine Double
+
+instance Render OffsideLine where
+  render :: S.Renderer -> SDLFont.Font -> OffsideLine -> IO ()
+  render r _ (OffsideLine x) = do
+    let lp1 = coordinateTransV $ V2 x (-34)
+    let lp2 = coordinateTransV $ V2 x 34
+    SP.line r lp1 lp2 grey
 
 
+data DefLine = DefLine (V2 Double) (V2 Double)
+
+instance Render DefLine where
+  render :: S.Renderer -> SDLFont.Font -> DefLine -> IO ()
+  render r _ (DefLine p1 p2) = do
+    let lp1 = coordinateTransV p1
+    let lp2 = coordinateTransV p2
+    SP.line r lp1 lp2 grey

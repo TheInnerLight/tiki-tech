@@ -19,6 +19,7 @@ import Football.Pitch (rightGoalLine, leftGoalLine)
 import qualified Statistics.Distribution.Normal as ND
 import Statistics.Distribution (Distribution(cumulative))
 import Football.Understanding.Space.Data (SpaceCache)
+import Football.Understanding.LineBreaking (linesBroken)
 
 data DribbleTarget 
   = DribbleAwayFromOpponents (V2 Double)
@@ -33,6 +34,7 @@ data DribbleDesirability =
     , dribbleSafetyCoeff :: !Double
     , dribbleXGAdded :: !Double
     , dribbleOppositionXGAdded :: !Double
+    , dribbleLinesBroken :: !Double
     } deriving Show
 
 awayFromOppositionDribbleOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m DribbleDesirability
@@ -54,15 +56,17 @@ awayFromOppositionDribbleOptions player = do
       b = 0.48
       safety = 1 / (1 + exp (-(a * z1 + b)))
   let xgAdded = newXG - curXG
+  brokenLines <- linesBroken (playerTeam player) (locate2D ball, ns)
   pure $ DribbleDesirability
     { dribbleTarget = DribbleAwayFromOpponents ns
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
     , dribbleXGAdded = xgAdded
     , dribbleOppositionXGAdded = newOppXG - curOppXG
+    , dribbleLinesBroken = brokenLines
     }
 
-towardsTouchlineDribbleOption :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
+towardsTouchlineDribbleOption :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m DribbleDesirability
 towardsTouchlineDribbleOption player = do
   attackingDirection' <- attackingDirection (playerTeam player)
   let dribbleLoc = 
@@ -83,15 +87,17 @@ towardsTouchlineDribbleOption player = do
       b = 0.48
       safety = 1 / (1 + exp (-(a * z1 + b)))
   let xgAdded = newXG - curXG
+  brokenLines <- linesBroken (playerTeam player) (locate2D ball, locate2D dribbleLoc)
   pure $ DribbleDesirability
     { dribbleTarget = DribbleTowardsTouchline dribbleLoc
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
     , dribbleXGAdded = xgAdded
     , dribbleOppositionXGAdded = newOppXG - curOppXG
+    , dribbleLinesBroken = brokenLines
     }
 
-towardsGoalDribbleOption :: (Monad m, Match m, Log m) => Player -> m DribbleDesirability
+towardsGoalDribbleOption :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m DribbleDesirability
 towardsGoalDribbleOption player = do
   attackingDirection' <- attackingDirection (playerTeam player)
   pitch' <- pitch
@@ -119,12 +125,14 @@ towardsGoalDribbleOption player = do
       b = 0.48
       safety = 1 / (1 + exp (-(a * z1 + b)))
   let xgAdded = newXG - curXG
+  brokenLines <- linesBroken (playerTeam player) (locate2D ball, locate2D dribbleLoc)
   pure $ DribbleDesirability
     { dribbleTarget = DribbleTowardsGoal dribbleLoc
     , dribbleDirection = ballMotionVector ball'
     , dribbleSafetyCoeff = safety
     , dribbleXGAdded = xgAdded
     , dribbleOppositionXGAdded = newOppXG - curOppXG
+    , dribbleLinesBroken = brokenLines
     }
 
 desirableDribbleOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m [DribbleDesirability]
