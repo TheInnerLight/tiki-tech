@@ -406,8 +406,8 @@ loopFor r fonts fpsm = do
       -- (SpaceMap t1Sites) <- getSpaceMapForTeam Team1
       -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList t1Sites
 
-      (SpaceMap t2Sites) <- getSpaceMapForTeam Team2
-      traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList t2Sites
+      -- (SpaceMap t2Sites) <- getSpaceMapForTeam Team2
+      -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList t2Sites
 
       --draw zone polygons
       -- (ZoneMap sitesAll) <- getZoneMap Team1
