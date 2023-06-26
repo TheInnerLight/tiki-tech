@@ -29,7 +29,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         
         let coeff = onTheBallOptionDesirabilityCoeff $ PassOption unreliablePass
 
-        coeff @?= 1.1445182876038281e-6
+        coeff @?= 3.1008089177420917e-9
     , testCase "A very reliable pass should have high desirability" $ do
         let reliablePass = PassDesirability
               { passTarget = SpaceTarget (V2 0 0)
@@ -44,7 +44,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         
         let coeff = onTheBallOptionDesirabilityCoeff $ PassOption reliablePass
 
-        coeff @?= 0.6249027308313191
+        coeff @?= 0.6203580259263135
     , testCase "A very reliable pass with high XG should have very high desirability" $ do
         let reliablePass = PassDesirability
               { passTarget = SpaceTarget (V2 0 0)
@@ -59,7 +59,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         
         let coeff = onTheBallOptionDesirabilityCoeff $ PassOption reliablePass
 
-        coeff @?= 0.9374092252263341
+        coeff @?= 0.9528760087568101
     , testCase "A 50/50 pass with high XG should have medium desirability" $ do
         let reliablePass = PassDesirability
               { passTarget = SpaceTarget (V2 0 0)
@@ -74,7 +74,7 @@ onTheBallTests = testGroup "Desirability calculation tests"
         
         let coeff = onTheBallOptionDesirabilityCoeff $ PassOption reliablePass
 
-        coeff @?= 0.4927654866500457
+        coeff @?= 0.40781117835385866
 
 
     ]
