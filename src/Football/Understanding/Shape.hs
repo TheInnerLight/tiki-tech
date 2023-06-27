@@ -51,7 +51,7 @@ outOfPossessionDesiredPosition player = do
   let (tCentreX, tCentreY) = (0.55*pCentreX+0.45*ballX, max (-15) $ min 15 $ 0.85*pCentreY+ 0.15*ballY)
       halfPitchLength = 0.5 * pitchLength pitch'
       horizontalCompactness = min halfPitchLength (halfPitchLength + tCentreX) / halfPitchLength
-  pos <- outOfPossessionFormationRelativeTo 1 horizontalCompactness player (V2 pCentreX pCentreY)
+  pos <- outOfPossessionFormationRelativeTo 1 horizontalCompactness player (V2 tCentreX tCentreY)
   clampPitch pos
 
 inPossessionDesiredPosition :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
