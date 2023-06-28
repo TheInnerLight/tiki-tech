@@ -19,13 +19,10 @@ import Football.Maths (lineLineIntersection, linePlaneIntersection, linePlaneInt
 import Football.Understanding.Pitch (targetGoalVector)
 import Football.Locate2D (Locate2D(locate2D))
 
-
 oppositionLines :: (Monad m, Match m, Cache m SpaceCache) => Team -> m [(V2 Double, V2 Double)]
 oppositionLines team = do
   (SpaceMap spaceMap') <- getSpaceMapForTeam $ oppositionTeam team
-
   ball <- gameBall
-
   tgVec <- targetGoalVector team
   let tgVec2D = tgVec ^. _xy
       tgVec2D' = tgVec2D - locate2D ball
@@ -40,7 +37,6 @@ oppositionLines team = do
         in case res of
           p1 : p2 : _ -> (p1, p2) : acc
             
-
   pure $ foldl' lineFolder [] $ Map.toList spaceMap'
 
 linesBroken :: (Monad m, Match m, Cache m SpaceCache, Log m) => Team -> (V2 Double, V2 Double)  -> m Double
