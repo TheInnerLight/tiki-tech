@@ -72,7 +72,7 @@ controlBall loc player = do
     kickSuccess kickLoc player' = do
       ball <- gameBall
       mult <- randomNormalMeanStd 1.0 0.05
-      ball' <- kickBall player kickLoc $ (- ballMotionVector ball + playerMotionVector player') * pure mult
+      ball' <- kickBall player kickLoc $ (- ballMotionVector ball + playerMotionVector player' * 0.8) * pure mult
       time <- currentGameTime
       let cooldownTime = 0.1
       let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime

@@ -17,7 +17,7 @@ import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), Horizont
 import qualified Data.Vector as Vec
 import Statistics.Quantile (median, medianUnbiased)
 import Data.Ord (comparing, Down(..))
-import Football.Pitch (pitchHalfwayLineX)
+import Football.Pitch (pitchHalfwayLineX, pitchHalfLengthX)
 import Core (Cache, cached, CacheKeyValue (CacheKey, CacheValue))
 import Football.Player (playerControlCentre)
 import Linear.V3 (_x)
@@ -110,15 +110,14 @@ mostAdvancedPlayer team = do
 offsideLine :: (Match m, Monad m) => Team -> m Double
 offsideLine team  = do
   pitch' <- pitch
-  teamPlayers' <- teamPlayers $ otherTeam team
+  teamPlayers' <- teamPlayers $ oppositionTeam team
   attackingDirection' <- attackingDirection team
   (V2 ballX _) <- locate2D <$> gameBall
+
   pure $ case attackingDirection' of
-       AttackingLeftToRight -> min (pitchLength pitch')  $ max ballX                      $ max (pitchHalfwayLineX pitch') $ xPos (sortOn (Data.Ord.Down . xPos) teamPlayers' !! 1)
-       AttackingRightToLeft -> min ballX                 $ min (pitchHalfwayLineX pitch') $ max 0                          $ xPos (sortOn xPos teamPlayers' !! 1                  ) 
+       AttackingLeftToRight -> min (pitchLength pitch')  $ max ballX                      $ max (pitchHalfwayLineX pitch')  $ xPos (sortOn (Data.Ord.Down . xPos) teamPlayers' !! 1)
+       AttackingRightToLeft -> min ballX                 $ min 0                          $ max (- pitchHalfLengthX pitch') $ xPos (sortOn xPos teamPlayers' !! 1                  ) 
   where 
-    otherTeam Team1 = Team2
-    otherTeam Team2 = Team1
     xPos player = locate2D player ^. _x
 
 isOffide :: (Match m, Monad m, Locate2D x) => Team -> x -> m Bool

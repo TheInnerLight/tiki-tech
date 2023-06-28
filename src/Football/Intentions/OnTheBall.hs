@@ -20,7 +20,7 @@ import Football.Types
 import qualified Data.Vector as Vector
 import qualified Statistics.Distribution.Normal as ND
 import Statistics.Distribution (Distribution(cumulative))
-import Linear (V2(V2), project, normalize, Metric (dot), V3 (V3))
+import Linear (V2(V2), project, normalize, Metric (dot, norm), V3 (V3), V4 (V4))
 import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Football.GameTime (gameTimeAddSeconds)
 import Football.Understanding.Space.Data (SpaceCache)
@@ -46,18 +46,23 @@ cumulativeProbabilityValue mean sd value =
 onTheBallOptionDesirabilityCoeff :: OnTheBallOption -> Double
 onTheBallOptionDesirabilityCoeff (DribbleOption dd) =
   let zXGAdded = min 3.5 $ (dribbleXGAdded dd * dribbleSafetyCoeff dd - 0.000833333333333) / 0.09
-      zOppXGAdded = min 3.5 $ (dribbleOppositionXGAdded dd * (1 - dribbleSafetyCoeff dd) + 0.000833333333333) / 0.15
+      zOppXGAdded = - (min 3.5 $ (dribbleOppositionXGAdded dd * (1 - dribbleSafetyCoeff dd) + 0.000833333333333) / 0.15)
       zSafety = min 3.5 $ (dribbleSafetyCoeff dd - 1) / 0.01
       v = V3 zXGAdded zSafety zOppXGAdded
-      proj = (1/sqrt 3) * v `dot` V3 1 1 (-1)
+      ws = V3 1.0 1 0.4
+      wt = ws `dot` V3 1 1 1
+      proj = v `dot` (ws / pure wt) / norm (ws / pure wt)
       unitND = ND.normalDistr 0 1
   in cumulative unitND proj
 onTheBallOptionDesirabilityCoeff (PassOption pd) =
-  let zXGAdded = min 3.5 $ (passXGAdded pd * passSafetyCoeff pd - 0.000833333333333) / 0.1
-      zOppXGAdded = min 3.5 $ (passOppositionXGAdded pd * (1 - passSafetyCoeff pd)  +  0.000833333333333) / 0.15
-      zSafety = min 3.5 $ (passSafetyCoeff pd - 0.85) / 0.08
-      v = V3 zXGAdded zSafety zOppXGAdded
-      proj = (1/sqrt 3) * v `dot` V3 1 1 (-1)
+  let zXGAdded = min 5 $ (passXGAdded pd * passSafetyCoeff pd - 0.000833333333333) / 0.1
+      zSafety = min 5 $ (passSafetyCoeff pd - 0.85) / 0.08
+      zOppXGAdded = - (min 5 $ (passOppositionXGAdded pd * (1 - passSafetyCoeff pd)  +  0.000833333333333) / 0.15)
+      zLinesBroken = min 5 $ (passBrokenLines pd * passSafetyCoeff pd - 0.2) / 0.25
+      v = V4 zXGAdded zSafety zOppXGAdded zLinesBroken
+      ws = V4 1.0 1 0.4 1
+      wt = ws `dot` V4 1 1 1 1
+      proj = v `dot` (ws / pure wt) / norm (ws / pure wt)
       unitND = ND.normalDistr 0 1
   in cumulative unitND proj
 onTheBallOptionDesirabilityCoeff (ShotOption sd) = 
@@ -76,8 +81,7 @@ determineOnTheBallIntention otbc player = do
       validOptions = filter (not . isNaN . onTheBallOptionDesirabilityCoeff) combinedOptions
       sortedOptions = sortOn (Data.Ord.Down . onTheBallOptionDesirabilityCoeff) validOptions
 
-  logOutput (fmap onTheBallOptionDesirabilityCoeff sortedOptions)
-
+  
   chosenOption <- pickFrom $ cycle sortedOptions
 
   pure $ case chosenOption of

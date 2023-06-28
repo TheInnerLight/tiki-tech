@@ -13,6 +13,33 @@ linePlaneIntersection (l0, l) (p0, n) =
       let d = (p0-l0) `dot` n' / l' `dot` n'
       in Just $ l0 + pure d * l'
 
+linePlaneIntersection2D :: (V2 Double, V2 Double) -> (V2 Double, V2 Double) -> Maybe (V2 Double)
+linePlaneIntersection2D (l0, l) (p0, n) =
+  let l' = normalize l
+      n' = normalize n
+  in 
+    if (p0 - l0) `dot` n' == 0 then
+      Nothing
+    else
+      let d = (p0-l0) `dot` n' / l' `dot` n'
+      in Just $ l0 + pure d * l'
+
+lineSegmentPlaneIntersection2D :: (V2 Double, V2 Double) -> (V2 Double, V2 Double) -> Maybe (V2 Double)
+lineSegmentPlaneIntersection2D (l0, l1) (p0, n) =
+  let l = (l1-l0)
+      l' = normalize l
+      n' = normalize n
+  in 
+    if (p0 - l0) `dot` n' == 0 then
+      Nothing
+    else
+      let d = (p0-l0) `dot` n' / l' `dot` n'
+      in 
+        if d >= 0 && d <= norm l then
+          Just $ l0 + pure d * l'
+        else
+          Nothing
+
 lineLineIntersection :: (V2 Double, V2 Double) -> (V2 Double, V2 Double) -> Maybe (V2 Double)
 lineLineIntersection (V2 x1 y1, V2 x2 y2) (V2 x3 y3, V2 x4 y4) =
   let td = (x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)

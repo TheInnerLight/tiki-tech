@@ -42,7 +42,9 @@ import qualified Text.Printf as TText
 import Football.Events.Goal (score)
 import Football.Understanding.Zones (getZoneMap)
 import Football.Understanding.Zones.Types (ZoneMap(ZoneMap))
-import Football.Understanding.Space (getSpaceMapForTeam)
+import Football.Understanding.Space (getSpaceMapForTeam, offsideLine)
+import Football.Understanding.LineBreaking (oppositionLines)
+import Football.Locate2D (Locate2D(locate2D))
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -407,9 +409,19 @@ loopFor r fonts fpsm = do
       -- (SpaceMap t2Sites) <- getSpaceMapForTeam Team2
       -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList t2Sites
 
-      -- draw zone polygons
+      --draw zone polygons
       -- (ZoneMap sitesAll) <- getZoneMap Team1
       -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
+
+      -- offside1X <- offsideLine Team1
+      -- liftIO $ render r (fontsDefault fonts) (OffsideLine offside1X)
+      -- offside2X <- offsideLine Team2
+      -- liftIO $ render r (fontsDefault fonts) (OffsideLine offside2X)
+
+
+      -- lines <- oppositionLines Team1 
+      -- let lines' = fmap (\(l1, l2) -> DefLine l1 l2) lines
+      -- traverse_ (liftIO . render r (fontsDefault fonts)) lines'
 
       -- draw the scores
       (lg, mg) <- score
