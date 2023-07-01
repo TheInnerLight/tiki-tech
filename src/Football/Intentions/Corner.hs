@@ -14,23 +14,23 @@ import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passBallVector))
 import Football.GameTime (gameTimeAddSeconds)
 
-decideCornerIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m Player
+decideCornerIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m PlayerIntention
 decideCornerIntention team cornerLocation player = do
   ball <- gameBall
   time <- currentGameTime
-  closestPlayer <- head . sortOn (distance (V3 (cornerLocation ^. _x) (cornerLocation ^. _y) 0) . playerPositionVector ) <$> teamPlayers team
-  newIntention <-
-    if playerTeam player /= team then do
-      loc <- positionalOrientedZonalMark player
-      pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
-    else if (playerNumber player == playerNumber closestPlayer) && distance (playerPositionVector player) (ballPositionVector ball) >= 0.5 then do
-      pure $ RunToLocation cornerLocation $ gameTimeAddSeconds time 0.1
-    else if playerNumber player == playerNumber closestPlayer then do
-      -- FIX ME
-      goalKickPass <- head <$> safestPassingOptions player
-      pure $ TakeCornerIntention (passTarget goalKickPass) cornerLocation (passBallVector goalKickPass)
-    else  do
-      nearbySpace <- optimalNearbySpace player
-      targetLoc <- clampPitch nearbySpace
-      pure $ MoveIntoSpace targetLoc $ gameTimeAddSeconds time 0.1
-  pure player { playerIntention = newIntention }  
+  playerState <- getPlayerState player
+  closestPlayerState <- head . sortOn (distance (V3 (cornerLocation ^. _x) (cornerLocation ^. _y) 0) . playerStatePositionVector ) <$> teamPlayers team
+
+  if playerTeam player /= team then do
+    loc <- positionalOrientedZonalMark player
+    pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
+  else if (player == playerStatePlayer closestPlayerState) && distance (playerStatePositionVector playerState) (ballPositionVector ball) >= 0.5 then do
+    pure $ RunToLocation cornerLocation $ gameTimeAddSeconds time 0.1
+  else if player == playerStatePlayer closestPlayerState then do
+    -- FIX ME
+    goalKickPass <- head <$> safestPassingOptions player
+    pure $ TakeCornerIntention (passTarget goalKickPass) cornerLocation (passBallVector goalKickPass)
+  else  do
+    nearbySpace <- optimalNearbySpace player
+    targetLoc <- clampPitch nearbySpace
+    pure $ MoveIntoSpace targetLoc $ gameTimeAddSeconds time 0.1

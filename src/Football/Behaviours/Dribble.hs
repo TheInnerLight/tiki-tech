@@ -20,6 +20,7 @@ import qualified Statistics.Distribution.Normal as ND
 import Statistics.Distribution (Distribution(cumulative))
 import Football.Understanding.Space.Data (SpaceCache)
 import Football.Understanding.LineBreaking (linesBroken)
+import Football.Understanding.Team (inTeamCoordinateSystem)
 
 data DribbleTarget 
   = DribbleAwayFromOpponents (V2 Double)
@@ -40,16 +41,17 @@ data DribbleDesirability =
 awayFromOppositionDribbleOptions :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m DribbleDesirability
 awayFromOppositionDribbleOptions player = do
   (V2 nsX nsY) <- nearestSpace player
-  let diff = playerPositionVector player - V3 nsX nsY 0
+  playerState <- getPlayerState player
+  let diff = playerStatePositionVector playerState - V3 nsX nsY 0
       ns = locate2D $ pure 2.5 * normalize diff
-  curXG <- locationXG (playerTeam player) player
+  curXG <- locationXG (playerTeam player) playerState
   newXG <- locationXG (playerTeam player) ns
-  curOppXG <- locationXG (oppositionTeam $ playerTeam player) player
+  curOppXG <- locationXG (oppositionTeam $ playerTeam player) playerState
   newOppXG <- locationXG (oppositionTeam $ playerTeam player) ns
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   ball <- gameBall
-  let ball' = ball { ballMotionVector = motionVectorForDribble player ball ns }
-  trd <- interceptionTimePlayerBallRK False player ball'
+  let ball' = ball { ballMotionVector = motionVectorForDribble playerState ball ns }
+  trd <- interceptionTimePlayerBallRK False playerState ball'
   oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
   let z1 = (oid - trd) / sqrt 2
       a = 4.68
@@ -68,19 +70,16 @@ awayFromOppositionDribbleOptions player = do
 
 towardsTouchlineDribbleOption :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m DribbleDesirability
 towardsTouchlineDribbleOption player = do
-  attackingDirection' <- attackingDirection (playerTeam player)
-  let dribbleLoc = 
-        case attackingDirection' of
-          AttackingLeftToRight -> playerPositionVector player + V3 2.5 0 0
-          AttackingRightToLeft -> playerPositionVector player - V3 2.5 0 0
-  curXG <- locationXG (playerTeam player) player
+  playerState <- getPlayerState player
+  dribbleLoc <- inTeamCoordinateSystem (playerTeam player) (playerStatePositionVector playerState) (+ V3 2.5 0 0)
+  curXG <- locationXG (playerTeam player) playerState
   newXG <- locationXG (playerTeam player) dribbleLoc
-  curOppXG <- locationXG (oppositionTeam $ playerTeam player) player
+  curOppXG <- locationXG (oppositionTeam $ playerTeam player) playerState
   newOppXG <- locationXG (oppositionTeam $ playerTeam player) dribbleLoc
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   ball <- gameBall
-  let ball' = ball { ballMotionVector = motionVectorForDribble player ball (locate2D dribbleLoc) }
-  trd <- interceptionTimePlayerBallRK False player ball'
+  let ball' = ball { ballMotionVector = motionVectorForDribble playerState ball (locate2D dribbleLoc) }
+  trd <- interceptionTimePlayerBallRK False playerState ball'
   oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
   let z1 = (oid - trd) / sqrt 2
       a = 4.68
@@ -101,6 +100,7 @@ towardsGoalDribbleOption :: (Monad m, Match m, Log m, Cache m SpaceCache) => Pla
 towardsGoalDribbleOption player = do
   attackingDirection' <- attackingDirection (playerTeam player)
   pitch' <- pitch
+  playerState <- getPlayerState player
   let finalDribbleLoc = 
         case attackingDirection' of
           AttackingLeftToRight ->   
@@ -109,16 +109,16 @@ towardsGoalDribbleOption player = do
           AttackingRightToLeft -> 
             let (goalMin, goalMax) = leftGoalLine pitch'
             in (goalMin + goalMax)/2
-      dir = normalize (finalDribbleLoc - playerPositionVector player)
-      dribbleLoc = playerPositionVector player + dir * 2.5
-  curXG <- locationXG (playerTeam player) player
+      dir = normalize (finalDribbleLoc - playerStatePositionVector playerState)
+      dribbleLoc = playerStatePositionVector playerState + dir * 2.5
+  curXG <- locationXG (playerTeam player) playerState
   newXG <- locationXG (playerTeam player) dribbleLoc
-  curOppXG <- locationXG (oppositionTeam $ playerTeam player) player
+  curOppXG <- locationXG (oppositionTeam $ playerTeam player) playerState
   newOppXG <- locationXG (oppositionTeam $ playerTeam player) dribbleLoc
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   ball <- gameBall
-  let ball' = ball { ballMotionVector = motionVectorForDribble player ball (locate2D dribbleLoc) }
-  trd <- interceptionTimePlayerBallRK False player ball'
+  let ball' = ball { ballMotionVector = motionVectorForDribble playerState ball (locate2D dribbleLoc) }
+  trd <- interceptionTimePlayerBallRK False playerState ball'
   oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
   let z1 = (oid - trd) / sqrt 2
       a = 4.68

@@ -27,7 +27,8 @@ data AttackingDirection
 class Match m where
   attackingDirection :: Team -> m AttackingDirection
   gameBall :: m Ball
-  allPlayers :: m [Player]
+  allPlayers :: m [PlayerState]
+  getPlayerState :: Player -> m PlayerState
   kickBall :: Player -> V3 Double -> V3 Double -> m Ball
   setBallMotionParams :: V3 Double -> V3 Double -> m Ball
   update :: Int -> m ()
@@ -47,14 +48,14 @@ instance HasTeam Team where
 instance HasTeam Player where
   getTeam = playerTeam
 
-oppositionPlayers :: (Functor m, Match m) => Team -> m [Player]
-oppositionPlayers team = filter (\p -> playerTeam p /= team) <$> allPlayers
+oppositionPlayers :: (Functor m, Match m) => Team -> m [PlayerState]
+oppositionPlayers team = filter (\p -> playerTeam (playerStatePlayer p) /= team) <$> allPlayers
 
-teamPlayers :: (Functor m, Match m) => Team -> m [Player]
-teamPlayers team = filter (\p -> playerTeam p == team) <$> allPlayers
+teamPlayers :: (Functor m, Match m) => Team -> m [PlayerState]
+teamPlayers team = filter (\p -> playerTeam (playerStatePlayer p) == team) <$> allPlayers
 
-teammates :: (Functor m, Match m) => Player -> m [Player]
-teammates player = filter (\p -> playerNumber p /= playerNumber player) <$> teamPlayers (playerTeam player)
+teammates :: (Functor m, Match m) => Player -> m [PlayerState]
+teammates player = filter (\p -> playerStatePlayer p /= player) <$> teamPlayers (playerTeam player)
  
 clampPitch :: (Monad m, Match m) => V2 Double -> m (V2 Double)
 clampPitch (V2 x y) = do

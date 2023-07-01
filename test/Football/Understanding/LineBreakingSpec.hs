@@ -15,6 +15,8 @@ import Control.Monad.Reader (ReaderT (runReaderT), MonadReader (ask, local), ask
 import Core (Cache(..))
 import Linear (V3(V3), V2 (V2))
 import Football.Understanding.LineBreaking (oppositionLines)
+import Data.Maybe (fromJust)
+import Data.Foldable (find)
 
 defaultPlayerSpeed :: PlayerSpeed
 defaultPlayerSpeed =
@@ -25,7 +27,7 @@ defaultPlayerSpeed =
 
 data LineBreakingSpecContext = 
   LineBreakingSpecContext
-    { lbPlayers :: [Player]
+    { lbPlayers :: [PlayerState]
     , lbBall :: Ball
     }
 
@@ -42,6 +44,9 @@ instance Match LineBreakingSpecM where
   attackingDirection Team1 = pure AttackingLeftToRight
   attackingDirection Team2 = pure AttackingRightToLeft
   gameBall = asks lbBall
+  getPlayerState player = do
+    players <- asks lbPlayers
+    pure $ fromJust $ find (\p -> player == playerStatePlayer p) players
   allPlayers = asks lbPlayers
   pitch = pure $ Pitch 105 68
 
@@ -50,49 +55,53 @@ instance Cache LineBreakingSpecM SpaceCache where
   cacheInsert _ _ = pure ()
 
 
-dmPlayer :: Player
-dmPlayer = 
-  Player 
-    { playerPositionVector = V3 30 0 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 6
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2 
-    }
+dmPlayer :: PlayerState
+dmPlayer = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 6
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2 
+      }
+  , playerStatePositionVector = V3 30 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-leftCMPlayer :: Player
-leftCMPlayer = 
-  Player 
-    { playerPositionVector = V3 25 8 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 10
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2 
-    }
+leftCMPlayer :: PlayerState
+leftCMPlayer = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 10
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2 
+      }
+  , playerStatePositionVector = V3 25 8 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-rightCMPlayer :: Player
-rightCMPlayer = 
-  Player 
-    { playerPositionVector = V3 25 (-8) 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 8
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2 
-    }
+rightCMPlayer :: PlayerState
+rightCMPlayer = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 8
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2 
+      }
+  , playerStatePositionVector = V3 25 (-8) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-fwPlayer :: Player
-fwPlayer = 
-  Player 
-    { playerPositionVector = V3 10 0 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 9
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2 
-    }
+fwPlayer :: PlayerState
+fwPlayer = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 9
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2 
+      }
+  , playerStatePositionVector = V3 10 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
 ball :: Ball
 ball = 

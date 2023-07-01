@@ -17,10 +17,10 @@ import Core (Cache, cached)
 zipAdj :: (a -> b) -> [a] -> [(a, b)]
 zipAdj f x = zip x $ fmap f (tail x)
 
-interceptionTimePlayerBallRK :: (Match m, Monad m) => Bool -> Player -> Ball -> m Double
+interceptionTimePlayerBallRK :: (Match m, Monad m) => Bool -> PlayerState -> Ball -> m Double
 interceptionTimePlayerBallRK includeOutOfBounds player ball = snd <$> interceptionInfoPlayerBallRK includeOutOfBounds player ball
 
-interceptionInfoPlayerBallRK :: (Match m, Monad m) => Bool -> Player -> Ball -> m (V3 Double, Double)
+interceptionInfoPlayerBallRK :: (Match m, Monad m) => Bool -> PlayerState -> Ball -> m (V3 Double, Double)
 interceptionInfoPlayerBallRK includeOutOfBounds player ball = do
   pitch' <- pitch
   let bpv = ballPositionVector ball
@@ -33,20 +33,7 @@ interceptionInfoPlayerBallRK includeOutOfBounds player ball = do
   else 
     pure (fbpv, 1/0)
 
--- outOfPlayTime :: (Match m, Monad m) =>  Ball -> m (V3 Double, Double)
--- outOfPlayTime ball = do
---   pitch' <- pitch
---   let bpv = ballPositionVector ball
---       bmv = ballMotionVector ball
---       dt = 0.015
---       dropOutOfRange (t', (bpv', bmv')) = isInPitchBounds bpv' pitch'
---       (t, (fbpv, fbmv)) = head $ dropWhile dropOutOfRange $ rungeKutte (bpv, bmv) dt ballMotionEq
---   if isInPitchBounds fbpv pitch' then
---     pure (fbpv, 1/0)
---   else 
---     pure (fbpv, t)
-
-calcInterceptionInfoPlayerBallRKI :: (Match m, Monad m) => Player -> Ball -> m [InterceptionData]
+calcInterceptionInfoPlayerBallRKI :: (Match m, Monad m) => PlayerState -> Ball -> m [InterceptionData]
 calcInterceptionInfoPlayerBallRKI player ball = do
   pitch' <- pitch
   let bpv = ballPositionVector ball
@@ -71,7 +58,7 @@ calcInterceptionInfoPlayerBallRKI player ball = do
 
   pure $ filter (\intData -> isInPitchBounds (interceptionDataBallLocation intData) pitch') $ fastestAndOptimalInterception $ rungeKutte (bpv, bmv) dt ballMotionEq
 
-interceptionInfoPlayerBallRKI :: (Match m, Monad m, Cache m InterceptionDataCache) => Player -> Ball -> m [InterceptionData]
+interceptionInfoPlayerBallRKI :: (Match m, Monad m, Cache m InterceptionDataCache) => PlayerState -> Ball -> m [InterceptionData]
 interceptionInfoPlayerBallRKI player ball = 
   cached (uncurry calcInterceptionInfoPlayerBallRKI) (player, ball)
 
@@ -85,10 +72,10 @@ fastestInterceptionOption (i:icepts) =
 fastestInterceptionOption [] = 
   Nothing
 
-interceptionTimePlayersBallRK :: (Match m, Monad m) => Bool -> [Player] -> Ball -> m Double
+interceptionTimePlayersBallRK :: (Match m, Monad m) => Bool -> [PlayerState] -> Ball -> m Double
 interceptionTimePlayersBallRK includeOutOfBounds players ball = snd <$> interceptionInfoPlayersBallRK includeOutOfBounds players ball
 
-interceptionInfoPlayersBallRK :: (Match m, Monad m) => Bool -> [Player] -> Ball -> m (V3 Double, Double)
+interceptionInfoPlayersBallRK :: (Match m, Monad m) => Bool -> [PlayerState] -> Ball -> m (V3 Double, Double)
 interceptionInfoPlayersBallRK includeOutOfBounds players ball = do
   pitch' <- pitch
   let bpv = ballPositionVector ball

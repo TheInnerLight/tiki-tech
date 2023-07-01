@@ -5,7 +5,7 @@ module Football.Understanding.Interception.Data where
 
 import Linear (V3)
 import Core 
-import Football.Types (Player, Ball)
+import Football.Types (Ball, PlayerState)
 
 data InterceptionData = InterceptionData
   { interceptionDataTime :: Double
@@ -17,6 +17,6 @@ data InterceptionData = InterceptionData
 data InterceptionDataCache = InterceptionDataCache
 
 instance CacheKeyValue InterceptionDataCache where
-  type CacheKey InterceptionDataCache = (Player, Ball)
+  type CacheKey InterceptionDataCache = (PlayerState, Ball)
   type CacheValue InterceptionDataCache = [InterceptionData]
 

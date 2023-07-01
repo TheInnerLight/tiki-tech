@@ -18,6 +18,7 @@ import Data.Maybe (isJust, maybeToList)
 import Football.Maths (lineLineIntersection, linePlaneIntersection, linePlaneIntersection2D, lineSegmentPlaneIntersection2D)
 import Football.Understanding.Pitch (targetGoalVector)
 import Football.Locate2D (Locate2D(locate2D))
+import Data.Foldable (foldlM)
 
 oppositionLines :: (Monad m, Match m, Cache m SpaceCache) => Team -> m [(V2 Double, V2 Double)]
 oppositionLines team = do
@@ -29,15 +30,16 @@ oppositionLines team = do
       tgVecDir2D = normalize tgVec2D'
       tgVecPerp2D = V2 (- tgVecDir2D ^. _y) (tgVecDir2D ^. _x)
 
-  let lineFolder acc (_, poly) =
+  let lineFolder acc (_, poly) = do
         let edges = polyEdges . spacePolyJCV $ poly
-            playerLoc = locate2D $ spacePolyPlayer poly
-            res = concatMap (\e -> maybeToList $ lineSegmentPlaneIntersection2D (jcvEdgePoint1 e, jcvEdgePoint2 e) (playerLoc, tgVecDir2D) ) edges
+        playerState <- getPlayerState $ spacePolyPlayer poly
+        let playerLoc = locate2D playerState
+        let res = concatMap (\e -> maybeToList $ lineSegmentPlaneIntersection2D (jcvEdgePoint1 e, jcvEdgePoint2 e) (playerLoc, tgVecDir2D) ) edges
 
-        in case res of
+        pure $ case res of
           p1 : p2 : _ -> (p1, p2) : acc
             
-  pure $ foldl' lineFolder [] $ Map.toList spaceMap'
+  foldlM lineFolder [] $ Map.toList spaceMap'
 
 linesBroken :: (Monad m, Match m, Cache m SpaceCache, Log m) => Team -> (V2 Double, V2 Double)  -> m Double
 linesBroken team line = do

@@ -104,6 +104,7 @@ optimalNearbySpace player = do
 
     shapePosition <- inPossessionDesiredPosition player
     teammates' <- teammates player
+    let teammatePlayers = playerStatePlayer <$> teammates'
 
     let buildAssignments p (assignments, spaces) = do
           filtered <- filterM filterPitchArea spaces
@@ -114,7 +115,7 @@ optimalNearbySpace player = do
             Just c -> (Map.insert p c assignments, tail sorted)
             Nothing -> (Map.insert p shapePosition assignments, sorted)
 
-    assignments <- fst <$> foldrM buildAssignments (Map.empty, allSpaces) (player : teammates')
+    assignments <- fst <$> foldrM buildAssignments (Map.empty, allSpaces) (player : teammatePlayers)
     pure $ assignments ! player
 
 nearestSpace :: (Monad m, Match m, Log m, Cache m SpaceCache) => Player -> m (V2 Double)
@@ -127,5 +128,6 @@ nearestSpace player = do
 findClosestOpposition :: (Monad m, Match m) => Player ->  m Player
 findClosestOpposition player = do
   opp <- oppositionPlayers (playerTeam player)
-  pure $ head $ sortOn (\o -> distance (playerPositionVector o) (playerPositionVector player) ) opp
+  playerState <- getPlayerState player
+  pure $ playerStatePlayer $ head $ sortOn (\o -> distance (playerStatePositionVector o) (playerStatePositionVector playerState) ) opp
   

@@ -33,6 +33,7 @@ instance Match AppM where
   attackingDirection = attackingDirectionImpl
   gameBall = gameBallImpl
   allPlayers = allPlayersImpl
+  getPlayerState = getPlayerStateImpl
   kickBall = kickImpl
   update = updateImpl
   pitch = pitchImpl

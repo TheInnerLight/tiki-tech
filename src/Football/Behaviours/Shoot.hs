@@ -25,9 +25,10 @@ data ShotDesirability =
 centreShotOption :: (Monad m, Match m, Log m) => Player -> m ShotDesirability
 centreShotOption player = do
   pitch' <- pitch
+  playerState <- getPlayerState player
   targetLoc <- fromTeamCoordinateSystem (playerTeam player) $ V3 (pitchHalfLengthX pitch') 0 0
-  let shotVec = 31 * normalize (targetLoc - playerPositionVector player)
-  xg <- locationXG (playerTeam player) player
+  let shotVec = 31 * normalize (targetLoc - playerStatePositionVector playerState)
+  xg <- locationXG (playerTeam player) playerState
   pure $ ShotDesirability
     { shotTarget = CentreShot $ locate2D targetLoc
     , shotBallVector = shotVec

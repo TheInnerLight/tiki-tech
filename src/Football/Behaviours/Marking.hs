@@ -30,11 +30,12 @@ playerMarkClosestOppositionPlayer player = do
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
   teamPlayers' <- teamPlayers (playerTeam player)
   ball <- gameBall
+  playerState <- getPlayerState player
   let matchUp = foldl' (folder teamPlayers') Map.empty oppositionPlayers'
-  case Map.lookup player matchUp of
+  case Map.lookup playerState matchUp of
     Just p | playerNumber player /= 1 -> do
       tBall <- toTeamCoordinateSystem (playerTeam player) (ballPositionVector ball)
-      tTargetPlayer <- toTeamCoordinateSystem (playerTeam player) (playerPositionVector p)
+      tTargetPlayer <- toTeamCoordinateSystem (playerTeam player) (playerStatePositionVector p)
       let tDiff = tBall - tTargetPlayer
       let desiredDist x = 1.8 * exp ( 0.075 * x )
       let desiredDistTP = desiredDist (norm tDiff)
@@ -47,7 +48,7 @@ playerMarkClosestOppositionPlayer player = do
     _ -> outOfPossessionDesiredPosition player
   where 
     folder teamPlayers' acc p =
-      case find (\p' -> isNothing $ Map.lookup p' acc) $ sortOn (distance (playerPositionVector p) . playerPositionVector) teamPlayers' of
+      case find (\p' -> isNothing $ Map.lookup p' acc) $ sortOn (distance (playerStatePositionVector p) . playerStatePositionVector) teamPlayers' of
         Just teamP -> Map.insert teamP p acc
         Nothing -> acc
     resolvePosition minPos maxPos formPos =
@@ -65,6 +66,8 @@ playerOrientedZonalMark :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache,
 playerOrientedZonalMark player = do
   maybeMarkedPlayer <- mostDangerousPlayerInZone player
   case maybeMarkedPlayer of
-    Just markedPlayer -> locate2D <$> inTeamCoordinateSystem (playerTeam player) (playerPositionVector markedPlayer) (+ V3 (-2) 0 0)
+    Just markedPlayer -> do
+      markedPlayerState <- getPlayerState markedPlayer
+      locate2D <$> inTeamCoordinateSystem (playerTeam player) (playerStatePositionVector markedPlayerState) (+ V3 (-2) 0 0)
     Nothing           -> outOfPossessionDesiredPosition player
 

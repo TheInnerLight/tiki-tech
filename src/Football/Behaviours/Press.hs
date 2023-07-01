@@ -16,7 +16,7 @@ import Core (Log(..), Cache)
 import Football.Behaviours.Kick (motionVectorForPassTo)
 import Data.Maybe (isNothing)
 import Football.Understanding.Zones.Types (ZoneCache)
-import Football.Types (Player (playerTeam, playerPositionVector), Ball (ballPositionVector))
+import Football.Types
 import Football.Behaviours.Marking.Zonal (mostDangerousPlayerInZone)
 import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 
@@ -24,8 +24,11 @@ coverShadowOfPlayerOrientedZonalMark :: (Monad m, Match m, Log m, Cache m Centre
 coverShadowOfPlayerOrientedZonalMark player = do
   maybeMarkedPlayer <- mostDangerousPlayerInZone player
   ball <- gameBall
-  let dir = normalize (ballPositionVector ball - playerPositionVector player)
+  playerState <- getPlayerState player
+  let dir = normalize (ballPositionVector ball - playerStatePositionVector playerState)
   case maybeMarkedPlayer of
-    Just markedPlayer -> pure $ locate2D $ playerPositionVector markedPlayer + dir * pure 2
+    Just markedPlayer -> do
+      markedPlayerState <- getPlayerState markedPlayer
+      pure $ locate2D $ playerStatePositionVector markedPlayerState + dir * pure 2
     Nothing -> outOfPossessionDesiredPosition player
 

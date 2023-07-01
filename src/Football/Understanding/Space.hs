@@ -31,7 +31,7 @@ createSpaceMap = do
   let map1 = Map.fromList $ fmap (\v -> (polyIndex v, v)) allPlayersVoronoi
   let folder acc (i, p) =
         case Map.lookup i map1 of
-          Just poly -> Map.insert i (SpacePoly poly p) acc
+          Just poly -> Map.insert i (SpacePoly poly (playerStatePlayer p)) acc
           Nothing -> acc
   let map2 = foldl' folder Map.empty $ zip [0..]  players'
   pure $ SpaceMap map2
@@ -43,7 +43,7 @@ createSpaceMapForTeam team = do
   let map1 = Map.fromList $ fmap (\v -> (polyIndex v, v)) allPlayersVoronoi
   let folder acc (i, p) =
         case Map.lookup i map1 of
-          Just poly -> Map.insert i (SpacePoly poly p) acc
+          Just poly -> Map.insert i (SpacePoly poly (playerStatePlayer p)) acc
           Nothing -> acc
   let map2 = foldl' folder Map.empty $ zip [0..]  players'
   pure $ SpaceMap map2
@@ -83,8 +83,8 @@ calcCentresOfPlay :: (Match m, Monad m) => m CentresOfPlay
 calcCentresOfPlay = do
   players' <- allPlayers
   let (xs, ys) = unzip $ fmap (\(V2 x y) -> (x, y)) $ locate2D <$> players'
-  let (t1xs, t1ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeam p == Team1) players'
-  let (t2xs, t2ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeam p == Team2) players'
+  let (t1xs, t1ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeam (playerStatePlayer p) == Team1) players'
+  let (t2xs, t2ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeam (playerStatePlayer p) == Team2) players'
   let allPlayersCofP = V2 (median medianUnbiased $ Vec.fromList xs) (median medianUnbiased $ Vec.fromList ys)
   let t1CofP = V2 (median medianUnbiased $ Vec.fromList t1xs) (median medianUnbiased $ Vec.fromList t1ys)
   let t2CofP = V2 (median medianUnbiased $ Vec.fromList t2xs) (median medianUnbiased $ Vec.fromList t2ys)
@@ -102,10 +102,10 @@ mostAdvancedPlayer :: (Match m, Monad m) => Team -> m Player
 mostAdvancedPlayer team = do
   teamPlayers' <- teamPlayers team
   attackingDirection' <- attackingDirection team
-  let px p = playerPositionVector p ^. _x
+  let px p = playerStatePositionVector p ^. _x
   pure $ case attackingDirection' of
-    AttackingLeftToRight -> maximumBy (compare `on` px) teamPlayers'
-    AttackingRightToLeft -> minimumBy (compare `on` px) teamPlayers'
+    AttackingLeftToRight -> playerStatePlayer $ maximumBy (compare `on` px) teamPlayers'
+    AttackingRightToLeft -> playerStatePlayer $ minimumBy (compare `on` px) teamPlayers'
 
 offsideLine :: (Match m, Monad m) => Team -> m Double
 offsideLine team  = do
@@ -135,9 +135,10 @@ isInOwnHalf :: (Match m, Monad m) => Player -> m Bool
 isInOwnHalf player = do
   attackingDirection' <- attackingDirection (playerTeam player)
   pitch' <- pitch
+  playerState <- getPlayerState player
   pure $ case attackingDirection' of
-    AttackingLeftToRight -> locate2D player ^. _x < pitchHalfwayLineX pitch'
-    AttackingRightToLeft -> locate2D player ^. _x > pitchHalfwayLineX pitch'
+    AttackingLeftToRight -> locate2D playerState ^. _x < pitchHalfwayLineX pitch'
+    AttackingRightToLeft -> locate2D playerState ^. _x > pitchHalfwayLineX pitch'
 
 
 

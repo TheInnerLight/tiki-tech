@@ -99,20 +99,20 @@ coordinateTransPV :: Integral a => (Double, Double) -> V2 a
 coordinateTransPV (x, y) = 
   V2 (floor $ (x+57.5)*scaleFactor) (floor $ (y+36.5) * scaleFactor) 
 
-instance Render Player where
-  render :: S.Renderer -> SDLFont.Font -> Player -> IO ()
+instance Render PlayerState where
+  render :: S.Renderer -> SDLFont.Font -> PlayerState -> IO ()
   render r font p = do
-    let ppv = playerPositionVector p
+    let ppv = playerStatePositionVector p
         scaled' = coordinateTransV ppv
         colour = 
-          case playerTeam p of
+          case playerTeam $ playerStatePlayer p of
             Team1 -> red
             Team2 -> blue 
 
-    renderIntention r scaled' (playerIntention p)
+    renderIntention r scaled' (playerStateIntention p)
     SP.fillCircle r scaled' 10 colour
 
-    surf <- SDLFont.solid font white (T.pack (show $ playerNumber p))
+    surf <- SDLFont.solid font white (T.pack (show $ playerNumber $ playerStatePlayer p))
     shirtNumberTexture <- SVR.createTextureFromSurface r surf
     surfDimensions <- SVR.surfaceDimensions surf
     SVR.freeSurface surf

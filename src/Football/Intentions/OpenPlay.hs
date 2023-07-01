@@ -24,18 +24,18 @@ import Football.GameTime (gameTimeAddSeconds)
 
 
 
-decideOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Player -> m Player
+decideOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Player -> m PlayerIntention
 decideOpenPlayIntention player =
   if isGoalKeeper player then
     decideGoalKeeperOpenPlayIntention player
   else
     decideOutfieldOpenPlayIntention player
     
-decideOutfieldOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Player -> m Player
+decideOutfieldOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Player -> m PlayerIntention
 decideOutfieldOpenPlayIntention player = do
   time <- currentGameTime
   decisionFactors <- calculateDecisionFactors player
-  newIntention <- case decisionFactors of
+  case decisionFactors of
     DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.75) Nothing) player
     DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = False } -> do
@@ -61,13 +61,12 @@ decideOutfieldOpenPlayIntention player = do
       targetLoc <- clampPitch nearbySpace
       pure $ MoveIntoSpace targetLoc $ gameTimeAddSeconds time 0.25
     _  -> pure DoNothing
-  pure player { playerIntention = newIntention }
 
-decideGoalKeeperOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Player -> m Player
+decideGoalKeeperOpenPlayIntention :: (Match m, Monad m, Log m, Random m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Player -> m PlayerIntention
 decideGoalKeeperOpenPlayIntention player = do
   decisionFactors <- calculateDecisionFactors player
   time <- currentGameTime
-  newIntention <- case decisionFactors of
+  case decisionFactors of
     DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = True } -> do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.75) Nothing) player
     DecisionFactors { dfHasControlOfBall = True, dfIsUnderPressure = True, dfInCompressedSpace = False } -> do
@@ -102,4 +101,4 @@ decideGoalKeeperOpenPlayIntention player = do
       targetLoc <- clampPitch nearbySpace
       pure $ MoveIntoSpace targetLoc $ gameTimeAddSeconds time 0.25
     _  -> pure DoNothing
-  pure player { playerIntention = newIntention }  
+

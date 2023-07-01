@@ -26,26 +26,26 @@ data ThrowDesirability = ThrowDesirability
 
 shortThrowOptions :: (Monad m, Match m, Log m) => Player -> m [ThrowDesirability]
 shortThrowOptions player = do
-  pitch' <- pitch
+  playerState <- getPlayerState player
   teamPlayers' <- teammates player
   ball <- gameBall
   oppositionPlayers' <- oppositionPlayers (playerTeam player)
-  originalXG <- locationXG (playerTeam player) player
-  originalOppXG <- locationXG (oppositionTeam $ playerTeam player) player
-  let calcToFeetDesirability p1 = do
-        let t = timeForPassTo ball $ locate2D p1 
-            ball' = ball { ballMotionVector = motionVectorForPassTo ball $ locate2D (playerPositionVector p1 + playerMotionVector p1 * pure t) } 
+  originalXG <- locationXG (playerTeam player) playerState
+  originalOppXG <- locationXG (oppositionTeam $ playerTeam player) playerState
+  let calcToFeetDesirability p1State = do
+        let t = timeForPassTo ball $ locate2D p1State
+            ball' = ball { ballMotionVector = motionVectorForPassTo ball $ locate2D (playerStatePositionVector p1State + playerStateMotionVector p1State * pure t) } 
         
-        trd <- interceptionTimePlayerBallRK False p1 ball'
+        trd <- interceptionTimePlayerBallRK False p1State ball'
         oid <- interceptionTimePlayersBallRK True oppositionPlayers' ball'
         let z1 = (oid - trd) / sqrt 2
             a = 4.68
             b = 0.48
             safety = 1 / (1 + exp (-(a * z1 + b))) 
-        newXG <- locationXG (playerTeam player) p1
-        newOppXG <- locationXG (oppositionTeam $ playerTeam player) p1
+        newXG <- locationXG (playerTeam player) p1State
+        newOppXG <- locationXG (oppositionTeam $ playerTeam player) p1State
         pure $ ThrowDesirability 
-          { throwTarget = p1
+          { throwTarget = playerStatePlayer p1State
           , throwBallVector = ballMotionVector ball'
           , throwOppositionInterceptionDistance = oid
           , throwTeammateReceptionDistance = trd

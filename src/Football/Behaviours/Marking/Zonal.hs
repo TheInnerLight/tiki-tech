@@ -32,6 +32,6 @@ mostDangerousPlayerInZone player = do
     Just poly -> do
       oppositionPlayersInPoly <- traverse (\p -> (p, ) <$> locationXG oppTeam p) $ filter (\op -> pointInPoly (locate2D op) (spacePolyJCV poly)) opps
       let maybeMostDangerous = maxByMaybe (compare `on` snd) oppositionPlayersInPoly
-      pure $ fst <$> maybeMostDangerous
+      pure $ playerStatePlayer . fst <$> maybeMostDangerous
     Nothing -> pure Nothing
   

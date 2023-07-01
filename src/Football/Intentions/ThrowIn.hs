@@ -17,24 +17,24 @@ import Data.List (sortOn)
 import Football.GameTime (gameTimeAddSeconds)
 
 
-decideThrowInIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m Player
+decideThrowInIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m PlayerIntention
 decideThrowInIntention team throwLocation player = do
   ball <- gameBall
   time <- currentGameTime
-  closestPlayer <- head . sortOn (distance (V3 (throwLocation ^. _x) (throwLocation ^. _y) 0) . playerPositionVector ) <$> teamPlayers team
-  newIntention <-
-    if playerTeam player /= team then do
-      loc <- positionalOrientedZonalMark player
-      pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
-    else if (playerNumber player == playerNumber closestPlayer) && distance (playerPositionVector player) (ballPositionVector ball) >= 0.5 then do
-      pure $ RunToLocation throwLocation $ gameTimeAddSeconds time 0.1
-    else if playerNumber player == playerNumber closestPlayer then do
-      -- just pick the first throw for now
-      throw <- head <$> throwOptions player
-      pure $ ThrowIntention (throwTarget throw) throwLocation (throwBallVector throw)
-    else  do
-      nearbySpace <- optimalNearbySpace player
-      targetLoc <- clampPitch nearbySpace
-      pure $ MoveIntoSpace targetLoc time
-  pure player { playerIntention = newIntention }  
+  playerState <- getPlayerState player
+  closestPlayer <- head . sortOn (distance (V3 (throwLocation ^. _x) (throwLocation ^. _y) 0) . playerStatePositionVector ) <$> teamPlayers team
+  if playerTeam player /= team then do
+    loc <- positionalOrientedZonalMark player
+    pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
+  else if (player == playerStatePlayer closestPlayer) && distance (playerStatePositionVector playerState) (ballPositionVector ball) >= 0.5 then do
+    pure $ RunToLocation throwLocation $ gameTimeAddSeconds time 0.1
+  else if player == playerStatePlayer closestPlayer then do
+    -- just pick the first throw for now
+    throw <- head <$> throwOptions player
+    pure $ ThrowIntention (throwTarget throw) throwLocation (throwBallVector throw)
+  else  do
+    nearbySpace <- optimalNearbySpace player
+    targetLoc <- clampPitch nearbySpace
+    pure $ MoveIntoSpace targetLoc time
+
 

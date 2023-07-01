@@ -46,13 +46,13 @@ import Football.GameTime (gameTimeAddSeconds)
 
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
-  , matchStatePlayers :: TVar [Player]
+  , matchStatePlayers :: TVar (Map Player PlayerState)
   , matchStateTeam1VoronoiMap :: TMVar [JCVPoly]
   , matchStateTeam2VoronoiMap :: TMVar [JCVPoly]
   , matchStateSpaceMap :: TMVar SpaceMap
   , matchStateLastPlayerTouchedBall :: TMVar Player
   , matchStateCentresOfPlay :: TMVar CentresOfPlay
-  , matchStateInterceptionCache :: TMVar (Map (Player, Ball) [InterceptionData])
+  , matchStateInterceptionCache :: TMVar (Map (PlayerState, Ball) [InterceptionData])
   , matchStateZoneCache :: TMVar (Map Team ZoneMap)
   , matchStateSpaceCache :: TMVar (Map (Maybe Team) SpaceMap)
   , matchPitch :: Pitch
@@ -119,40 +119,41 @@ enactIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
     players' <- traverse enactIntention players
-    atomise $ writeTVar (matchStatePlayers state) players'
+    let playerMap = Map.fromList $ fmap (\p -> (playerStatePlayer p, p)  ) players'
+    atomise $ writeTVar (matchStatePlayers state) playerMap
   where 
-    enactIntention player =
-      case playerIntention player of
-        DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc player
+    enactIntention playerState =
+      case playerStateIntention playerState of
+        DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc playerState
         PassIntention target iceptloc mot t -> do
           tNow <- currentGameTime
           if tNow >= gameTimeAddSeconds t (-0.1) then
-            kickBallWith iceptloc mot player
+            kickBallWith iceptloc mot playerState
           else do
             ball <- gameBall
-            pure $ player { playerIntention = PassIntention target (locate2D ball) mot t}
+            pure $ playerState { playerStateIntention = PassIntention target (locate2D ball) mot t}
         ThrowIntention _ iceptloc mot -> do 
-            p <- kickBallWith iceptloc mot player
+            p <- kickBallWith iceptloc mot playerState
             setGameState OpenPlay
             pure p
         TakeCornerIntention _ iceptloc mot -> do 
-            p <- kickBallWith iceptloc mot player
+            p <- kickBallWith iceptloc mot playerState
             setGameState OpenPlay
             pure p
         TakeGoalKickIntention _ iceptloc mot -> do 
-            p <- kickBallWith iceptloc mot player
+            p <- kickBallWith iceptloc mot playerState
             setGameState OpenPlay
             pure p
         TakeKickOffIntention _ iceptloc mot -> do 
-            p <- kickBallWith iceptloc mot player
+            p <- kickBallWith iceptloc mot playerState
             setGameState OpenPlay
             pure p
-        ShootIntention _ iceptloc mot -> kickBallWith iceptloc mot player
-        MoveIntoSpace loc _ -> pure player
-        RunToLocation loc _ -> pure player
-        ControlBallIntention loc _ -> controlBall loc player
-        IntentionCooldown _ -> pure player
-        DoNothing -> pure player
+        ShootIntention _ iceptloc mot -> kickBallWith iceptloc mot playerState
+        MoveIntoSpace loc _ -> pure playerState
+        RunToLocation loc _ -> pure playerState
+        ControlBallIntention loc _ -> controlBall loc playerState
+        IntentionCooldown _ -> pure playerState
+        DoNothing -> pure playerState
       
 updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Int -> m ()
 updateImpl fps = do
@@ -180,7 +181,7 @@ updateImpl fps = do
     let ball' = updateBall (fromIntegral fps) ball
     writeTVar (matchStateBall state) ball'
     players <- readTVar $ matchStatePlayers state
-    let players' = fmap (updatePlayer (fromIntegral fps)) players
+    let players' = fmap (timeStepPlayerState (fromIntegral fps)) players
     writeTVar (matchStatePlayers state) players'
   where
     timeStep = 1000000 `div` fps
@@ -195,10 +196,17 @@ resetBall = do
     KickOff _  -> void $ setBallMotionParamsImpl (V3 0 0 0) (V3 0 0 0)
     OpenPlay -> pure ()
 
-allPlayersImpl :: (Monad m, Has m MatchState, Atomise m) => m [Player]
+allPlayersImpl :: (Monad m, Has m MatchState, Atomise m) => m [PlayerState]
 allPlayersImpl = do 
   (state :: MatchState) <- has
-  atomise $ readTVar $ matchStatePlayers state
+  map' <- atomise $ readTVar $ matchStatePlayers state
+  pure $ snd <$> Map.toList map'
+
+getPlayerStateImpl :: (Monad m, Has m MatchState, Atomise m) => Player -> m PlayerState
+getPlayerStateImpl player = do
+  (state :: MatchState) <- has
+  map' <- atomise $ readTVar $ matchStatePlayers state
+  pure $ map' Map.! player
 
 gameBallImpl :: (Monad m, Has m MatchState, Atomise m) => m Ball
 gameBallImpl = do 
@@ -210,18 +218,21 @@ decideIntentions = do
     (state :: MatchState) <- has
     players <- allPlayers
     players' <- mapConcurrently updateIntention players
-    atomise $ writeTVar (matchStatePlayers state) players'
+    let playerMap = Map.fromList $ fmap (\p -> (playerStatePlayer p, p)  ) players'
+    atomise $ writeTVar (matchStatePlayers state) playerMap
   where
-    updateIntention player = do
+    updateIntention playerState = do
       time <- currentGameTime
       gameState <- getGameState
-      case (intentionCooldown (playerIntention player), gameState) of
-        (Just endTime, _) | time < endTime -> pure player
+      let player = playerStatePlayer playerState
+      newIntention <- case (intentionCooldown (playerStateIntention playerState), gameState) of
+        (Just endTime, _) | time < endTime -> pure $ playerStateIntention playerState
         (_, OpenPlay) -> decideOpenPlayIntention player
         (_, ThrowIn loc team) -> decideThrowInIntention loc team player
         (_, CornerKick loc team) -> decideCornerIntention loc team player
         (_, GoalKick loc team) -> decideGoalKickIntention loc team player
         (_, KickOff team) -> decideKickOffIntention team player
+      pure $ playerState {playerStateIntention = newIntention }
 
 cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe CentresOfPlay)
 cacheLookupCentreOfPlayImpl () = do
@@ -233,21 +244,21 @@ cacheInsertCentreOfPlayImpl () v = do
   (state :: MatchState) <- has
   atomise $ writeTMVar (matchStateCentresOfPlay state) v
 
-cacheLookupInterceptionDataImpl :: (Monad m, Has m MatchState, Atomise m) => (Player, Ball) -> m (Maybe [InterceptionData])
-cacheLookupInterceptionDataImpl (player, ball) = do
+cacheLookupInterceptionDataImpl :: (Monad m, Has m MatchState, Atomise m) => (PlayerState, Ball) -> m (Maybe [InterceptionData])
+cacheLookupInterceptionDataImpl (playerState, ball) = do
   (state :: MatchState) <- has
   cache <- atomise $ tryReadTMVar $ matchStateInterceptionCache state
   case cache of
-    Just c  -> pure $ Map.lookup (player, ball) c
+    Just c  -> pure $ Map.lookup (playerState, ball) c
     Nothing -> pure Nothing
 
-cacheInsertInterceptionDataImpl :: (Monad m, Has m MatchState, Atomise m) => (Player, Ball) -> [InterceptionData] -> m ()
-cacheInsertInterceptionDataImpl (player, ball) v = do
+cacheInsertInterceptionDataImpl :: (Monad m, Has m MatchState, Atomise m) => (PlayerState, Ball) -> [InterceptionData] -> m ()
+cacheInsertInterceptionDataImpl (playerState, ball) v = do
   (state :: MatchState) <- has
   cache <- atomise $ tryReadTMVar $ matchStateInterceptionCache state
   case cache of
-    Just c -> atomise $ writeTMVar (matchStateInterceptionCache state) $ Map.insert (player, ball) v c 
-    Nothing -> atomise $ writeTMVar (matchStateInterceptionCache state) (Map.fromList [((player, ball), v)])
+    Just c -> atomise $ writeTMVar (matchStateInterceptionCache state) $ Map.insert (playerState, ball) v c 
+    Nothing -> atomise $ writeTMVar (matchStateInterceptionCache state) (Map.fromList [((playerState, ball), v)])
 
 cacheLookupZoneDataImpl :: (Monad m, Has m MatchState, Atomise m) => Team -> m (Maybe ZoneMap)
 cacheLookupZoneDataImpl team = do

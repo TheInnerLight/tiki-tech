@@ -44,7 +44,8 @@ checkClosestPlayer :: (Match m, Monad m, Log m, Cache m InterceptionDataCache) =
 checkClosestPlayer player = do
   ball <- gameBall
   teamPlayers' <- teammates player
-  interceptionOptions <- interceptionInfoPlayerBallRKI player ball
+  playerState <- getPlayerState player
+  interceptionOptions <- interceptionInfoPlayerBallRKI playerState ball
   case safestInterceptionOption interceptionOptions of
     Just iceptLoc -> do
       let iceptLoc2D = locate2D (interceptionDataBallLocation iceptLoc)
@@ -74,8 +75,9 @@ checkPhase player = do
 checkInPossession :: (Match m, Monad m, Log m) => Player -> m Bool
 checkInPossession player = do
   ball <- gameBall
-  canKick' <- isJust <$> canKick player
-  pure (canKick' && norm (playerMotionVector player - ballMotionVector ball) < 4)
+  playerState <- getPlayerState player
+  canKick' <- isJust <$> canKick playerState
+  pure (canKick' && norm (playerStateMotionVector playerState - ballMotionVector ball) < 4)
 
 checkInCompressedSpace :: (Match m, Monad m, Cache m SpaceCache) => Player -> m Bool
 checkInCompressedSpace player = do
@@ -87,7 +89,9 @@ checkInCompressedSpace player = do
 checkIsUnderPressure :: (Match m, Monad m) => Player -> m Bool
 checkIsUnderPressure player = do
   op <- findClosestOpposition player
-  pure $ distance (playerPositionVector player) (playerPositionVector op) <= 5.0
+  playerState <- getPlayerState player
+  opState <- getPlayerState op
+  pure $ distance (playerStatePositionVector playerState) (playerStatePositionVector opState) <= 5.0
 
 calculateDecisionFactors :: (Match m, Monad m, Log m, Cache m InterceptionDataCache, Cache m SpaceCache) => Player -> m DecisionFactors
 calculateDecisionFactors player = do

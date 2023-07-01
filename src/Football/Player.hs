@@ -10,19 +10,19 @@ import Football.Types
 import Football.Maths
 import Football.Locate2D (Locate2D(locate2D))
 
-updatePlayer :: Double -> Player -> Player
-updatePlayer dt player =
-  let ppv = playerPositionVector player
-      pmv = playerMotionVector player
+timeStepPlayerState :: Double -> PlayerState -> PlayerState
+timeStepPlayerState dt playerState =
+  let ppv = playerStatePositionVector playerState
+      pmv = playerStateMotionVector playerState
       desired = 
-        case playerDesiredLocation' player of
+        case playerDesiredLocation' playerState of
           Just (V2 desX desY) -> V3 desX desY 0
           Nothing             -> ppv
-      desiredSpeed = min (playerSpeedMax (playerSpeed player)) $ (dt/2)*norm(desired - ppv)
+      desiredSpeed = min (playerSpeedMax . playerSpeed $ playerStatePlayer playerState) $ (dt/2)*norm(desired - ppv)
       desiredMotion = pure desiredSpeed * normalize (desired - ppv)
       direction = if norm(desiredMotion - pmv) > 0 then normalize (desiredMotion - pmv) else normalize desiredMotion
-      (ppv', pmv') = rk2 (1.0/dt) (playerMotionEq direction (playerSpeed player)) (ppv, pmv)
-  in player { playerPositionVector = ppv', playerMotionVector = pmv' }
+      (ppv', pmv') = rk2 (1.0/dt) (playerMotionEq direction (playerSpeed $ playerStatePlayer playerState)) (ppv, pmv)
+  in playerState { playerStatePositionVector = ppv', playerStateMotionVector = pmv' }
 
 playerMotionEq :: V3 Double -> PlayerSpeed -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
 playerMotionEq direction pSpeed (ppv, pmv) =
@@ -45,21 +45,21 @@ maxMag m v =
   else
     v
 
-playerControlCentre :: Double -> Player -> V3 Double
-playerControlCentre time player =
-  let pa = playerSpeedAcceleration (playerSpeed player)
-      start = playerPositionVector player
-  in start + pure ((1 - exp(-pa * time))/pa) * playerMotionVector player
+playerControlCentre :: Double -> PlayerState -> V3 Double
+playerControlCentre time playerState =
+  let pa = playerSpeedAcceleration (playerSpeed $ playerStatePlayer playerState)
+      start = playerStatePositionVector playerState
+  in start + pure ((1 - exp(-pa * time))/pa) * playerStateMotionVector playerState
 
 -- use Fujimura-Sugihara model
-distanceToTargetAfter :: (V3 Double, V3 Double) -> Double -> Player -> Double
+distanceToTargetAfter :: (V3 Double, V3 Double) -> Double -> PlayerState -> Double
 distanceToTargetAfter (target, targetVector) t p =
   let 
-      start = playerPositionVector p
-      ms = playerSpeedMax (playerSpeed p)
-      pa = playerSpeedAcceleration (playerSpeed p)
+      start = playerStatePositionVector p
+      ms = playerSpeedMax (playerSpeed $ playerStatePlayer p)
+      pa = playerSpeedAcceleration (playerSpeed $ playerStatePlayer p)
       -- vector difference between x(t) and A(t)
-      st = target - start - pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
+      st = target - start - pure ((1 - exp(-pa * t))/pa) * playerStateMotionVector p
       --st2 = start + pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
       -- radius B(t)
       rt = (ms*(t - (1 - exp(-pa * t))/pa))
@@ -68,9 +68,9 @@ distanceToTargetAfter (target, targetVector) t p =
     -- fst (movingObjectAndPointClosestInterceptWithinTimeStep (-dt) (target, targetVector) st2) - rt
     norm st - rt
 
-playerDesiredLocation' :: Player -> Maybe (V2 Double)
+playerDesiredLocation' :: PlayerState -> Maybe (V2 Double)
 playerDesiredLocation' p =
-  intentionToLocation (playerIntention p)
+  intentionToLocation (playerStateIntention p)
   where
     intentionToLocation (PassIntention _ loc _ _) = Just loc
     intentionToLocation (ThrowIntention _ loc _) = Just loc

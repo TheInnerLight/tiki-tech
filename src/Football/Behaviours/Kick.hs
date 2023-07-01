@@ -15,73 +15,76 @@ import Football.Locate2D (Locate2D(locate2D))
 import Football.Maths
 import Football.GameTime (gameTimeAddSeconds)
 
-canKick :: (Monad m, Match m, Log m) => Player -> m (Maybe (V3 Double))
+canKick :: (Monad m, Match m, Log m) => PlayerState -> m (Maybe (V3 Double))
 canKick player = do
   ball <- gameBall
-  if distance (ballPositionVector ball) (playerPositionVector player) <= 0.5 then
+  if distance (ballPositionVector ball) (playerStatePositionVector player) <= 0.5 then
     pure $ Just (ballPositionVector ball)
   else do
-    let (dist, closestBallPos, _) = distanceAndClosestInterceptsWithinTimeStep (-1/30) (ballPositionVector ball, ballMotionVector ball) (playerPositionVector player, playerMotionVector player)
+    let (dist, closestBallPos, _) = distanceAndClosestInterceptsWithinTimeStep (-1/30) (ballPositionVector ball, ballMotionVector ball) (playerStatePositionVector player, playerStateMotionVector player)
     if dist <= 0.7 then do
       pure $ Just closestBallPos
     else
       pure Nothing
 
-kickBallWith :: (Monad m, Match m, Log m) => V2 Double -> V3 Double -> Player -> m Player
-kickBallWith iceptLoc desiredBallMotion player = do
-  ballInRange <- canKick player
+kickBallWith :: (Monad m, Match m, Log m) => V2 Double -> V3 Double -> PlayerState -> m PlayerState
+kickBallWith iceptLoc desiredBallMotion playerState = do
+  ballInRange <- canKick playerState
   case ballInRange of
     Just r -> do
-      player'' <-  kickSuccess r player
-      logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerIntention player))
-      pure player''
-    Nothing -> pure player
+      playerState'' <-  kickSuccess r playerState
+      let player = playerStatePlayer playerState''
+      logOutput ("Player: " ++ show (playerTeam  player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState))
+      pure playerState''
+    Nothing -> pure playerState
   where
-    kickSuccess kickLoc player' = do
+    kickSuccess kickLoc playerState' = do
       time <- currentGameTime
-      void $ kickBall player kickLoc desiredBallMotion
-      pure $ player' { playerIntention = IntentionCooldown $ gameTimeAddSeconds time 0.3 }
+      void $ kickBall (playerStatePlayer playerState') kickLoc desiredBallMotion
+      pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time 0.3 }
 
-dribbleToLocation :: (Monad m, Match m, Log m) => V2 Double -> V3 Double -> Player -> m Player
-dribbleToLocation iceptLoc diff player = do
-  ballInRange <- canKick player
+dribbleToLocation :: (Monad m, Match m, Log m) => V2 Double -> V3 Double -> PlayerState -> m PlayerState
+dribbleToLocation iceptLoc diff playerState = do
+  ballInRange <- canKick playerState
   case ballInRange of
     Just r -> do
-      player'' <-  kickSuccess r player
-      logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerIntention player))
-      pure player''
-    Nothing -> pure player
+      playerState'' <-  kickSuccess r playerState
+      let player = playerStatePlayer playerState''
+      logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
+      pure playerState''
+    Nothing -> pure playerState
   where
-    kickSuccess kickLoc player' = do
+    kickSuccess kickLoc playerState' = do
       time <- currentGameTime
-      ball' <- kickBall player' kickLoc diff
+      ball' <- kickBall (playerStatePlayer playerState') kickLoc diff
       let cooldownTime = 0.3
       let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
-      pure $ player' { playerIntention = RunToLocation (locate2D eBallPos) $ gameTimeAddSeconds time cooldownTime }
+      pure $ playerState' { playerStateIntention = RunToLocation (locate2D eBallPos) $ gameTimeAddSeconds time cooldownTime }
 
-controlBall :: (Monad m, Match m, Random m, Log m) => V2 Double -> Player -> m Player
-controlBall loc player = do
-  ballInRange <- canKick player
+controlBall :: (Monad m, Match m, Random m, Log m) => V2 Double -> PlayerState -> m PlayerState
+controlBall loc playerState = do
+  ballInRange <- canKick playerState
   case ballInRange of
     Just r -> do 
-      player'' <- kickSuccess r player
-      logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerIntention player))
-      pure player''
-    Nothing -> pure player
+      playerState'' <- kickSuccess r playerState
+      let player = playerStatePlayer playerState''
+      logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
+      pure playerState''
+    Nothing -> pure playerState
   where
-    kickSuccess kickLoc player' = do
+    kickSuccess kickLoc playerState' = do
       ball <- gameBall
       mult <- randomNormalMeanStd 1.0 0.05
-      ball' <- kickBall player kickLoc $ (- ballMotionVector ball + playerMotionVector player' * 0.8) * pure mult
+      ball' <- kickBall (playerStatePlayer playerState') kickLoc $ (- ballMotionVector ball + playerStateMotionVector playerState' * 0.8) * pure mult
       time <- currentGameTime
       let cooldownTime = 0.1
       let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
-      pure $ player' { playerIntention = IntentionCooldown $ gameTimeAddSeconds time cooldownTime }
+      pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time cooldownTime }
 
-motionVectorForDribble :: Player -> Ball -> V2 Double -> V3 Double
+motionVectorForDribble :: PlayerState -> Ball -> V2 Double -> V3 Double
 motionVectorForDribble player ball (V2 targetX targetY) = 
   let ncv = V3 targetX targetY 0
-      speedInDir = max 4.0 $ dot (normalize (ncv - ballPositionVector ball)) (playerMotionVector player)
+      speedInDir = max 4.0 $ dot (normalize (ncv - ballPositionVector ball)) (playerStateMotionVector player)
   in maxMag (speedInDir+0.5) $ ncv - ballPositionVector ball -- - ballMotionVector ball
 
 -- motionVectorForDribble :: Ball -> (Double, Double) -> V3 Double

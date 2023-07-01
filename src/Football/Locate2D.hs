@@ -10,9 +10,9 @@ import Linear (V2(..), V3(..), V4(..), _x, _y, _z, Metric (norm), normalize, R2 
 class Locate2D a where
   locate2D :: a -> V2 Double
 
-instance Locate2D Player where
+instance Locate2D PlayerState where
   locate2D p = 
-    let ppv = playerPositionVector p
+    let ppv = playerStatePositionVector p
     in V2 (ppv ^. _x) (ppv ^. _y) 
 
 instance Locate2D (Double, Double) where
@@ -33,9 +33,9 @@ instance Locate2D (V3 Double) where
 
 data ProjectFuture a = ProjectFuture Double a
 
-instance Locate2D (ProjectFuture Player) where
+instance Locate2D (ProjectFuture PlayerState) where
   locate2D (ProjectFuture t p) = 
-    let fppv = playerPositionVector p + playerMotionVector p * pure t
+    let fppv = playerStatePositionVector p + playerStateMotionVector p * pure t
     in locate2D fppv
 
 

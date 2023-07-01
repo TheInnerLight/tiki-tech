@@ -101,225 +101,269 @@ playerDefaultAcceleration = 1.3
 playerDefaultMaxSpeed :: Double
 playerDefaultMaxSpeed = 7.8
 
-player :: Player
-player = Player 
-  { playerPositionVector = V3 (-50) 0 0
-  , playerNumber = 1
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing
-  , playerTeam = Team1
+player :: PlayerState
+player = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 1
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-50) 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing
   }
 
-player2 :: Player
-player2 = Player 
-  { playerPositionVector = V3 (-35) 20 0
-  , playerNumber = 2
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player2 :: PlayerState
+player2 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 2
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-35) 20 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player3 :: Player
-player3 = Player 
-  { playerPositionVector = V3 (-35) (-20) 0
-  , playerNumber = 3
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player3 :: PlayerState
+player3 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 3
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-35) (-20) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player4 :: Player
-player4 = Player 
-  { playerPositionVector = V3 (-35) 10 0
-  , playerNumber = 4
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player4 :: PlayerState
+player4 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 4
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-35) 10 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player5 :: Player
-player5 = Player 
-  { playerPositionVector = V3 (-35) (-10) 0
-  , playerNumber = 5
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player5 :: PlayerState
+player5 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 5
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-35) (-10) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player6 :: Player
-player6 = Player 
-  { playerPositionVector = V3 (-30.0) 0 0
-  , playerNumber = 6
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player6 :: PlayerState
+player6 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 6
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-30.0) 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
+  }
+
+player8 :: PlayerState
+player8 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 8
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-25) 5 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
+  }
+
+player10 :: PlayerState
+player10 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 10
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-26) (-6) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
 
-player8 :: Player
-player8 = Player 
-  { playerPositionVector = V3 (-25) 5 0
-  , playerNumber = 8
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player7 :: PlayerState
+player7 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 7
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-15) 10 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player10 :: Player
-player10 = Player 
-  { playerPositionVector = V3 (-26) (-6) 0
-  , playerNumber = 10
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player9 :: PlayerState
+player9 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 9
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-15) 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player7 :: Player
-player7 = Player 
-  { playerPositionVector = V3 (-15) 10 0
-  , playerNumber = 7
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player11 :: PlayerState
+player11 = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 11
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team1
+    }
+  , playerStatePositionVector = V3 (-15) (-10) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player9 :: Player
-player9 = Player 
-  { playerPositionVector = V3 (-15) 0 0
-  , playerNumber = 9
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player1B :: PlayerState
+player1B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 1
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 50 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player11 :: Player
-player11 = Player 
-  { playerPositionVector = V3 (-15) (-10) 0
-  , playerNumber = 11
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team1
+player2B :: PlayerState
+player2B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 2
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 35 (-20) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player1B :: Player
-player1B = Player 
-  { playerPositionVector = V3 (50) 0 0
-  , playerNumber = 1
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player3B :: PlayerState
+player3B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 3
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 35 20 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player2B :: Player
-player2B = Player 
-  { playerPositionVector = V3 35 (-20) 0
-  , playerNumber = 2
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player4B :: PlayerState
+player4B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 4
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 35 (-10) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player3B :: Player
-player3B = Player 
-  { playerPositionVector = V3 35 20 0
-  , playerNumber = 3
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player5B :: PlayerState
+player5B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 5
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 35 (10) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player4B :: Player
-player4B = Player 
-  { playerPositionVector = V3 35 10 0
-  , playerNumber = 4
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player6B :: PlayerState
+player6B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 6
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 30.0 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player5B :: Player
-player5B = Player 
-  { playerPositionVector = V3 35 (-10) 0
-  , playerNumber = 5
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player8B :: PlayerState
+player8B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 8
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 25.0 (-5) 0.0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player6B :: Player
-player6B = Player 
-  { playerPositionVector = V3 30.0 0 0
-  , playerNumber = 6
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player7B :: PlayerState
+player7B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 7
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 15 (-10) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
   }
 
-player8B :: Player
-player8B = Player 
-  { playerPositionVector = V3 25 (-5) 0
-  , playerNumber = 8
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player9B :: PlayerState
+player9B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 9
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 15.0 0 0.0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player10B :: Player
-player10B = Player 
-  { playerPositionVector = V3 26 6 0
-  , playerNumber = 10
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player10B :: PlayerState
+player10B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 10
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 26.0 6 0.0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
-player7B :: Player
-player7B = Player 
-  { playerPositionVector = V3 15 (-10) 0
-  , playerNumber = 7
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
-  }
-
-player9B :: Player
-player9B = Player 
-  { playerPositionVector = V3 15 0 0
-  , playerNumber = 9
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
-  }
-
-player11B :: Player
-player11B = Player 
-  { playerPositionVector = V3 15 10 0
-  , playerNumber = 11
-  , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-  , playerMotionVector = V3 0.0 0.0 0.0 
-  , playerIntention = DoNothing --KickIntention (15.0, 45.0)
-  , playerTeam = Team2
+player11B :: PlayerState
+player11B = PlayerState
+  { playerStatePlayer = Player
+    { playerNumber = 11
+    , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
+    , playerTeam = Team2
+    }
+  , playerStatePositionVector = V3 15.0 10.0 0.0
+  , playerStateMotionVector = V3 0.0 0.0 0.0
+  , playerStateIntention = DoNothing --KickIntention (15.0, 45.0)
   }
 
 ball :: Ball
@@ -345,7 +389,9 @@ data Fonts = Fonts
 
 loopFor :: S.Renderer -> Fonts-> SF.Manager -> IO ()
 loopFor r fonts fpsm = do
-  pt <- newTVarIO [player, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player1B, player2B, player3B, player4B, player5B, player6B, player7B, player8B, player9B, player10B, player11B]
+  let playerStates = [player, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player1B, player2B, player3B, player4B, player5B, player6B, player7B, player8B, player9B, player10B, player11B]
+  let playerMap = Map.fromList $ fmap (\p -> (playerStatePlayer p, p)) playerStates
+  pt <- newTVarIO playerMap
   bt <- newTVarIO ball
   eventLog <- newTVarIO []
   t1Voronoi <- newEmptyTMVarIO

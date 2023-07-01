@@ -12,7 +12,6 @@ updateBall :: Double -> Ball -> Ball
 updateBall dt ball =
   let bpv = ballPositionVector ball
       bmv = ballMotionVector ball
-      --(dbpv, dbmv) = ballMotionEq (1.0/dt) (bpv, bmv)
       (bpv', bmv') = rk (1.0/dt) ballMotionEq (bpv, bmv)
   in ball { ballPositionVector = bpv', ballMotionVector = bmv'}
 

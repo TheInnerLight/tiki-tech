@@ -10,11 +10,11 @@ import Football.Behaviours.Pass
 import Linear (V3(V3), normalize)
 import Control.Monad.Reader (ReaderT (runReaderT), MonadIO (liftIO), MonadReader (..), asks)
 import Core
-import Data.List (sortOn)
+import Data.List (sortOn, find)
 import qualified Data.Ord
 import Football.Types
 import Football.Understanding.Space.Data (SpaceCache)
-import Data.Maybe (Maybe(Nothing))
+import Data.Maybe (Maybe(Nothing), fromJust)
 
 defaultPlayerSpeed :: PlayerSpeed
 defaultPlayerSpeed =
@@ -26,7 +26,7 @@ defaultPlayerSpeed =
 
 data PassSpecContext = 
   PassSpecContext
-    { psPlayers :: [Player]
+    { psPlayers :: [PlayerState]
     , psBall :: Ball
     }
 
@@ -43,6 +43,9 @@ instance Match PassSpecM where
   attackingDirection Team1 = pure AttackingLeftToRight
   attackingDirection Team2 = pure AttackingRightToLeft
   gameBall = asks psBall
+  getPlayerState player = do
+    players <- asks psPlayers
+    pure $ fromJust $ find (\p -> player == playerStatePlayer p) players
   allPlayers = asks psPlayers
   pitch = pure $ Pitch 105 68
 
@@ -53,115 +56,125 @@ instance Cache PassSpecM SpaceCache where
   cacheLookup _ = pure Nothing
   cacheInsert _ _ = pure ()
 
-playerWithBallAtOrigin :: Player
-playerWithBallAtOrigin = 
-  Player 
-    { playerPositionVector = V3 0 0 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 8
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team1  
-    }
+playerWithBallAtOrigin :: PlayerState
+playerWithBallAtOrigin = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 8
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team1  
+      }
+  , playerStatePositionVector = V3 0 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-easyPassingOptionTeammate :: Player
-easyPassingOptionTeammate = 
-  Player 
-    { playerPositionVector = V3 10 0 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 10
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team1  
-    }
+easyPassingOptionTeammate :: PlayerState
+easyPassingOptionTeammate = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 10
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team1  
+      }
+  , playerStatePositionVector = V3 10 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-farAwayOpposition1 :: Player
-farAwayOpposition1 = 
-  Player 
-    { playerPositionVector = V3 51 0 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 8
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2
-    }
+farAwayOpposition1 :: PlayerState
+farAwayOpposition1 = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 8
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2
+      }
+  , playerStatePositionVector = V3 51 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-farAwayOpposition2 :: Player
-farAwayOpposition2 = 
-  Player 
-    { playerPositionVector = V3 50 0 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 10
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2
-    }
+farAwayOpposition2 :: PlayerState
+farAwayOpposition2 = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 10
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2
+      }
+  , playerStatePositionVector = V3 50 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-farAwayTeammate :: Player
-farAwayTeammate = 
-  Player 
-    { playerPositionVector = V3 45 0 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 9
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team1  
-    }
+farAwayTeammate :: PlayerState
+farAwayTeammate = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 9
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team1  
+      }
+  , playerStatePositionVector = V3 45 0 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-equidistantTeammate :: V3 Double -> Player
-equidistantTeammate motion = 
-  Player 
-    { playerPositionVector = V3 30 0 0
-    , playerMotionVector = motion
-    , playerNumber = 9
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team1  
-    }
+equidistantTeammate :: V3 Double -> PlayerState
+equidistantTeammate motion = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 9
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team1  
+      }
+  , playerStatePositionVector = V3 30 0 0
+  , playerStateMotionVector = motion
+  , playerStateIntention = DoNothing
+  }
 
-equidistantOpponent :: V3 Double -> Player
-equidistantOpponent motion = 
-  Player 
-    { playerPositionVector = V3 30 1 0
-    , playerMotionVector = motion
-    , playerNumber = 9
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2
-    }
+equidistantOpponent :: V3 Double -> PlayerState
+equidistantOpponent motion = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 9
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2
+      }
+  , playerStatePositionVector = V3 30 1 0
+  , playerStateMotionVector = motion
+  , playerStateIntention = DoNothing
+  }
 
-highLineOpposingCentreBack1 :: Player
-highLineOpposingCentreBack1 = 
-  Player 
-    { playerPositionVector = V3 20 (-5) 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 4
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2
-    }
+highLineOpposingCentreBack1 :: PlayerState
+highLineOpposingCentreBack1 = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 4
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2
+      }
+  , playerStatePositionVector = V3 20 (-5) 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-highLineOpposingCentreBack2 :: Player
-highLineOpposingCentreBack2 = 
-  Player 
-    { playerPositionVector = V3 20 (5) 0
-    , playerMotionVector = V3 0 0 0
-    , playerNumber = 5
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team2
-    }
+highLineOpposingCentreBack2 :: PlayerState
+highLineOpposingCentreBack2 = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 5
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team2
+      }
+  , playerStatePositionVector = V3 20 5 0
+  , playerStateMotionVector = V3 0.0 0.0 0.0 
+  , playerStateIntention = DoNothing
+  }
 
-runningNearLineTeammate :: V3 Double -> Player
-runningNearLineTeammate motion = 
-  Player 
-    { playerPositionVector = V3 15 0 0
-    , playerMotionVector = motion
-    , playerNumber = 9
-    , playerSpeed = defaultPlayerSpeed
-    , playerIntention = DoNothing
-    , playerTeam = Team1  
-    }
+runningNearLineTeammate :: V3 Double -> PlayerState
+runningNearLineTeammate motion = PlayerState
+  { playerStatePlayer = Player 
+      { playerNumber = 9
+      , playerSpeed = defaultPlayerSpeed
+      , playerTeam = Team1  
+      }
+  , playerStatePositionVector = V3 15 0 0
+  , playerStateMotionVector = motion
+  , playerStateIntention = DoNothing
+  }
 
 ball :: Ball
 ball = 
@@ -183,9 +196,9 @@ passToFeetTests = testGroup "Passing to feet tests"
               }
       
       res <- runPassSpecM testContext $ do
-        toFeetPassingOptions playerWithBallAtOrigin
+        toFeetPassingOptions $ playerStatePlayer playerWithBallAtOrigin
       
-      passTarget (head res) @?= PlayerTarget easyPassingOptionTeammate
+      passTarget (head res) @?= PlayerTarget (playerStatePlayer easyPassingOptionTeammate)
 
   , testCase "A stationary player with two passing options will see the closer teammate further from opposition as the safest passing option" $ do
       let testContext =
@@ -195,10 +208,10 @@ passToFeetTests = testGroup "Passing to feet tests"
               }
       
       res <- runPassSpecM testContext $ do
-        sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
+        sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions (playerStatePlayer playerWithBallAtOrigin)
      
-      passTarget (head res) @?= PlayerTarget easyPassingOptionTeammate
-      passTarget (last res) @?= PlayerTarget farAwayTeammate
+      passTarget (head res) @?= PlayerTarget (playerStatePlayer easyPassingOptionTeammate)
+      passTarget (last res) @?= PlayerTarget (playerStatePlayer farAwayTeammate)
 
   , testCase "A stationary player will see approximately 61% chance of pass completion when equidistant teammate and opponent" $ do
     -- Odds are not 50/50 due to b term in 1 / 1 + exp (-(az+b)) : Space evaluation in football games via field weighting based on tracking data
@@ -209,14 +222,14 @@ passToFeetTests = testGroup "Passing to feet tests"
               }
       
       res <- runPassSpecM testContext $ do
-        sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
+        sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions (playerStatePlayer playerWithBallAtOrigin)
 
-      passTarget (head res) @?= PlayerTarget (equidistantTeammate $ V3 0 0 0)
+      passTarget (head res) @?= PlayerTarget (playerStatePlayer $ equidistantTeammate $ V3 0 0 0)
       passSafetyCoeff (head res) `compare` 0.62 @?= GT
       passSafetyCoeff (head res) `compare` 0.65 @?= LT
 
   , testCase "A stationary player will see lower chance of pass completion with equidistant teammate and opponent running toward the ball" $ do
-    let diff = normalize (playerPositionVector . equidistantOpponent $ V3 0 0 0 - playerPositionVector playerWithBallAtOrigin)
+    let diff = normalize (playerStatePositionVector . equidistantOpponent $ V3 0 0 0 - playerStatePositionVector playerWithBallAtOrigin)
         testContext =
           PassSpecContext
             { psPlayers = [playerWithBallAtOrigin,  equidistantTeammate $ V3 0 0 0, equidistantOpponent (pure (-7.6) * diff), farAwayOpposition1]
@@ -224,13 +237,13 @@ passToFeetTests = testGroup "Passing to feet tests"
             }
     
     res <- runPassSpecM testContext $ do
-      sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
+      sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions (playerStatePlayer playerWithBallAtOrigin)
 
-    passTarget (head res) @?= PlayerTarget (equidistantTeammate $ V3 0 0 0)
+    passTarget (head res) @?= PlayerTarget (playerStatePlayer $ equidistantTeammate $ V3 0 0 0)
     passSafetyCoeff (head res) `compare` 0.45 @?= LT
 
   , testCase "A stationary player will see higher chance of pass completion with equidistant teammate and opponent running away from the ball" $ do
-    let diff = normalize (playerPositionVector . equidistantOpponent $ V3 0 0 0 - playerPositionVector playerWithBallAtOrigin)
+    let diff = normalize (playerStatePositionVector . equidistantOpponent $ V3 0 0 0 - playerStatePositionVector playerWithBallAtOrigin)
         testContext =
           PassSpecContext
             { psPlayers = [playerWithBallAtOrigin, equidistantTeammate $ V3 0 0 0, equidistantOpponent (pure 7.6 * diff), farAwayOpposition1]
@@ -238,9 +251,9 @@ passToFeetTests = testGroup "Passing to feet tests"
             }
 
     res <- runPassSpecM testContext $ do
-      sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions playerWithBallAtOrigin
+      sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions (playerStatePlayer playerWithBallAtOrigin)
 
-    passTarget (head res) @?= PlayerTarget (equidistantTeammate $ V3 0 0 0)
+    passTarget (head res) @?= PlayerTarget (playerStatePlayer $ equidistantTeammate $ V3 0 0 0)
     passSafetyCoeff (head res) `compare` 0.81 @?= GT
   ]
 
@@ -255,7 +268,7 @@ throughBallTests = testGroup "Through ball tests"
             }
     
     res <- runPassSpecM testContext $ do
-      sortOn (Data.Ord.Down . passSafetyCoeff) <$> throughBallPassingOptions playerWithBallAtOrigin
+      sortOn (Data.Ord.Down . passSafetyCoeff) <$> throughBallPassingOptions (playerStatePlayer playerWithBallAtOrigin)
 
     res @?= []
     
@@ -267,9 +280,9 @@ throughBallTests = testGroup "Through ball tests"
             }
     
     res <- runPassSpecM testContext $ do
-      sortOn (Data.Ord.Down . passSafetyCoeff) <$> throughBallPassingOptions playerWithBallAtOrigin
+      sortOn (Data.Ord.Down . passSafetyCoeff) <$> throughBallPassingOptions (playerStatePlayer playerWithBallAtOrigin)
 
-    passTarget (head res) @?= AheadOfTarget (runningNearLineTeammate $ V3 7.6 0 0)
+    passTarget (head res) @?= AheadOfTarget (playerStatePlayer $ runningNearLineTeammate $ V3 7.6 0 0)
 
   , testCase "There should be no through ball available if teammate is running away from the opponent line" $ do
     let testContext =
@@ -279,7 +292,7 @@ throughBallTests = testGroup "Through ball tests"
             }
     
     res <- runPassSpecM testContext $ do
-      sortOn (Data.Ord.Down . passSafetyCoeff) <$> throughBallPassingOptions playerWithBallAtOrigin
+      sortOn (Data.Ord.Down . passSafetyCoeff) <$> throughBallPassingOptions (playerStatePlayer $ playerWithBallAtOrigin)
 
     res @?= []
 

@@ -33,14 +33,18 @@ data PlayerSpeed = PlayerSpeed
   deriving (Eq, Ord, Show)
 
 data Player = Player
-  { playerPositionVector :: !(V3 Double)
-  , playerNumber :: !Int
+  { playerNumber :: !Int
   , playerSpeed :: !PlayerSpeed
-  , playerMotionVector :: !(V3 Double)
-  , playerIntention :: !PlayerIntention
   , playerTeam :: !Team
   }
   deriving (Eq, Ord, Show)
+
+data PlayerState = PlayerState
+  { playerStatePlayer :: !Player
+  , playerStatePositionVector :: !(V3 Double)
+  , playerStateMotionVector :: !(V3 Double)
+  , playerStateIntention :: !PlayerIntention
+  } deriving (Eq, Ord, Show)
 
 data Ball = Ball
   { ballPositionVector :: !(V3 Double)
