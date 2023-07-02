@@ -121,6 +121,7 @@ library
         stm,
         text,
         time,
+        typenums,
         vector
 
     -- Directories containing source files.

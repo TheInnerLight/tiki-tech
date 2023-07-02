@@ -1,6 +1,12 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Football.Types where
 
 import Linear (V3(..), V2)
+import Data.TypeLits (Nat, type (+), type (==))
 
 data Team
   = Team1
@@ -106,4 +112,19 @@ data Pitch = Pitch
   , pitchWidth :: Double
   }
 
+data FormationLine (n :: Nat) where 
+  FiveLine  :: Player -> Player -> Player -> Player -> Player -> FormationLine 5
+  FourLine  :: Player -> Player -> Player -> Player -> FormationLine 4
+  ThreeLine :: Player -> Player -> Player -> FormationLine 3
+  TwoLine   :: Player -> Player -> FormationLine 2
+  OneLine   :: Player -> FormationLine 1
+  EmptyLine :: FormationLine 0
+
+data Formation = forall a b c d e. ((a + b + c + d + e) == 10) => Formation
+  { formationLine1 :: FormationLine a
+  , formationLine2 :: FormationLine b
+  , formationLine3 :: FormationLine c
+  , formationLine4 :: FormationLine d
+  , formationLine5 :: FormationLine e
+  }
 
