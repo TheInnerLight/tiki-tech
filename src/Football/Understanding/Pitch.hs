@@ -5,7 +5,7 @@ import Football.Match
 import Football.Match (AttackingDirection(AttackingRightToLeft))
 import Football.Pitch (rightGoalLine, leftGoalLine)
 
-ownGoalVector :: (Monad m, Match m) => Team -> m (V3 Double)
+ownGoalVector :: (Monad m, Match m) => TeamId -> m (V3 Double)
 ownGoalVector team = do
   ad <- attackingDirection team
   pitch' <- pitch
@@ -17,7 +17,7 @@ ownGoalVector team = do
       let (lgMin, lgMax) = rightGoalLine pitch'
       pure $ (lgMin + lgMax) / 2
 
-targetGoalVector :: (Monad m, Match m) => Team -> m (V3 Double)
+targetGoalVector :: (Monad m, Match m) => TeamId -> m (V3 Double)
 targetGoalVector team = ownGoalVector (oppositionTeam team)
 
 

@@ -36,7 +36,7 @@ createSpaceMap = do
   let map2 = foldl' folder Map.empty $ zip [0..]  players'
   pure $ SpaceMap map2
 
-createSpaceMapForTeam :: (Match m, Monad m) => Team -> m SpaceMap
+createSpaceMapForTeam :: (Match m, Monad m) => TeamId -> m SpaceMap
 createSpaceMapForTeam team = do
   players' <- teamPlayers team
   allPlayersVoronoi <- jcvSites2 <$> traverse (clampPitch . locate2D . playerControlCentre 0.1) players'
@@ -48,17 +48,17 @@ createSpaceMapForTeam team = do
   let map2 = foldl' folder Map.empty $ zip [0..]  players'
   pure $ SpaceMap map2
 
-createSpaceMapForMaybeTeam :: (Match m, Monad m) => Maybe Team -> m SpaceMap
+createSpaceMapForMaybeTeam :: (Match m, Monad m) => Maybe TeamId -> m SpaceMap
 createSpaceMapForMaybeTeam (Just team) = createSpaceMapForTeam team
 createSpaceMapForMaybeTeam Nothing = createSpaceMap
 
 getSpaceMap :: (Match m, Monad m, Cache m SpaceCache) => m SpaceMap
 getSpaceMap = cached createSpaceMapForMaybeTeam Nothing
 
-getSpaceMapForTeam :: (Match m, Monad m, Cache m SpaceCache) => Team -> m SpaceMap
+getSpaceMapForTeam :: (Match m, Monad m, Cache m SpaceCache) => TeamId -> m SpaceMap
 getSpaceMapForTeam team = cached createSpaceMapForMaybeTeam $ Just team
 
-pitchHorizontalZone :: (Match m, Monad m, Locate2D x) => Team -> x -> m HorizontalZone
+pitchHorizontalZone :: (Match m, Monad m, Locate2D x) => TeamId -> x -> m HorizontalZone
 pitchHorizontalZone team x = do
   let (V2 _ y) = locate2D x
   attackingDirection' <- attackingDirection team
@@ -83,8 +83,8 @@ calcCentresOfPlay :: (Match m, Monad m) => m CentresOfPlay
 calcCentresOfPlay = do
   players' <- allPlayers
   let (xs, ys) = unzip $ fmap (\(V2 x y) -> (x, y)) $ locate2D <$> players'
-  let (t1xs, t1ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeam (playerStatePlayer p) == Team1) players'
-  let (t2xs, t2ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeam (playerStatePlayer p) == Team2) players'
+  let (t1xs, t1ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeamId (playerStatePlayer p) == TeamId1) players'
+  let (t2xs, t2ys) = unzip $ fmap (\(V2 x y) -> (x, y))$ locate2D <$> filter (\p -> playerTeamId (playerStatePlayer p) == TeamId2) players'
   let allPlayersCofP = V2 (median medianUnbiased $ Vec.fromList xs) (median medianUnbiased $ Vec.fromList ys)
   let t1CofP = V2 (median medianUnbiased $ Vec.fromList t1xs) (median medianUnbiased $ Vec.fromList t1ys)
   let t2CofP = V2 (median medianUnbiased $ Vec.fromList t2xs) (median medianUnbiased $ Vec.fromList t2ys)
@@ -98,7 +98,7 @@ centresOfPlay :: (Match m, Monad m, Cache m CentresOfPlayCache) => m CentresOfPl
 centresOfPlay = do
   cached (const calcCentresOfPlay) ()
 
-mostAdvancedPlayer :: (Match m, Monad m) => Team -> m Player
+mostAdvancedPlayer :: (Match m, Monad m) => TeamId -> m Player
 mostAdvancedPlayer team = do
   teamPlayers' <- teamPlayers team
   attackingDirection' <- attackingDirection team
@@ -107,7 +107,7 @@ mostAdvancedPlayer team = do
     AttackingLeftToRight -> playerStatePlayer $ maximumBy (compare `on` px) teamPlayers'
     AttackingRightToLeft -> playerStatePlayer $ minimumBy (compare `on` px) teamPlayers'
 
-offsideLine :: (Match m, Monad m) => Team -> m Double
+offsideLine :: (Match m, Monad m) => TeamId -> m Double
 offsideLine team  = do
   pitch' <- pitch
   teamPlayers' <- teamPlayers $ oppositionTeam team
@@ -120,7 +120,7 @@ offsideLine team  = do
   where 
     xPos player = locate2D player ^. _x
 
-isOffide :: (Match m, Monad m, Locate2D x) => Team -> x -> m Bool
+isOffide :: (Match m, Monad m, Locate2D x) => TeamId -> x -> m Bool
 isOffide team x = do
   offsideLine' <- offsideLine team
   attackingDirection' <- attackingDirection team
@@ -128,12 +128,12 @@ isOffide team x = do
     AttackingLeftToRight -> locate2D x ^. _x > offsideLine'
     AttackingRightToLeft -> locate2D x ^. _x < offsideLine'
 
-isOnside :: (Match m, Monad m, Locate2D x) => Team -> x -> m Bool
+isOnside :: (Match m, Monad m, Locate2D x) => TeamId -> x -> m Bool
 isOnside team x = not <$> isOffide team x
 
 isInOwnHalf :: (Match m, Monad m) => Player -> m Bool
 isInOwnHalf player = do
-  attackingDirection' <- attackingDirection (playerTeam player)
+  attackingDirection' <- attackingDirection (playerTeamId player)
   pitch' <- pitch
   playerState <- getPlayerState player
   pure $ case attackingDirection' of

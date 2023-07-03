@@ -29,9 +29,9 @@ shortThrowOptions player = do
   playerState <- getPlayerState player
   teamPlayers' <- teammates player
   ball <- gameBall
-  oppositionPlayers' <- oppositionPlayers (playerTeam player)
-  originalXG <- locationXG (playerTeam player) playerState
-  originalOppXG <- locationXG (oppositionTeam $ playerTeam player) playerState
+  oppositionPlayers' <- oppositionPlayers (playerTeamId player)
+  originalXG <- locationXG (playerTeamId player) playerState
+  originalOppXG <- locationXG (oppositionTeam $ playerTeamId player) playerState
   let calcToFeetDesirability p1State = do
         let t = timeForPassTo ball $ locate2D p1State
             ball' = ball { ballMotionVector = motionVectorForPassTo ball $ locate2D (playerStatePositionVector p1State + playerStateMotionVector p1State * pure t) } 
@@ -42,8 +42,8 @@ shortThrowOptions player = do
             a = 4.68
             b = 0.48
             safety = 1 / (1 + exp (-(a * z1 + b))) 
-        newXG <- locationXG (playerTeam player) p1State
-        newOppXG <- locationXG (oppositionTeam $ playerTeam player) p1State
+        newXG <- locationXG (playerTeamId player) p1State
+        newOppXG <- locationXG (oppositionTeam $ playerTeamId player) p1State
         pure $ ThrowDesirability 
           { throwTarget = playerStatePlayer p1State
           , throwBallVector = ballMotionVector ball'

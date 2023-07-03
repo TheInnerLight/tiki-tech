@@ -106,7 +106,7 @@ player = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 1
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-50) 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -118,7 +118,7 @@ player2 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 2
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-35) 20 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -130,7 +130,7 @@ player3 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 3
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-35) (-20) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -142,7 +142,7 @@ player4 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 4
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-35) 10 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -154,7 +154,7 @@ player5 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 5
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-35) (-10) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -166,7 +166,7 @@ player6 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 6
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-30.0) 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -178,7 +178,7 @@ player8 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 8
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-25) 5 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -190,7 +190,7 @@ player10 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 10
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-26) (-6) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -203,7 +203,7 @@ player7 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 7
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-15) 10 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -215,7 +215,7 @@ player9 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 9
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-15) 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -227,7 +227,7 @@ player11 = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 11
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team1
+    , playerTeamId = TeamId1
     }
   , playerStatePositionVector = V3 (-15) (-10) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -239,7 +239,7 @@ player1B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 1
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 50 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -251,7 +251,7 @@ player2B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 2
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 35 (-20) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -263,7 +263,7 @@ player3B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 3
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 35 20 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -275,7 +275,7 @@ player4B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 4
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 35 (-10) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -287,7 +287,7 @@ player5B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 5
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 35 (10) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -299,7 +299,7 @@ player6B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 6
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 30.0 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -311,7 +311,7 @@ player8B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 8
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 25.0 (-5) 0.0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -323,7 +323,7 @@ player7B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 7
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 15 (-10) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -335,7 +335,7 @@ player9B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 9
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 15.0 0 0.0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -347,7 +347,7 @@ player10B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 10
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 26.0 6 0.0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -359,7 +359,7 @@ player11B = PlayerState
   { playerStatePlayer = Player
     { playerNumber = 11
     , playerSpeed = PlayerSpeed { playerSpeedAcceleration = playerDefaultAcceleration, playerSpeedMax = playerDefaultMaxSpeed }
-    , playerTeam = Team2
+    , playerTeamId = TeamId2
     }
   , playerStatePositionVector = V3 15.0 10.0 0.0
   , playerStateMotionVector = V3 0.0 0.0 0.0
@@ -391,6 +391,27 @@ loopFor :: S.Renderer -> Fonts-> SF.Manager -> IO ()
 loopFor r fonts fpsm = do
   let playerStates = [player, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player1B, player2B, player3B, player4B, player5B, player6B, player7B, player8B, player9B, player10B, player11B]
   let playerMap = Map.fromList $ fmap (\p -> (playerStatePlayer p, p)) playerStates
+  let liverbird = Team
+        { teamName = "Liverbird"
+        , teamFormation = Formation
+          { formationLine1 = FourLine (playerStatePlayer player3) (playerStatePlayer player5) (playerStatePlayer player4) (playerStatePlayer player2)
+          , formationLine2 = EmptyLine
+          , formationLine3 = ThreeLine (playerStatePlayer player10) (playerStatePlayer player6) (playerStatePlayer player8)
+          , formationLine4 = EmptyLine
+          , formationLine5 = ThreeLine (playerStatePlayer player11) (playerStatePlayer player9) (playerStatePlayer player7)
+          }
+        }
+  let manshippy = Team
+        { teamName = "Man Shippy"
+        , teamFormation = Formation
+          { formationLine1 = FourLine (playerStatePlayer player3B) (playerStatePlayer player5B) (playerStatePlayer player4B) (playerStatePlayer player2B)
+          , formationLine2 = EmptyLine
+          , formationLine3 = ThreeLine (playerStatePlayer player10B) (playerStatePlayer player6B) (playerStatePlayer player8B)
+          , formationLine4 = EmptyLine
+          , formationLine5 = ThreeLine (playerStatePlayer player11B) (playerStatePlayer player9B) (playerStatePlayer player7B)
+          }
+        }
+
   pt <- newTVarIO playerMap
   bt <- newTVarIO ball
   eventLog <- newTVarIO []
@@ -401,7 +422,7 @@ loopFor r fonts fpsm = do
   cOfP <- newEmptyTMVarIO
   icache <- newEmptyTMVarIO
   gametimer <- newTVarIO $ GameTime FirstHalf 0
-  gamestate <- newTVarIO $ KickOff Team1
+  gamestate <- newTVarIO $ KickOff TeamId1
   zonecache <- newEmptyTMVarIO
   spacecache <- newEmptyTMVarIO
   let initialState = 
@@ -420,6 +441,7 @@ loopFor r fonts fpsm = do
           , matchStateGameState = gamestate
           , matchStateZoneCache = zonecache
           , matchStateSpaceCache = spacecache
+          , matchStateTeams = Map.fromList [(TeamId1,liverbird),(TeamId2,manshippy)]
           }
   _ <- forkIO $ runAppM (processLoop processFps) initialState
   runAppM loop' initialState

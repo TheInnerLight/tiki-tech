@@ -81,7 +81,7 @@ decideGoalKeeperOpenPlayIntention player = do
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = OutOfPossessionPhase } -> do
       ball <- gameBall
       loc <- outOfPossessionDesiredPosition player
-      ogVev <- ownGoalVector (playerTeam player)
+      ogVev <- ownGoalVector (playerTeamId player)
       let ballFromGoal = ballPositionVector ball - ogVev
           desiredDistanceFromGoal = norm  (V3 (loc ^. _x) (loc ^. _y) 0 - ogVev )
       let dest = locate2D $ 

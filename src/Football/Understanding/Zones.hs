@@ -14,7 +14,7 @@ import Football.Understanding.Zones.Types (ZoneMap(..), ZoneCache)
 import Core (cached, Cache, Log)
 import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 
-createZonalMap :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache) => Team -> m ZoneMap
+createZonalMap :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache) => TeamId -> m ZoneMap
 createZonalMap team = do
   players' <- filter (not . isGoalKeeper . playerStatePlayer) <$> teamPlayers team
   pos <- traverse (outOfPossessionDesiredPosition . playerStatePlayer) players'
@@ -30,7 +30,7 @@ createZonalMap team = do
 zonePolyForPlayer :: Player -> ZoneMap -> Maybe SpacePoly
 zonePolyForPlayer player (ZoneMap zp) = Map.lookup player zp
 
-getZoneMap :: (Match m, Monad m, Log m, Cache m ZoneCache, Cache m CentresOfPlayCache ) => Team -> m ZoneMap
+getZoneMap :: (Match m, Monad m, Log m, Cache m ZoneCache, Cache m CentresOfPlayCache ) => TeamId -> m ZoneMap
 getZoneMap team = do 
   cached createZonalMap team
 

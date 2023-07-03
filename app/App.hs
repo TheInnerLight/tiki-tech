@@ -34,6 +34,7 @@ instance Match AppM where
   gameBall = gameBallImpl
   allPlayers = allPlayersImpl
   getPlayerState = getPlayerStateImpl
+  getTeam = getTeamImpl
   kickBall = kickImpl
   update = updateImpl
   pitch = pitchImpl

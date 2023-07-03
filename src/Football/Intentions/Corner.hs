@@ -14,14 +14,14 @@ import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passBallVector))
 import Football.GameTime (gameTimeAddSeconds)
 
-decideCornerIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m PlayerIntention
+decideCornerIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => TeamId -> V2 Double -> Player -> m PlayerIntention
 decideCornerIntention team cornerLocation player = do
   ball <- gameBall
   time <- currentGameTime
   playerState <- getPlayerState player
   closestPlayerState <- head . sortOn (distance (V3 (cornerLocation ^. _x) (cornerLocation ^. _y) 0) . playerStatePositionVector ) <$> teamPlayers team
 
-  if playerTeam player /= team then do
+  if playerTeamId player /= team then do
     loc <- positionalOrientedZonalMark player
     pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
   else if (player == playerStatePlayer closestPlayerState) && distance (playerStatePositionVector playerState) (ballPositionVector ball) >= 0.5 then do

@@ -41,8 +41,8 @@ instance MonadReader LineBreakingSpecContext LineBreakingSpecM where
   local f (LineBreakingSpecM x) = LineBreakingSpecM $ local f x
 
 instance Match LineBreakingSpecM where
-  attackingDirection Team1 = pure AttackingLeftToRight
-  attackingDirection Team2 = pure AttackingRightToLeft
+  attackingDirection TeamId1 = pure AttackingLeftToRight
+  attackingDirection TeamId2 = pure AttackingRightToLeft
   gameBall = asks lbBall
   getPlayerState player = do
     players <- asks lbPlayers
@@ -60,7 +60,7 @@ dmPlayer = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 6
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2 
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 30 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -72,7 +72,7 @@ leftCMPlayer = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 10
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2 
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 25 8 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -84,7 +84,7 @@ rightCMPlayer = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 8
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2 
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 25 (-8) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -96,7 +96,7 @@ fwPlayer = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 9
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2 
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 10 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -119,7 +119,7 @@ lineBreakingSpecTests = testGroup "LineBreakingSpec tests"
               , lbBall = ball
               }
 
-      lines <- runLineBreakingSpecM testContext $ oppositionLines Team1
+      lines <- runLineBreakingSpecM testContext $ oppositionLines TeamId1
 
       lines @?= [(V2 30.0 39.0, V2 30.0 (-39.0))]
   , testCase "Opposition Lines for two players in a line toward the goal should cross the pitch (-y, +y) at those players' locations" $ do
@@ -129,7 +129,7 @@ lineBreakingSpecTests = testGroup "LineBreakingSpec tests"
               , lbBall = ball
               }
 
-      lines <- runLineBreakingSpecM testContext $ oppositionLines Team1
+      lines <- runLineBreakingSpecM testContext $ oppositionLines TeamId1
 
       lines @?= [(V2 10.0 (-39.0), V2 10.0 39.0), (V2 30.0 39.0, V2 30.0 (-39.0))]
   , testCase "Opposition Lines for two players in a line side by side should split the pitch in two in the y direction, meeting in the centre" $ do
@@ -139,7 +139,7 @@ lineBreakingSpecTests = testGroup "LineBreakingSpec tests"
               , lbBall = ball
               }
 
-      lines <- runLineBreakingSpecM testContext $ oppositionLines Team1
+      lines <- runLineBreakingSpecM testContext $ oppositionLines TeamId1
 
       lines @?= [(V2 25.0 (-39.0),V2 25.0 0.0),(V2 25.0 39.0,V2 25.0 0.0)]
 

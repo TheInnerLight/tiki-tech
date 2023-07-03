@@ -7,15 +7,21 @@ module Football.Types where
 
 import Linear (V3(..), V2)
 import Data.TypeLits (Nat, type (+), type (==))
+import qualified Data.Text as T
 
-data Team
-  = Team1
-  | Team2
+data TeamId
+  = TeamId1
+  | TeamId2
   deriving (Eq, Ord, Show)
 
-oppositionTeam :: Team -> Team
-oppositionTeam Team1 = Team2
-oppositionTeam Team2 = Team1
+oppositionTeam :: TeamId -> TeamId
+oppositionTeam TeamId1 = TeamId2
+oppositionTeam TeamId2 = TeamId1
+
+data Team = Team
+  { teamName :: T.Text
+  , teamFormation :: Formation
+  }
 
 data PlayerIntention
   = PassIntention         PassTarget    (V2 Double)   (V3 Double)   GameTime
@@ -41,7 +47,7 @@ data PlayerSpeed = PlayerSpeed
 data Player = Player
   { playerNumber :: !Int
   , playerSpeed :: !PlayerSpeed
-  , playerTeam :: !Team
+  , playerTeamId :: !TeamId
   }
   deriving (Eq, Ord, Show)
 
@@ -68,7 +74,7 @@ data ShotTarget
   deriving (Eq, Ord, Show)
 
 data Goal = Goal
-  { goalTeam :: !Team
+  { goalTeam :: !TeamId
   , goalScorer :: !Player
   , goalTime :: !GameTime
   } deriving (Eq, Ord, Show)
@@ -82,10 +88,10 @@ data PhaseOfPlay
 
 data GameState
   = OpenPlay
-  | ThrowIn Team (V2 Double)
-  | CornerKick Team (V2 Double)
-  | GoalKick Team (V2 Double)
-  | KickOff Team
+  | ThrowIn TeamId (V2 Double)
+  | CornerKick TeamId (V2 Double)
+  | GoalKick TeamId (V2 Double)
+  | KickOff TeamId
   deriving Eq
   
 data GameHalf

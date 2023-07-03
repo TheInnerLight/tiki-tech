@@ -105,9 +105,9 @@ instance Render PlayerState where
     let ppv = playerStatePositionVector p
         scaled' = coordinateTransV ppv
         colour = 
-          case playerTeam $ playerStatePlayer p of
-            Team1 -> red
-            Team2 -> blue 
+          case playerTeamId $ playerStatePlayer p of
+            TeamId1 -> red
+            TeamId2 -> blue 
 
     renderIntention r scaled' (playerStateIntention p)
     SP.fillCircle r scaled' 10 colour
@@ -138,17 +138,17 @@ instance Render SpacePoly where
         (xPoints, yPoints) = unzip . fmap (coordinateTransP . jcvEdgePoint1) $ polyEdges vp
         (xCentre, yCentre) = coordinateTransP  $ polyPoint vp
         colourT = 
-          case playerTeam player of
-            Team1 | voronoiPolygonArea vp <= 25 -> darkRedT
-            Team1 -> redT
-            Team2 | voronoiPolygonArea vp <= 25 -> darkBlueT
-            Team2 -> blueT
+          case playerTeamId player of
+            TeamId1 | voronoiPolygonArea vp <= 25 -> darkRedT
+            TeamId1 -> redT
+            TeamId2 | voronoiPolygonArea vp <= 25 -> darkBlueT
+            TeamId2 -> blueT
         colour = 
-          case playerTeam player of
-            Team1 | voronoiPolygonArea vp <= 25 -> darkRed
-            Team1 -> red
-            Team2 | voronoiPolygonArea vp <= 25 -> darkBlue
-            Team2 -> blue
+          case playerTeamId player of
+            TeamId1 | voronoiPolygonArea vp <= 25 -> darkRed
+            TeamId1 -> red
+            TeamId2 | voronoiPolygonArea vp <= 25 -> darkBlue
+            TeamId2 -> blue
       
     SP.fillCircle r (V2 xCentre yCentre) 2 colour
     SP.fillPolygon r (V.fromList xPoints) (V.fromList yPoints) colourT

@@ -34,7 +34,7 @@ kickBallWith iceptLoc desiredBallMotion playerState = do
     Just r -> do
       playerState'' <-  kickSuccess r playerState
       let player = playerStatePlayer playerState''
-      logOutput ("Player: " ++ show (playerTeam  player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState))
+      logOutput ("Player: " ++ show (playerTeamId  player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState))
       pure playerState''
     Nothing -> pure playerState
   where
@@ -50,7 +50,7 @@ dribbleToLocation iceptLoc diff playerState = do
     Just r -> do
       playerState'' <-  kickSuccess r playerState
       let player = playerStatePlayer playerState''
-      logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
+      logOutput ("Player: " ++ show (playerTeamId player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
       pure playerState''
     Nothing -> pure playerState
   where
@@ -68,7 +68,7 @@ controlBall loc playerState = do
     Just r -> do 
       playerState'' <- kickSuccess r playerState
       let player = playerStatePlayer playerState''
-      logOutput ("Player: " ++ show (playerTeam player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
+      logOutput ("Player: " ++ show (playerTeamId player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
       pure playerState''
     Nothing -> pure playerState
   where

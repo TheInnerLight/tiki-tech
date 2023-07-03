@@ -49,16 +49,16 @@ meanOn f polys =
   let (n, area) = foldl' (\(c, area') p -> (c+1, f p + area')) (0, 0) polys
   in (area/n)
 
-voronoiPolygonAdjustedArea :: Team -> SpacePoly -> Double
+voronoiPolygonAdjustedArea :: TeamId -> SpacePoly -> Double
 voronoiPolygonAdjustedArea team poly  =
   let spacePoly = spacePolyJCV poly
       polyPlayer = spacePolyPlayer poly
-  in if playerTeam polyPlayer == team then
+  in if playerTeamId polyPlayer == team then
     voronoiPolygonArea spacePoly
   else
     voronoiPolygonArea spacePoly / 4
 
-findEdgeSpaces :: (Monad m, Match m, Cache m SpaceCache) => Team -> m [BlockOfSpace]
+findEdgeSpaces :: (Monad m, Match m, Cache m SpaceCache) => TeamId -> m [BlockOfSpace]
 findEdgeSpaces team = do
   (SpaceMap spaceMap') <- getSpaceMapForTeam team
   let edgeMaker idx polyEdge =
@@ -86,14 +86,14 @@ findPolySpaces player = do
   (SpaceMap spaceMap') <- getSpaceMap
   let polyToBlock poly =
         BlockOfSpace (polyPoint $ spacePolyJCV poly) (voronoiPolygonArea $ spacePolyJCV poly)
-  let spaceMap'' = Map.filter (\p -> playerTeam (spacePolyPlayer p) /= playerTeam player ) spaceMap'
+  let spaceMap'' = Map.filter (\p -> playerTeamId (spacePolyPlayer p) /= playerTeamId player ) spaceMap'
   pure $ (\(_, poly) -> polyToBlock poly) <$> Map.toList spaceMap''
   
 
 optimalNearbySpace :: (Monad m, Match m, Log m, Cache m SpaceCache, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 optimalNearbySpace player = do
     polySpaces <- findPolySpaces player
-    polyEdges' <- findEdgeSpaces (oppositionTeam $ playerTeam player)
+    polyEdges' <- findEdgeSpaces (oppositionTeam $ playerTeamId player)
 
     let allSpaces  = polyEdges' ++ polySpaces
     let filterPitchArea p = do
@@ -127,7 +127,7 @@ nearestSpace player = do
 
 findClosestOpposition :: (Monad m, Match m) => Player ->  m Player
 findClosestOpposition player = do
-  opp <- oppositionPlayers (playerTeam player)
+  opp <- oppositionPlayers (playerTeamId player)
   playerState <- getPlayerState player
   pure $ playerStatePlayer $ head $ sortOn (\o -> distance (playerStatePositionVector o) (playerStatePositionVector playerState) ) opp
   

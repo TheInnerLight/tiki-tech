@@ -14,7 +14,7 @@ touchEvents = do
 turnovers :: (Match m, Monad m) => m [TouchOfBall]
 turnovers = snd . foldr scanner (Nothing, []) <$> matchEventLog
   where
-    scanner (TouchLogEntry t) (Just p, xs) | playerTeam p /= playerTeam (touchOfBallPlayer t) = 
+    scanner (TouchLogEntry t) (Just p, xs) | playerTeamId p /= playerTeamId (touchOfBallPlayer t) = 
       let player = touchOfBallPlayer t
       in (Just player, t : xs)
     scanner (TouchLogEntry t) (Nothing, xs)  = 

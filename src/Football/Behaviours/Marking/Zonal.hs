@@ -24,9 +24,9 @@ maxByMaybe f xs = Just $ maximumBy f xs
 
 mostDangerousPlayerInZone :: (Match m, Monad m, Log m, Cache m ZoneCache, Cache m CentresOfPlayCache) => Player -> m (Maybe Player)
 mostDangerousPlayerInZone player = do
-  zmp <- getZoneMap (playerTeam player)
-  opps <- oppositionPlayers (playerTeam player)
-  let oppTeam = oppositionTeam (playerTeam player)
+  zmp <- getZoneMap (playerTeamId player)
+  opps <- oppositionPlayers (playerTeamId player)
+  let oppTeam = oppositionTeam (playerTeamId player)
   let maybePoly = zonePolyForPlayer player zmp
   case maybePoly of
     Just poly -> do

@@ -17,13 +17,13 @@ import Data.List (sortOn)
 import Football.GameTime (gameTimeAddSeconds)
 
 
-decideThrowInIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m PlayerIntention
+decideThrowInIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => TeamId -> V2 Double -> Player -> m PlayerIntention
 decideThrowInIntention team throwLocation player = do
   ball <- gameBall
   time <- currentGameTime
   playerState <- getPlayerState player
   closestPlayer <- head . sortOn (distance (V3 (throwLocation ^. _x) (throwLocation ^. _y) 0) . playerStatePositionVector ) <$> teamPlayers team
-  if playerTeam player /= team then do
+  if playerTeamId player /= team then do
     loc <- positionalOrientedZonalMark player
     pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
   else if (player == playerStatePlayer closestPlayer) && distance (playerStatePositionVector playerState) (ballPositionVector ball) >= 0.5 then do

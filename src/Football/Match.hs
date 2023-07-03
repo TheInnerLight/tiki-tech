@@ -25,10 +25,11 @@ data AttackingDirection
   | AttackingRightToLeft
 
 class Match m where
-  attackingDirection :: Team -> m AttackingDirection
+  attackingDirection :: TeamId -> m AttackingDirection
   gameBall :: m Ball
   allPlayers :: m [PlayerState]
   getPlayerState :: Player -> m PlayerState
+  getTeam :: TeamId -> m Team
   kickBall :: Player -> V3 Double -> V3 Double -> m Ball
   setBallMotionParams :: V3 Double -> V3 Double -> m Ball
   update :: Int -> m ()
@@ -39,23 +40,23 @@ class Match m where
   getGameState :: m GameState
   setGameState :: GameState -> m ()
 
-class HasTeam a where
-  getTeam :: a -> Team
+class HasTeamId a where
+  getTeamId :: a -> TeamId
 
-instance HasTeam Team where
-  getTeam = id
+instance HasTeamId TeamId where
+  getTeamId = id
 
-instance HasTeam Player where
-  getTeam = playerTeam
+instance HasTeamId Player where
+  getTeamId = playerTeamId
 
-oppositionPlayers :: (Functor m, Match m) => Team -> m [PlayerState]
-oppositionPlayers team = filter (\p -> playerTeam (playerStatePlayer p) /= team) <$> allPlayers
+oppositionPlayers :: (Functor m, Match m) => TeamId -> m [PlayerState]
+oppositionPlayers team = filter (\p -> playerTeamId (playerStatePlayer p) /= team) <$> allPlayers
 
-teamPlayers :: (Functor m, Match m) => Team -> m [PlayerState]
-teamPlayers team = filter (\p -> playerTeam (playerStatePlayer p) == team) <$> allPlayers
+teamPlayers :: (Functor m, Match m) => TeamId -> m [PlayerState]
+teamPlayers team = filter (\p -> playerTeamId (playerStatePlayer p) == team) <$> allPlayers
 
 teammates :: (Functor m, Match m) => Player -> m [PlayerState]
-teammates player = filter (\p -> playerStatePlayer p /= player) <$> teamPlayers (playerTeam player)
+teammates player = filter (\p -> playerStatePlayer p /= player) <$> teamPlayers (playerTeamId player)
  
 clampPitch :: (Monad m, Match m) => V2 Double -> m (V2 Double)
 clampPitch (V2 x y) = do
