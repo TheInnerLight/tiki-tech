@@ -34,6 +34,7 @@ data PlayerIntention
   | MoveIntoSpace         (V2 Double)   GameTime
   | RunToLocation         (V2 Double)   GameTime
   | ControlBallIntention  (V2 Double)   GameTime
+  | WinBallIntention      (V2 Double)   GameTime
   | IntentionCooldown     GameTime
   | DoNothing
   deriving (Eq, Ord, Show)

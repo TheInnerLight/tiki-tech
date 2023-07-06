@@ -478,12 +478,12 @@ loopFor r fonts fpsm = do
       -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList t2Sites
 
       --draw zone polygons
-      -- (ZoneMap sitesAll) <- getZoneMap Team1
+      -- (ZoneMap sitesAll) <- getZoneMap TeamId1
       -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
 
-      -- offside1X <- offsideLine Team1
+      -- offside1X <- offsideLine TeamId1
       -- liftIO $ render r (fontsDefault fonts) (OffsideLine offside1X)
-      -- offside2X <- offsideLine Team2
+      -- offside2X <- offsideLine TeamId2
       -- liftIO $ render r (fontsDefault fonts) (OffsideLine offside2X)
 
 

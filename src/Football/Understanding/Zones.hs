@@ -17,14 +17,15 @@ import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 createZonalMap :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache) => TeamId -> m ZoneMap
 createZonalMap team = do
   players' <- filter (not . isGoalKeeper . playerStatePlayer) <$> teamPlayers team
-  pos <- traverse (outOfPossessionDesiredPosition . playerStatePlayer) players'
+  let players'' = filter (\p -> case playerStateIntention p of WinBallIntention _ _ -> False; _ -> True) players'
+  pos <- traverse (outOfPossessionDesiredPosition . playerStatePlayer) players''
   let allPlayersVoronoi = jcvSites2 pos
   let map1 = Map.fromList $ fmap (\v -> (polyIndex v, v)) allPlayersVoronoi
   let folder acc (i, p) =
         case Map.lookup i map1 of
           Just poly -> Map.insert p (SpacePoly poly p) acc
           Nothing -> acc
-  let map2 = foldl' folder Map.empty $ zip [0..] (fmap playerStatePlayer players')
+  let map2 = foldl' folder Map.empty $ zip [0..] (fmap playerStatePlayer players'')
   pure $ ZoneMap map2
 
 zonePolyForPlayer :: Player -> ZoneMap -> Maybe SpacePoly

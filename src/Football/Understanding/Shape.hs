@@ -65,11 +65,11 @@ outOfPossessionFormationRelativeToLine line horizontalCompactness player = do
   case chosenLine of
     UnchangedFormationLine adjustedLine' ->
       case horizPos player adjustedLine' of
-        Just p -> pure . Just $ 5 * horizontalCompactness * p
+        Just p -> pure . Just $ (3 + 3 * horizontalCompactness) * p
         Nothing -> pure Nothing
     ReducedFormationLine adjustedLine' ->
       case horizPos player adjustedLine' of
-        Just p -> pure . Just $ 5 * horizontalCompactness * p
+        Just p -> pure . Just $ (3 + 3 * horizontalCompactness) * p
         Nothing -> pure Nothing
 
   where
@@ -99,11 +99,11 @@ excludeBallWinner (FiveLine p1 p2 p3 p4 p5) = do
   p4s <- getPlayerState p4
   p5s <- getPlayerState p5
   case (playerStateIntention p1s, playerStateIntention p2s, playerStateIntention p3s, playerStateIntention p4s, playerStateIntention p5s) of
-    (ControlBallIntention _ _, _, _, _, _) -> pure (ReducedFormationLine   $ FourLine p2 p3 p4 p5, Just p1)
-    (_, ControlBallIntention _ _, _, _, _) -> pure (ReducedFormationLine   $ FourLine p1 p3 p4 p5, Just p2)
-    (_, _, ControlBallIntention _ _, _, _) -> pure (ReducedFormationLine   $ FourLine p1 p2 p4 p5, Just p3)
-    (_, _, _, ControlBallIntention _ _, _) -> pure (ReducedFormationLine   $ FourLine p1 p2 p4 p5, Just p4)
-    (_, _, _, _, ControlBallIntention _ _) -> pure (ReducedFormationLine   $ FourLine p1 p2 p3 p4, Just p5)
+    (WinBallIntention _ _, _, _, _, _) -> pure (ReducedFormationLine   $ FourLine p2 p3 p4 p5, Just p1)
+    (_, WinBallIntention _ _, _, _, _) -> pure (ReducedFormationLine   $ FourLine p1 p3 p4 p5, Just p2)
+    (_, _, WinBallIntention _ _, _, _) -> pure (ReducedFormationLine   $ FourLine p1 p2 p4 p5, Just p3)
+    (_, _, _, WinBallIntention _ _, _) -> pure (ReducedFormationLine   $ FourLine p1 p2 p4 p5, Just p4)
+    (_, _, _, _, WinBallIntention _ _) -> pure (ReducedFormationLine   $ FourLine p1 p2 p3 p4, Just p5)
     (_, _, _, _, _)                        -> pure (UnchangedFormationLine $ FiveLine p1 p2 p3 p4 p5, Nothing)
 excludeBallWinner (FourLine p1 p2 p3 p4) = do
   p1s <- getPlayerState p1
@@ -111,31 +111,31 @@ excludeBallWinner (FourLine p1 p2 p3 p4) = do
   p3s <- getPlayerState p3
   p4s <- getPlayerState p4
   case (playerStateIntention p1s, playerStateIntention p2s, playerStateIntention p3s, playerStateIntention p4s) of
-    (ControlBallIntention _ _, _, _, _) -> pure (ReducedFormationLine $ ThreeLine p2 p3 p4, Just p1)
-    (_, ControlBallIntention _ _, _, _) -> pure (ReducedFormationLine $ ThreeLine p1 p3 p4, Just p2)
-    (_, _, ControlBallIntention _ _, _) -> pure (ReducedFormationLine $ ThreeLine p1 p2 p4, Just p3)
-    (_, _, _, ControlBallIntention _ _) -> pure (ReducedFormationLine $ ThreeLine p1 p2 p3, Just p4)
+    (WinBallIntention _ _, _, _, _) -> pure (ReducedFormationLine $ ThreeLine p2 p3 p4, Just p1)
+    (_, WinBallIntention _ _, _, _) -> pure (ReducedFormationLine $ ThreeLine p1 p3 p4, Just p2)
+    (_, _, WinBallIntention _ _, _) -> pure (ReducedFormationLine $ ThreeLine p1 p2 p4, Just p3)
+    (_, _, _, WinBallIntention _ _) -> pure (ReducedFormationLine $ ThreeLine p1 p2 p3, Just p4)
     (_, _, _, _)                        -> pure (UnchangedFormationLine $ FourLine p1 p2 p3 p4, Nothing)
 excludeBallWinner (ThreeLine p1 p2 p3) = do
   p1s <- getPlayerState p1
   p2s <- getPlayerState p2
   p3s <- getPlayerState p3
   case (playerStateIntention p1s, playerStateIntention p2s, playerStateIntention p3s) of
-    (ControlBallIntention _ _, _, _) -> pure (ReducedFormationLine $ TwoLine p2 p3, Just p1)
-    (_, ControlBallIntention _ _, _) -> pure (ReducedFormationLine $ TwoLine p1 p3, Just p2)
-    (_, _, ControlBallIntention _ _) -> pure (ReducedFormationLine $ TwoLine p1 p2, Just p3)
+    (WinBallIntention _ _, _, _) -> pure (ReducedFormationLine $ TwoLine p2 p3, Just p1)
+    (_, WinBallIntention _ _, _) -> pure (ReducedFormationLine $ TwoLine p1 p3, Just p2)
+    (_, _, WinBallIntention _ _) -> pure (ReducedFormationLine $ TwoLine p1 p2, Just p3)
     (_, _, _)                        -> pure (UnchangedFormationLine $ ThreeLine p1 p2 p3, Nothing)
 excludeBallWinner (TwoLine p1 p2) = do
   p1s <- getPlayerState p1
   p2s <- getPlayerState p2
   case (playerStateIntention p1s, playerStateIntention p2s) of
-    (ControlBallIntention _ _, _) -> pure (ReducedFormationLine $ OneLine p2, Just p1)
-    (_, ControlBallIntention _ _) -> pure (ReducedFormationLine $ OneLine p1, Just p2)
+    (WinBallIntention _ _, _) -> pure (ReducedFormationLine $ OneLine p2, Just p1)
+    (_, WinBallIntention _ _) -> pure (ReducedFormationLine $ OneLine p1, Just p2)
     (_, _)                        -> pure (UnchangedFormationLine $ TwoLine p1 p2, Nothing)
 excludeBallWinner (OneLine p1) = do
   p1s <- getPlayerState p1
   case playerStateIntention p1s of
-    (ControlBallIntention _ _) -> pure (ReducedFormationLine EmptyLine, Just p1)
+    (WinBallIntention _ _) -> pure (ReducedFormationLine EmptyLine, Just p1)
     _                          -> pure (UnchangedFormationLine $ OneLine p1, Nothing)
 excludeBallWinner EmptyLine = pure (UnchangedFormationLine EmptyLine, Nothing)
 
