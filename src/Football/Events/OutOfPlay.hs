@@ -3,7 +3,7 @@ module Football.Events.OutOfPlay where
 import Control.Lens ((^.))
 import Football.Match
 import Football.Types
-import Linear (normalize, V3 (V3), _x, _y, _z, V2 (V2))
+import Linear (normalize, V3 (V3), _x, _y, _z, V2 (V2), Metric (dot))
 import Football.Maths (linePlaneIntersection)
 import Football.Pitch (leftGoalLine, rightGoalLine, pitchHalfLengthX, pitchHalfWidthY)
 import Data.Maybe (fromJust, listToMaybe)
@@ -36,11 +36,11 @@ wentForThrowIn = do
   let intersecPoint1 = linePlaneIntersection (ballNow, ballDir) (leftTouchLineCentre, leftTouchLineNormal)
   let intersecPoint2 = linePlaneIntersection (ballNow, ballDir) (rightTouchLineCentre, rightTouchLineNormal)
   case (intersecPoint1, intersecPoint2, ltp, gs) of
-    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _y < leftTouchLineMax ^. _y && ip ^. _x >= leftTouchLineMin ^. _x && ip ^. _x <= leftTouchLineMax ^. _x -> 
+    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _y < leftTouchLineMax ^. _y && ip ^. _x >= leftTouchLineMin ^. _x && ip ^. _x <= leftTouchLineMax ^. _x && leftTouchLineNormal `dot` ballDir > 0  -> 
       let lastTouchTeam = playerTeamId lastTouch
           touchLineLoc = locate2D ball
       in pure $ Just (oppositionTeam lastTouchTeam, touchLineLoc)
-    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _y > rightTouchLineMax ^. _y && ip ^. _x >= rightTouchLineMin ^. _x && ip ^. _x <= rightTouchLineMax ^. _x -> 
+    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _y > rightTouchLineMax ^. _y && ip ^. _x >= rightTouchLineMin ^. _x && ip ^. _x <= rightTouchLineMax ^. _x && rightTouchLineNormal `dot` ballDir > 0 -> 
       let lastTouchTeam = playerTeamId lastTouch
           touchLineLoc = locate2D ball
       in pure $ Just (oppositionTeam lastTouchTeam, touchLineLoc)
