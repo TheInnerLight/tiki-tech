@@ -8,9 +8,10 @@ import Football.MathsSpec (mathsTests)
 import Football.Intentions.OnTheBallSpec (onTheBallTests)
 import Football.Understanding.ExpectedGoalsSpec (expectedGoalsSpecTests)
 import Football.Understanding.LineBreakingSpec (lineBreakingSpecTests)
+import Football.Understanding.ShapeSpec (shapeSpecTests)
 
 main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [spaceSpecTests, passTests, mathsTests, onTheBallTests, expectedGoalsSpecTests, lineBreakingSpecTests]
+tests = testGroup "Tests" [shapeSpecTests, spaceSpecTests, passTests, mathsTests, onTheBallTests, expectedGoalsSpecTests, lineBreakingSpecTests]
