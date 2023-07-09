@@ -256,7 +256,25 @@ shapeSpecTests = testGroup "ShapeSpec tests"
     pLCM @?= V2 (-5.0) (-6.0)
     pCDM @?= V2 (-5.0) (-0.0)
     pRCM @?= V2 (-5.0) (6.0)
-    
+
+  , testCase "Midfield five becomes a midfield four when one player is pressing" $ do
+    let ssc = 
+          ShapeSpecContext 
+            { shapeSpecContextPressingPlayer = Just playerLCM
+            }
+
+    (pLWB, pCDM, pRCM, pRWB) <- runTestMLR ssc $ do
+      pLW <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerLWB (V2 0 0)
+      pCDM <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerDM (V2 0 0)
+      pRCM <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerRCM (V2 0 0)
+      pRW <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerRWB (V2 0 0)
+      pure (pLW, pCDM, pRCM, pRW)
+
+    pLWB @?= V2 (-5.0) (-9.0)
+    pCDM @?= V2 (-5.0) (-3.0)
+    pRCM @?= V2 (-5.0) (3.0)
+    pRWB @?= V2 (-5.0) (9.0)
+  
   , testCase "Back four becomes a back three when one player is pressing" $ do
     let ssc = 
           ShapeSpecContext 
