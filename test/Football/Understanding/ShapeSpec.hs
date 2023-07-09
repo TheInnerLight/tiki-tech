@@ -217,6 +217,27 @@ shapeSpecTests = testGroup "ShapeSpec tests"
     pCCB @?= V2 (-15.0) (-0.0)
     pRCB @?= V2 (-15.0) (6.0)
 
+  , testCase "Midfield five are properly positioned" $ do
+
+    let ssc = 
+          ShapeSpecContext 
+            { shapeSpecContextPressingPlayer = Nothing
+            }
+            
+    (pLWB, pLCM, pCDM, pRCM, pRWB) <- runTestMLR ssc $ do
+      pLW <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerLWB (V2 0 0)
+      pLCM <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerLCM (V2 0 0)
+      pCDM <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerDM (V2 0 0)
+      pRCM <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerRCM (V2 0 0)
+      pRW <- outOfPossessionFormationRelativeTo (teamFormation threeFiveTwoTeam) 1 0 playerRWB (V2 0 0)
+      pure (pLW, pLCM, pCDM, pRCM, pRW)
+
+    pLWB @?= V2 (-5.0) (-12.0)
+    pLCM @?= V2 (-5.0) (-6.0)
+    pCDM @?= V2 (-5.0) (0.0)
+    pRCM @?= V2 (-5.0) (6.0)
+    pRWB @?= V2 (-5.0) (12.0)
+
   , testCase "Midfield three are properly positioned" $ do
     let ssc = 
           ShapeSpecContext 
