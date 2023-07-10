@@ -27,15 +27,15 @@ import Football.Understanding.Team (inTeamCoordinateSystem, toTeamCoordinateSyst
 
 playerMarkClosestOppositionPlayer :: (Monad m, Match m, Log m, Cache m CentresOfPlayCache) => Player -> m (V2 Double)
 playerMarkClosestOppositionPlayer player = do
-  oppositionPlayers' <- oppositionPlayers (playerTeam player)
-  teamPlayers' <- teamPlayers (playerTeam player)
+  oppositionPlayers' <- oppositionPlayers (playerTeamId player)
+  teamPlayers' <- teamPlayers (playerTeamId player)
   ball <- gameBall
   playerState <- getPlayerState player
   let matchUp = foldl' (folder teamPlayers') Map.empty oppositionPlayers'
   case Map.lookup playerState matchUp of
     Just p | playerNumber player /= 1 -> do
-      tBall <- toTeamCoordinateSystem (playerTeam player) (ballPositionVector ball)
-      tTargetPlayer <- toTeamCoordinateSystem (playerTeam player) (playerStatePositionVector p)
+      tBall <- toTeamCoordinateSystem (playerTeamId player) (ballPositionVector ball)
+      tTargetPlayer <- toTeamCoordinateSystem (playerTeamId player) (playerStatePositionVector p)
       let tDiff = tBall - tTargetPlayer
       let desiredDist x = 1.8 * exp ( 0.075 * x )
       let desiredDistTP = desiredDist (norm tDiff)
@@ -43,7 +43,7 @@ playerMarkClosestOppositionPlayer player = do
       let maximumPos = tTargetPlayer - V3 1.8 0 0
       formationPos <- outOfPossessionDesiredPosition player
       let ultimatePos = resolvePosition minimumPos maximumPos formationPos
-      locate2D <$> fromTeamCoordinateSystem (playerTeam player) ultimatePos
+      locate2D <$> fromTeamCoordinateSystem (playerTeamId player) ultimatePos
       --locate2D <$> inTeamCoordinateSystem (playerTeam player) (playerPositionVector p) (+ V3 (-2) 0 0)
     _ -> outOfPossessionDesiredPosition player
   where 
@@ -68,6 +68,6 @@ playerOrientedZonalMark player = do
   case maybeMarkedPlayer of
     Just markedPlayer -> do
       markedPlayerState <- getPlayerState markedPlayer
-      locate2D <$> inTeamCoordinateSystem (playerTeam player) (playerStatePositionVector markedPlayerState) (+ V3 (-2) 0 0)
+      locate2D <$> inTeamCoordinateSystem (playerTeamId player) (playerStatePositionVector markedPlayerState) (+ V3 (-2) 0 0)
     Nothing           -> outOfPossessionDesiredPosition player
 

@@ -47,14 +47,15 @@ import Football.GameTime (gameTimeAddSeconds)
 data MatchState = MatchState 
   { matchStateBall :: TVar Ball
   , matchStatePlayers :: TVar (Map Player PlayerState)
+  , matchStateTeams :: Map TeamId Team
   , matchStateTeam1VoronoiMap :: TMVar [JCVPoly]
   , matchStateTeam2VoronoiMap :: TMVar [JCVPoly]
   , matchStateSpaceMap :: TMVar SpaceMap
   , matchStateLastPlayerTouchedBall :: TMVar Player
   , matchStateCentresOfPlay :: TMVar CentresOfPlay
   , matchStateInterceptionCache :: TMVar (Map (PlayerState, Ball) [InterceptionData])
-  , matchStateZoneCache :: TMVar (Map Team ZoneMap)
-  , matchStateSpaceCache :: TMVar (Map (Maybe Team) SpaceMap)
+  , matchStateZoneCache :: TMVar (Map TeamId ZoneMap)
+  , matchStateSpaceCache :: TMVar (Map (Maybe TeamId) SpaceMap)
   , matchPitch :: Pitch
   , matchStateGameTime :: TVar GameTime
   , matchStateEventLog :: TVar [MatchLogEntry]
@@ -84,11 +85,11 @@ setGameStateImpl gs = do
 pitchImpl :: (Monad m, Has m MatchState) => m Pitch
 pitchImpl = matchPitch <$> has
 
-attackingDirectionImpl :: (Monad m, Has m MatchState) => Team -> m AttackingDirection
+attackingDirectionImpl :: (Monad m, Has m MatchState) => TeamId -> m AttackingDirection
 attackingDirectionImpl team =
   case team of
-    Team1 -> pure AttackingLeftToRight
-    Team2 -> pure AttackingRightToLeft
+    TeamId1 -> pure AttackingLeftToRight
+    TeamId2 -> pure AttackingRightToLeft
 
 kickImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => Player -> V3 Double -> V3 Double -> m Ball
 kickImpl player loc motionVector' = do
@@ -152,14 +153,15 @@ enactIntentions = do
         MoveIntoSpace loc _ -> pure playerState
         RunToLocation loc _ -> pure playerState
         ControlBallIntention loc _ -> controlBall loc playerState
+        WinBallIntention loc _ -> controlBall loc playerState
         IntentionCooldown _ -> pure playerState
         DoNothing -> pure playerState
       
 updateImpl :: (Monad m, Has m MatchState, Atomise m, Match m, Log m, Random m, Concurrent m, Cache m CentresOfPlayCache, Cache m InterceptionDataCache, Cache m ZoneCache, Cache m SpaceCache) => Int -> m ()
 updateImpl fps = do
   (state :: MatchState) <- has
-  team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team1
-  team2Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers Team2
+  team1Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers TeamId1
+  team2Voronoi <- jcvSites2 . fmap locate2D <$> teamPlayers TeamId2
   spaceMap' <- createSpaceMap
   atomise $ do
     writeTMVar (matchStateTeam1VoronoiMap state) team1Voronoi
@@ -207,6 +209,11 @@ getPlayerStateImpl player = do
   (state :: MatchState) <- has
   map' <- atomise $ readTVar $ matchStatePlayers state
   pure $ map' Map.! player
+
+getTeamImpl :: (Monad m, Has m MatchState) => TeamId -> m Team
+getTeamImpl tid = do
+  (state :: MatchState) <- has
+  pure $ matchStateTeams state Map.! tid
 
 gameBallImpl :: (Monad m, Has m MatchState, Atomise m) => m Ball
 gameBallImpl = do 
@@ -260,7 +267,7 @@ cacheInsertInterceptionDataImpl (playerState, ball) v = do
     Just c -> atomise $ writeTMVar (matchStateInterceptionCache state) $ Map.insert (playerState, ball) v c 
     Nothing -> atomise $ writeTMVar (matchStateInterceptionCache state) (Map.fromList [((playerState, ball), v)])
 
-cacheLookupZoneDataImpl :: (Monad m, Has m MatchState, Atomise m) => Team -> m (Maybe ZoneMap)
+cacheLookupZoneDataImpl :: (Monad m, Has m MatchState, Atomise m) => TeamId -> m (Maybe ZoneMap)
 cacheLookupZoneDataImpl team = do
   (state :: MatchState) <- has
   cache <- atomise $ tryReadTMVar $ matchStateZoneCache state
@@ -268,7 +275,7 @@ cacheLookupZoneDataImpl team = do
     Just c  -> pure $ Map.lookup team c
     Nothing -> pure Nothing
 
-cacheInsertZoneDataImpl :: (Monad m, Has m MatchState, Atomise m) => Team -> ZoneMap -> m ()
+cacheInsertZoneDataImpl :: (Monad m, Has m MatchState, Atomise m) => TeamId -> ZoneMap -> m ()
 cacheInsertZoneDataImpl team v = do
   (state :: MatchState) <- has
   cache <- atomise $ tryReadTMVar $ matchStateZoneCache state
@@ -276,7 +283,7 @@ cacheInsertZoneDataImpl team v = do
     Just c -> atomise $ writeTMVar (matchStateZoneCache state) $ Map.insert team v c 
     Nothing -> atomise $ writeTMVar (matchStateZoneCache state) (Map.fromList [(team, v)])
 
-cacheLookupSpaceDataImpl :: (Monad m, Has m MatchState, Atomise m) => Maybe Team -> m (Maybe SpaceMap)
+cacheLookupSpaceDataImpl :: (Monad m, Has m MatchState, Atomise m) => Maybe TeamId -> m (Maybe SpaceMap)
 cacheLookupSpaceDataImpl team = do
   (state :: MatchState) <- has
   cache <- atomise $ tryReadTMVar $ matchStateSpaceCache state
@@ -284,7 +291,7 @@ cacheLookupSpaceDataImpl team = do
     Just c  -> pure $ Map.lookup team c
     Nothing -> pure Nothing
 
-cacheInsertSpaceDataImpl :: (Monad m, Has m MatchState, Atomise m) => Maybe Team -> SpaceMap -> m ()
+cacheInsertSpaceDataImpl :: (Monad m, Has m MatchState, Atomise m) => Maybe TeamId -> SpaceMap -> m ()
 cacheInsertSpaceDataImpl team v = do
   (state :: MatchState) <- has
   cache <- atomise $ tryReadTMVar $ matchStateSpaceCache state

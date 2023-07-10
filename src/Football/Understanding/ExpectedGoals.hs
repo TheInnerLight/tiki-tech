@@ -11,7 +11,7 @@ xgValue :: Double -> Double
 xgValue distance =
     min 0.99 $ 1.123*exp(-0.203*distance)+0.023
 
-locationXG :: (Match m, Monad m, Locate2D l) => Team -> l -> m Double
+locationXG :: (Match m, Monad m, Locate2D l) => TeamId -> l -> m Double
 locationXG team l = do
   pitch' <- pitch
   let halfLengthOfPitch = pitchLength pitch' / 2

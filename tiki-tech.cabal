@@ -121,6 +121,7 @@ library
         stm,
         text,
         time,
+        typenums,
         vector
 
     -- Directories containing source files.
@@ -189,6 +190,7 @@ test-suite tiki-tech-test
       Football.Intentions.OnTheBallSpec
       Football.Understanding.ExpectedGoalsSpec
       Football.Understanding.LineBreakingSpec
+      Football.Understanding.ShapeSpec
       Football.Understanding.SpaceSpec
       Football.MathsSpec
 

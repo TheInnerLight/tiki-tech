@@ -43,7 +43,11 @@ decideOutfieldOpenPlayIntention player = do
     DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False } -> do
       targetLoc <- clampPitch loc
       let timestep = max 0.1 $ min 0.5 (0.5*t)
-      pure $ ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
+      pure $ case dfGamePhase decisionFactors of
+        InPossessionPhase -> ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        AttackingTransitionPhase -> ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        DefensiveTransitionPhase -> WinBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        OutOfPossessionPhase -> WinBallIntention targetLoc $ gameTimeAddSeconds time timestep
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = DefensiveTransitionPhase } -> do
       loc <- coverShadowOfPlayerOrientedZonalMark player
       pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
@@ -74,14 +78,18 @@ decideGoalKeeperOpenPlayIntention player = do
     DecisionFactors { dfClosestPlayerToBall = Just (ClosestPlayerToBall loc t), dfHasControlOfBall = False } -> do
       targetLoc <- clampPitch loc
       let timestep = max 0.1 $ min 0.5 (0.5*t)
-      pure $ ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
+      pure $ case dfGamePhase decisionFactors of
+        InPossessionPhase -> ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        AttackingTransitionPhase -> ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        DefensiveTransitionPhase -> WinBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        OutOfPossessionPhase -> WinBallIntention targetLoc $ gameTimeAddSeconds time timestep
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = DefensiveTransitionPhase } -> do
       loc <- outOfPossessionDesiredPosition player
       pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = OutOfPossessionPhase } -> do
       ball <- gameBall
       loc <- outOfPossessionDesiredPosition player
-      ogVev <- ownGoalVector (playerTeam player)
+      ogVev <- ownGoalVector (playerTeamId player)
       let ballFromGoal = ballPositionVector ball - ogVev
           desiredDistanceFromGoal = norm  (V3 (loc ^. _x) (loc ^. _y) 0 - ogVev )
       let dest = locate2D $ 

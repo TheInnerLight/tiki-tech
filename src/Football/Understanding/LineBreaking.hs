@@ -20,7 +20,7 @@ import Football.Understanding.Pitch (targetGoalVector)
 import Football.Locate2D (Locate2D(locate2D))
 import Data.Foldable (foldlM)
 
-oppositionLines :: (Monad m, Match m, Cache m SpaceCache) => Team -> m [(V2 Double, V2 Double)]
+oppositionLines :: (Monad m, Match m, Cache m SpaceCache) => TeamId -> m [(V2 Double, V2 Double)]
 oppositionLines team = do
   (SpaceMap spaceMap') <- getSpaceMapForTeam $ oppositionTeam team
   ball <- gameBall
@@ -41,7 +41,7 @@ oppositionLines team = do
             
   foldlM lineFolder [] $ Map.toList spaceMap'
 
-linesBroken :: (Monad m, Match m, Cache m SpaceCache, Log m) => Team -> (V2 Double, V2 Double)  -> m Double
+linesBroken :: (Monad m, Match m, Cache m SpaceCache, Log m) => TeamId -> (V2 Double, V2 Double)  -> m Double
 linesBroken team line = do
   oppLines <- oppositionLines team
   let (lv1, lv2) = line

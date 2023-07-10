@@ -41,5 +41,5 @@ instance CacheKeyValue CentresOfPlayCache where
 data SpaceCache = SpaceCache
 
 instance CacheKeyValue SpaceCache where
-  type CacheKey SpaceCache = Maybe Team
+  type CacheKey SpaceCache = Maybe TeamId
   type CacheValue SpaceCache = SpaceMap

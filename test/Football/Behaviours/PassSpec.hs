@@ -40,8 +40,8 @@ instance MonadReader PassSpecContext PassSpecM where
   local f (PassSpecM x) = PassSpecM $ local f x
 
 instance Match PassSpecM where
-  attackingDirection Team1 = pure AttackingLeftToRight
-  attackingDirection Team2 = pure AttackingRightToLeft
+  attackingDirection TeamId1 = pure AttackingLeftToRight
+  attackingDirection TeamId2 = pure AttackingRightToLeft
   gameBall = asks psBall
   getPlayerState player = do
     players <- asks psPlayers
@@ -61,7 +61,7 @@ playerWithBallAtOrigin = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 8
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team1  
+      , playerTeamId = TeamId1
       }
   , playerStatePositionVector = V3 0 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -73,7 +73,7 @@ easyPassingOptionTeammate = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 10
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team1  
+      , playerTeamId = TeamId1
       }
   , playerStatePositionVector = V3 10 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -85,7 +85,7 @@ farAwayOpposition1 = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 8
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 51 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -97,7 +97,7 @@ farAwayOpposition2 = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 10
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 50 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -109,7 +109,7 @@ farAwayTeammate = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 9
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team1  
+      , playerTeamId = TeamId1
       }
   , playerStatePositionVector = V3 45 0 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -121,7 +121,7 @@ equidistantTeammate motion = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 9
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team1  
+      , playerTeamId = TeamId1
       }
   , playerStatePositionVector = V3 30 0 0
   , playerStateMotionVector = motion
@@ -133,7 +133,7 @@ equidistantOpponent motion = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 9
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 30 1 0
   , playerStateMotionVector = motion
@@ -145,7 +145,7 @@ highLineOpposingCentreBack1 = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 4
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 20 (-5) 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -157,7 +157,7 @@ highLineOpposingCentreBack2 = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 5
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team2
+      , playerTeamId = TeamId2
       }
   , playerStatePositionVector = V3 20 5 0
   , playerStateMotionVector = V3 0.0 0.0 0.0 
@@ -169,7 +169,7 @@ runningNearLineTeammate motion = PlayerState
   { playerStatePlayer = Player 
       { playerNumber = 9
       , playerSpeed = defaultPlayerSpeed
-      , playerTeam = Team1  
+      , playerTeamId = TeamId1
       }
   , playerStatePositionVector = V3 15 0 0
   , playerStateMotionVector = motion

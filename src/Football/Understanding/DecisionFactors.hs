@@ -61,9 +61,9 @@ checkPhase player = do
   time <- currentGameTime
   maybeEvent <- listToMaybe <$> turnovers
   case maybeEvent of
-    Just (TouchOfBall touchPlayer touchTime) | playerTeam touchPlayer == playerTeam player && gameTimeSeconds time - gameTimeSeconds touchTime <= 3 -> 
+    Just (TouchOfBall touchPlayer touchTime) | playerTeamId touchPlayer == playerTeamId player && gameTimeSeconds time - gameTimeSeconds touchTime <= 3 -> 
       pure AttackingTransitionPhase
-    Just (TouchOfBall touchPlayer _) | playerTeam touchPlayer == playerTeam player ->
+    Just (TouchOfBall touchPlayer _) | playerTeamId touchPlayer == playerTeamId player ->
       pure InPossessionPhase
     Just (TouchOfBall _ touchTime) | gameTimeSeconds time - gameTimeSeconds touchTime <= 3 ->
       pure DefensiveTransitionPhase

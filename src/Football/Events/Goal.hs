@@ -2,7 +2,7 @@ module Football.Events.Goal where
 
 import Control.Lens ((^.))
 import Football.Match
-import Football.Types (Goal(..), Ball (ballPositionVector, ballMotionVector), Team (..), MatchLogEntry (GoalLogEntry), TouchOfBall (TouchOfBall, touchOfBallPlayer))
+import Football.Types
 import Linear (normalize, V3 (V3), _x, _y, _z)
 import Football.Maths (linePlaneIntersection)
 import Football.Pitch (leftGoalLine, rightGoalLine)
@@ -28,11 +28,11 @@ wasGoalScored = do
   time <- currentGameTime
   lte <- listToMaybe <$> touchEvents
   let ltp = touchOfBallPlayer <$> lte
-  attackingDirection' <- attackingDirection Team1
+  attackingDirection' <- attackingDirection TeamId1
   let (leftGoalScoredTeam, rightGoalScoredTeam)=
         case attackingDirection' of
-          AttackingLeftToRight -> (Team2, Team1)
-          AttackingRightToLeft -> (Team1, Team2)
+          AttackingLeftToRight -> (TeamId2, TeamId1)
+          AttackingRightToLeft -> (TeamId1, TeamId2)
 
   let intersecPoint1 = linePlaneIntersection (ballPrev, ballDir) (goal1Pos, goal1Normal)
   let intersecPoint2 = linePlaneIntersection (ballPrev, ballDir) (goal2Pos, goal2Normal)
@@ -61,5 +61,5 @@ goals =
     f _                   = []
 
 score :: (Functor m, Match m) => m (Int, Int)
-score = (\(g1s, g2s) -> (length g1s, length g2s)) . partition (\ g -> goalTeam g == Team1) <$> goals
+score = (\(g1s, g2s) -> (length g1s, length g2s)) . partition (\ g -> goalTeam g == TeamId1) <$> goals
 

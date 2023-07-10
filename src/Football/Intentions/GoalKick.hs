@@ -15,12 +15,12 @@ import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passBallVector))
 import Football.GameTime (gameTimeAddSeconds)
 
-decideGoalKickIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => Team -> V2 Double -> Player -> m PlayerIntention
+decideGoalKickIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => TeamId -> V2 Double -> Player -> m PlayerIntention
 decideGoalKickIntention team goalKickLoc player = do
   ball <- gameBall
   time <- currentGameTime
   playerState <- getPlayerState player
-  if playerTeam player /= team then do
+  if playerTeamId player /= team then do
     loc <- positionalOrientedZonalMark player
     pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
   else if (playerNumber player == 1) && distance (playerStatePositionVector playerState) (ballPositionVector ball) >= 0.5 then do
