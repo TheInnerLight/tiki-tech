@@ -104,14 +104,28 @@ data GameTime
   = GameTime GameHalf Int
   deriving (Eq, Ord, Show)
 
+data TypeOfTouch 
+  = ControlTouch
+  | DribbleTouch
+  | InterceptionTouch
+  | PassTouch
+  | ShotTouch
+  | TackleTouch
+  | TakeCornerTouch
+  | TakeGoalKickTouch
+  | TakeKickOffTouch
+  | TakeThrowTouch
+
 data TouchOfBall = TouchOfBall
   { touchOfBallPlayer :: !Player
   , touchOfBallTime :: !GameTime
+  , touchOfBallType :: !TypeOfTouch
   }
 
 data MatchLogEntry
   = GoalLogEntry Goal
   | TouchLogEntry TouchOfBall
+  | OutOfPlayLogEntry
 
 
 data Pitch = Pitch

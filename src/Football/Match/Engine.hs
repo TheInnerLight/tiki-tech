@@ -91,8 +91,8 @@ attackingDirectionImpl team =
     TeamId1 -> pure AttackingLeftToRight
     TeamId2 -> pure AttackingRightToLeft
 
-kickImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => Player -> V3 Double -> V3 Double -> m Ball
-kickImpl player loc motionVector' = do
+kickImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => Player -> TypeOfTouch -> V3 Double -> V3 Double -> m Ball
+kickImpl player typeOfTouch loc motionVector' = do
   (state :: MatchState) <- has
   time <- currentGameTime
   let stBall = matchStateBall state
@@ -102,7 +102,7 @@ kickImpl player loc motionVector' = do
     let ball' = ball { ballPositionVector = loc, ballMotionVector = ballMotionVector ball + motionVector'  }
     writeTVar stBall ball'
     writeTMVar stLastPlayerBall player
-    modifyTVar' (matchStateEventLog state) (TouchLogEntry (TouchOfBall player time) :)
+    modifyTVar' (matchStateEventLog state) (TouchLogEntry (TouchOfBall player time typeOfTouch) :)
     pure ball'
 
 setBallMotionParamsImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => V3 Double -> V3 Double -> m Ball
@@ -125,35 +125,35 @@ enactIntentions = do
   where 
     enactIntention playerState =
       case playerStateIntention playerState of
-        DribbleIntention iceptloc kloc -> dribbleToLocation iceptloc kloc playerState
+        DribbleIntention iceptloc kloc -> dribbleToLocation kloc playerState
         PassIntention target iceptloc mot t -> do
           tNow <- currentGameTime
           if tNow >= gameTimeAddSeconds t (-0.1) then
-            kickBallWith iceptloc mot playerState
+            kickBallWithMotion mot PassTouch playerState
           else do
             ball <- gameBall
             pure $ playerState { playerStateIntention = PassIntention target (locate2D ball) mot t}
         ThrowIntention _ iceptloc mot -> do 
-            p <- kickBallWith iceptloc mot playerState
+            p <- kickBallWithMotion mot TakeThrowTouch playerState
             setGameState OpenPlay
             pure p
         TakeCornerIntention _ iceptloc mot -> do 
-            p <- kickBallWith iceptloc mot playerState
+            p <- kickBallWithMotion mot TakeCornerTouch playerState
             setGameState OpenPlay
             pure p
         TakeGoalKickIntention _ iceptloc mot -> do 
-            p <- kickBallWith iceptloc mot playerState
+            p <- kickBallWithMotion mot TakeGoalKickTouch playerState
             setGameState OpenPlay
             pure p
         TakeKickOffIntention _ iceptloc mot -> do 
-            p <- kickBallWith iceptloc mot playerState
+            p <- kickBallWithMotion mot TakeKickOffTouch playerState
             setGameState OpenPlay
             pure p
-        ShootIntention _ iceptloc mot -> kickBallWith iceptloc mot playerState
+        ShootIntention _ iceptloc mot -> kickBallWithMotion mot ShotTouch playerState
         MoveIntoSpace loc _ -> pure playerState
         RunToLocation loc _ -> pure playerState
-        ControlBallIntention loc _ -> controlBall loc playerState
-        WinBallIntention loc _ -> controlBall loc playerState
+        ControlBallIntention loc _ -> controlBall playerState
+        WinBallIntention loc _ -> interceptBall playerState
         IntentionCooldown _ -> pure playerState
         DoNothing -> pure playerState
       
@@ -233,13 +233,13 @@ decideIntentions = do
       gameState <- getGameState
       let player = playerStatePlayer playerState
       newIntention <- case (intentionCooldown (playerStateIntention playerState), gameState) of
-        (Just endTime, _) | time < endTime -> pure $ playerStateIntention playerState
+        (Just endTime, _) | time < endTime -> pure $ playerStateIntention playerState -- don't change the player intention during the cooldown
         (_, OpenPlay) -> decideOpenPlayIntention player
         (_, ThrowIn loc team) -> decideThrowInIntention loc team player
         (_, CornerKick loc team) -> decideCornerIntention loc team player
         (_, GoalKick loc team) -> decideGoalKickIntention loc team player
         (_, KickOff team) -> decideKickOffIntention team player
-      pure $ playerState {playerStateIntention = newIntention }
+      pure $ playerState { playerStateIntention = newIntention }
 
 cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe CentresOfPlay)
 cacheLookupCentreOfPlayImpl () = do

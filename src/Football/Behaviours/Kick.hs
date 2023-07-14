@@ -27,24 +27,8 @@ canKick player = do
     else
       pure Nothing
 
-kickBallWith :: (Monad m, Match m, Log m) => V2 Double -> V3 Double -> PlayerState -> m PlayerState
-kickBallWith iceptLoc desiredBallMotion playerState = do
-  ballInRange <- canKick playerState
-  case ballInRange of
-    Just r -> do
-      playerState'' <-  kickSuccess r playerState
-      let player = playerStatePlayer playerState''
-      logOutput ("Player: " ++ show (playerTeamId  player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState))
-      pure playerState''
-    Nothing -> pure playerState
-  where
-    kickSuccess kickLoc playerState' = do
-      time <- currentGameTime
-      void $ kickBall (playerStatePlayer playerState') kickLoc desiredBallMotion
-      pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time 0.3 }
-
-dribbleToLocation :: (Monad m, Match m, Log m) => V2 Double -> V3 Double -> PlayerState -> m PlayerState
-dribbleToLocation iceptLoc diff playerState = do
+kickBallInstr :: (Monad m, Match m, Log m) => PlayerState -> (V3 Double -> PlayerState -> m PlayerState) -> m PlayerState
+kickBallInstr playerState kickSuccess = do
   ballInRange <- canKick playerState
   case ballInRange of
     Just r -> do
@@ -53,33 +37,48 @@ dribbleToLocation iceptLoc diff playerState = do
       logOutput ("Player: " ++ show (playerTeamId player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
       pure playerState''
     Nothing -> pure playerState
-  where
-    kickSuccess kickLoc playerState' = do
-      time <- currentGameTime
-      ball' <- kickBall (playerStatePlayer playerState') kickLoc diff
-      let cooldownTime = 0.3
-      let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
-      pure $ playerState' { playerStateIntention = RunToLocation (locate2D eBallPos) $ gameTimeAddSeconds time cooldownTime }
 
-controlBall :: (Monad m, Match m, Random m, Log m) => V2 Double -> PlayerState -> m PlayerState
-controlBall loc playerState = do
-  ballInRange <- canKick playerState
-  case ballInRange of
-    Just r -> do 
-      playerState'' <- kickSuccess r playerState
-      let player = playerStatePlayer playerState''
-      logOutput ("Player: " ++ show (playerTeamId player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
-      pure playerState''
-    Nothing -> pure playerState
-  where
-    kickSuccess kickLoc playerState' = do
-      ball <- gameBall
-      mult <- randomNormalMeanStd 1.0 0.05
-      ball' <- kickBall (playerStatePlayer playerState') kickLoc $ (- ballMotionVector ball + playerStateMotionVector playerState' * 0.8) * pure mult
-      time <- currentGameTime
-      let cooldownTime = 0.1
-      let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
-      pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time cooldownTime }
+kickBallWithMotion :: (Monad m, Match m, Log m) => V3 Double -> TypeOfTouch -> PlayerState -> m PlayerState
+kickBallWithMotion desiredBallMotion typeOfTouch playerState = do
+  let f kickLoc playerState' = do
+        time <- currentGameTime
+        void $ kickBall (playerStatePlayer playerState') typeOfTouch kickLoc desiredBallMotion
+        pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time 0.3 }
+  kickBallInstr playerState f
+
+dribbleToLocation :: (Monad m, Match m, Log m) =>  V3 Double -> PlayerState -> m PlayerState
+dribbleToLocation  diff playerState = 
+  let f kickLoc playerState' = do
+        time <- currentGameTime
+        ball' <- kickBall (playerStatePlayer playerState') DribbleTouch kickLoc diff
+        let cooldownTime = 0.3
+        let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
+        pure $ playerState' { playerStateIntention = RunToLocation (locate2D eBallPos) $ gameTimeAddSeconds time cooldownTime }
+  in kickBallInstr playerState f
+
+controlBall :: (Monad m, Match m, Random m, Log m) => PlayerState -> m PlayerState
+controlBall playerState = do
+  let f kickLoc playerState' = do
+        ball <- gameBall
+        mult <- randomNormalMeanStd 1.0 0.05
+        ball' <- kickBall (playerStatePlayer playerState') ControlTouch kickLoc $ (- ballMotionVector ball + playerStateMotionVector playerState' * 0.8) * pure mult
+        time <- currentGameTime
+        let cooldownTime = 0.1
+        let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
+        pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time cooldownTime }
+  kickBallInstr playerState f
+
+interceptBall :: (Monad m, Match m, Random m, Log m) => PlayerState -> m PlayerState
+interceptBall playerState = do
+  let f kickLoc playerState' = do
+        ball <- gameBall
+        mult <- randomNormalMeanStd 1.0 0.05
+        ball' <- kickBall (playerStatePlayer playerState') InterceptionTouch kickLoc $ (- ballMotionVector ball + playerStateMotionVector playerState' * 0.8) * pure mult
+        time <- currentGameTime
+        let cooldownTime = 0.1
+        let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
+        pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time cooldownTime }
+  kickBallInstr playerState f
 
 motionVectorForDribble :: PlayerState -> Ball -> V2 Double -> V3 Double
 motionVectorForDribble player ball (V2 targetX targetY) = 

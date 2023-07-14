@@ -30,7 +30,7 @@ class Match m where
   allPlayers :: m [PlayerState]
   getPlayerState :: Player -> m PlayerState
   getTeam :: TeamId -> m Team
-  kickBall :: Player -> V3 Double -> V3 Double -> m Ball
+  kickBall :: Player -> TypeOfTouch -> V3 Double -> V3 Double -> m Ball
   setBallMotionParams :: V3 Double -> V3 Double -> m Ball
   update :: Int -> m ()
   pitch :: m Pitch
