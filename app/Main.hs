@@ -45,6 +45,9 @@ import Football.Understanding.Zones.Types (ZoneMap(ZoneMap))
 import Football.Understanding.Space (getSpaceMapForTeam, offsideLine)
 import Football.Understanding.LineBreaking (oppositionLines)
 import Football.Locate2D (Locate2D(locate2D))
+import Football.MatchStats (passesCompleted)
+import Football.Types (TeamId(TeamId1))
+import Core (Log(logOutput))
 
 black :: SP.Color
 black = V4 0 0 0 255
@@ -493,6 +496,13 @@ loopFor r fonts fpsm = do
 
       -- draw the scores
       (lg, mg) <- score
+
+      (pc1, pa1) <- passesCompleted TeamId1
+      logOutput ("Team 1 Passes completed: " <> show pc1 <> " and attempted: " <> show pa1)
+      (pc2, pa2) <- passesCompleted TeamId2
+      logOutput ("Team 2 Passes completed: " <> show pc2 <> " and attempted: " <> show pa2)
+
+
 
       (GameTime _ time) <- currentGameTime
       let (mm, ss) = (time `quot` 1000000) `quotRem` 60

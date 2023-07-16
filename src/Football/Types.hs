@@ -70,6 +70,11 @@ data PassTarget
   | SpaceTarget (V2 Double)
   deriving (Eq, Ord, Show)
 
+data Pass
+  = CompletePass Player Player
+  | IncompletePass Player
+  deriving (Eq, Show)
+
 data ShotTarget 
   = CentreShot (V2 Double)
   deriving (Eq, Ord, Show)
@@ -115,6 +120,7 @@ data TypeOfTouch
   | TakeGoalKickTouch
   | TakeKickOffTouch
   | TakeThrowTouch
+  deriving Eq
 
 data TouchOfBall = TouchOfBall
   { touchOfBallPlayer :: !Player
