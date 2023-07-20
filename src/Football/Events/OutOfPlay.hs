@@ -110,11 +110,11 @@ checkedCrossedGoalLine = do
   case maybeCrossedLine of
     Just (CrossedForCorner loc team) -> do
       _ <- setBallMotionParams (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
-      recordInMatchEventLog OutOfPlayLogEntry
+      recordInMatchEventLog $ OutOfPlayLogEntry team
       setGameState $ CornerKick team loc
     Just (CrossedForGoalKick loc team) -> do
       _ <- setBallMotionParams (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
-      recordInMatchEventLog OutOfPlayLogEntry
+      recordInMatchEventLog $ OutOfPlayLogEntry team
       setGameState $ GoalKick team loc
     Just (CrossedForGoal goal) -> do
       _ <- setBallMotionParams (V3 0 0 0) (V3 0 0 0)

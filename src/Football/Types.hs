@@ -71,8 +71,8 @@ data PassTarget
   deriving (Eq, Ord, Show)
 
 data Pass
-  = CompletePass Player Player
-  | IncompletePass Player
+  = CompletePass TouchOfBall TouchOfBall
+  | IncompletePass TouchOfBall
   deriving (Eq, Show)
 
 data ShotTarget 
@@ -120,18 +120,19 @@ data TypeOfTouch
   | TakeGoalKickTouch
   | TakeKickOffTouch
   | TakeThrowTouch
-  deriving Eq
+  deriving (Eq, Show)
 
 data TouchOfBall = TouchOfBall
   { touchOfBallPlayer :: !Player
   , touchOfBallTime :: !GameTime
   , touchOfBallType :: !TypeOfTouch
-  }
+  , touchOfBallLocation :: !(V2 Double)
+  } deriving (Eq, Show)
 
 data MatchLogEntry
   = GoalLogEntry Goal
   | TouchLogEntry TouchOfBall
-  | OutOfPlayLogEntry
+  | OutOfPlayLogEntry TeamId
 
 
 data Pitch = Pitch

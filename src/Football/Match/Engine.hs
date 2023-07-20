@@ -100,9 +100,10 @@ kickImpl player typeOfTouch loc motionVector' = do
   atomise $ do
     ball <- readTVar stBall
     let ball' = ball { ballPositionVector = loc, ballMotionVector = ballMotionVector ball + motionVector'  }
+    let loc2d = locate2D loc
     writeTVar stBall ball'
     writeTMVar stLastPlayerBall player
-    modifyTVar' (matchStateEventLog state) (TouchLogEntry (TouchOfBall player time typeOfTouch) :)
+    modifyTVar' (matchStateEventLog state) (TouchLogEntry (TouchOfBall player time typeOfTouch loc2d) :)
     pure ball'
 
 setBallMotionParamsImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => V3 Double -> V3 Double -> m Ball
