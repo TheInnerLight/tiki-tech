@@ -100,7 +100,10 @@ data StatsBoard =
 instance Render StatsBoard where
   render :: S.Renderer -> SDLFont.Font -> StatsBoard -> IO ()
   render r font board = do
-    let scaled' = coordinateTransPV (-20,  -30)
+    let scaled' = 
+          case statsBoardTeamId board of
+            TeamId1 -> coordinateTransPV (-20,  -30)
+            TeamId2 -> coordinateTransPV (20,  -30)
         completionPercentage :: Double = 100.0 * fromIntegral (statsBoardPassesCompleted board) / fromIntegral (statsBoardPassesAttempted board)
         colour = 
           case statsBoardTeamId board of
@@ -108,7 +111,7 @@ instance Render StatsBoard where
             TeamId2 -> blue
         text = T.pack $
            "Passes Completed: " <> show (statsBoardPassesCompleted board) <> " / " <> show (statsBoardPassesAttempted board) <> "  (" <> TText.printf "%.2f" completionPercentage <> "%)\n"
-           <> "PPDA: " <> show (statsBoardOppPPDA board)
+           <> "PPDA: " <> TText.printf "%.2f" (statsBoardOppPPDA board)
     surf <- SDLFont.blendedWrapped font colour 500 text
     shirtNumberTexture <- SVR.createTextureFromSurface r surf
     surfDimensions <- SVR.surfaceDimensions surf

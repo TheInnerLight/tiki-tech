@@ -498,11 +498,14 @@ loopFor r fonts fpsm = do
       (lg, mg) <- score
 
       (pc1, pa1) <- passesCompleted TeamId1
-      oppppda <- oppositionPassesPerDefensiveAction TeamId1
+      oppppda1 <- oppositionPassesPerDefensiveAction TeamId1
       (pc2, pa2) <- passesCompleted TeamId2
+      oppppda2 <- oppositionPassesPerDefensiveAction TeamId2
 
-      let board = StatsBoard TeamId1 pc1 pa1 oppppda
-      liftIO $ render r (fontsDefault fonts) board
+      let board1 = StatsBoard TeamId1 pc1 pa1 oppppda1
+      let board2 = StatsBoard TeamId2 pc2 pa2 oppppda2
+      liftIO $ render r (fontsDefault fonts) board1
+      liftIO $ render r (fontsDefault fonts) board2
 
       (GameTime _ time) <- currentGameTime
       let (mm, ss) = (time `quot` 1000000) `quotRem` 60
