@@ -82,3 +82,11 @@ movingObjectAndPointClosestInterceptWithinTimeStep dt (o1p, o1m) o2p =
       closestPos = o1p + pure t' * o1Dir
   in (distance closestPos o2p, closestPos)
 
+average :: Fractional a => [a] -> a
+average [] = 0
+average xs = total / fromIntegral counter
+  where
+    (total, counter) = sumAndCount xs
+    sumAndCount = foldr (\x (s, c) -> (s + x, c + 1)) (0, 0)
+
+

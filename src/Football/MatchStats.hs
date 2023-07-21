@@ -1,9 +1,12 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Football.MatchStats where
 
 import Football.Match
 import Football.Types 
-import Football.Events (passes)
+import Football.Events (passes, PassageOfPlay (passageOfPlayTeam, passageOfPlayTouches, passageOfPlayElements), passagesOfPlay, PlayElement (PassElement))
 import Data.Foldable (foldr)
+import Football.Maths (average)
 
 
 passesCompleted :: (Match m, Monad m) => TeamId -> m (Int, Int)
@@ -17,6 +20,10 @@ passesCompleted teamId = do
   pure $ foldr folder (0, 0) teamPasses
   
 
-
+oppositionPassesPerDefensiveAction :: (Match m, Monad m) => TeamId -> m Double
+oppositionPassesPerDefensiveAction teamId = do
+  pops <- passagesOfPlay
+  let oppositionPassages = filter (\pop -> passageOfPlayTeam pop /= teamId) pops
+  pure $ average $ fmap (fromIntegral . length . filter (\case PassElement _ -> True; _ -> False) . passageOfPlayElements) oppositionPassages
 
 

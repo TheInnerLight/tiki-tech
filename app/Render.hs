@@ -1,9 +1,12 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Render  
   ( Render(..)
   , Pitch(..)
   , OffsideLine(..)
   , DefLine(..)
+  , StatsBoard(..)
   ) where
 
 import qualified SDL as S
@@ -24,6 +27,8 @@ import Football.Types
 import qualified Data.Text as T
 import qualified SDL.Video.Renderer as SVR
 import Football.Locate2D (Locate2D(locate2D))
+import Data.Text as T
+import qualified Text.Printf as TText
 
 white :: SP.Color
 white = V4 255 255 255 255
@@ -83,6 +88,35 @@ data Scoreboard =
     , scoreboardTeamName2 :: T.Text
     }
 
+
+data StatsBoard =
+  StatsBoard
+    { statsBoardTeamId :: TeamId
+    , statsBoardPassesCompleted :: Int
+    , statsBoardPassesAttempted :: Int
+    , statsBoardOppPPDA :: Double
+    }
+
+instance Render StatsBoard where
+  render :: S.Renderer -> SDLFont.Font -> StatsBoard -> IO ()
+  render r font board = do
+    let scaled' = coordinateTransPV (-20,  -30)
+        completionPercentage :: Double = 100.0 * fromIntegral (statsBoardPassesCompleted board) / fromIntegral (statsBoardPassesAttempted board)
+        colour = 
+          case statsBoardTeamId board of
+            TeamId1 -> red
+            TeamId2 -> blue
+        text = T.pack $
+           "Passes Completed: " <> show (statsBoardPassesCompleted board) <> " / " <> show (statsBoardPassesAttempted board) <> "  (" <> TText.printf "%.2f" completionPercentage <> "%)\n"
+           <> "PPDA: " <> show (statsBoardOppPPDA board)
+    surf <- SDLFont.blendedWrapped font colour 500 text
+    shirtNumberTexture <- SVR.createTextureFromSurface r surf
+    surfDimensions <- SVR.surfaceDimensions surf
+    SVR.freeSurface surf
+    let textOffset = floor <$> (\x -> x/2) <$> fromIntegral <$> surfDimensions
+    let targetRect = S.Rectangle (S.P $ scaled' - textOffset) surfDimensions
+    SVR.copy r shirtNumberTexture Nothing (Just targetRect)
+    S.destroyTexture shirtNumberTexture
 
 coordinateTransV :: (Integral b, S.R2 t) => t Double -> V2 b
 coordinateTransV v = 
