@@ -92,8 +92,11 @@ data Scoreboard =
 data StatsBoard =
   StatsBoard
     { statsBoardTeamId :: TeamId
+    , statsBoardPosession :: Double
+    , statsBoardShots :: Int
     , statsBoardPassesCompleted :: Int
     , statsBoardPassesAttempted :: Int
+    , statsBoardPitchTilt :: Double
     , statsBoardOppPPDA :: Double
     }
 
@@ -110,7 +113,10 @@ instance Render StatsBoard where
             TeamId1 -> red
             TeamId2 -> blue
         text = T.pack $
-           "Passes Completed: " <> show (statsBoardPassesCompleted board) <> " / " <> show (statsBoardPassesAttempted board) <> "  (" <> TText.printf "%.2f" completionPercentage <> "%)\n"
+           "Possession: " <> TText.printf "%.2f" (100.0 * statsBoardPosession board) <> "%\n"
+           <> "Shots: " <> show (statsBoardShots board) <> "\n"
+           <> "Passes Completed: " <> show (statsBoardPassesCompleted board) <> " / " <> show (statsBoardPassesAttempted board) <> "  (" <> TText.printf "%.2f" completionPercentage <> "%)\n"
+           <> "Pitch Tilt: " <> TText.printf "%.2f" (100.0 * statsBoardPitchTilt board) <> "%\n"
            <> "PPDA: " <> TText.printf "%.2f" (statsBoardOppPPDA board)
     surf <- SDLFont.blendedWrapped font colour 500 text
     shirtNumberTexture <- SVR.createTextureFromSurface r surf
