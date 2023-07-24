@@ -97,6 +97,7 @@ data StatsBoard =
     , statsBoardPassesCompleted :: Int
     , statsBoardPassesAttempted :: Int
     , statsBoardPitchTilt :: Double
+    , statsBoardInterceptions :: Int
     , statsBoardOppPPDA :: Double
     }
 
@@ -117,6 +118,7 @@ instance Render StatsBoard where
            <> "Shots: " <> show (statsBoardShots board) <> "\n"
            <> "Passes Completed: " <> show (statsBoardPassesCompleted board) <> " / " <> show (statsBoardPassesAttempted board) <> "  (" <> TText.printf "%.2f" completionPercentage <> "%)\n"
            <> "Pitch Tilt: " <> TText.printf "%.2f" (100.0 * statsBoardPitchTilt board) <> "%\n"
+           <> "Interceptions: " <> show (statsBoardInterceptions board) <> "\n"
            <> "PPDA: " <> TText.printf "%.2f" (statsBoardOppPPDA board)
     surf <- SDLFont.blendedWrapped font colour 500 text
     shirtNumberTexture <- SVR.createTextureFromSurface r surf

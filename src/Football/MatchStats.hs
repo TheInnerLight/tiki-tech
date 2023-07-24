@@ -22,6 +22,15 @@ shots teamId =
         (ShotTouch, teamId') | teamId' == teamId -> True
         _                                        -> False
 
+interceptions :: (Match m, Monad m) => TeamId -> m Int
+interceptions teamId = 
+  length . filter isTeamInterceptionTouch <$> touchEvents
+  where
+    isTeamInterceptionTouch t = 
+      case (touchOfBallType t, playerTeamId $ touchOfBallPlayer t) of
+        (InterceptionTouch, teamId') | teamId' == teamId -> True
+        _                                                -> False
+
 passesCompleted :: (Match m, Monad m) => TeamId -> m (Int, Int)
 passesCompleted teamId = do
   passes' <- passes
