@@ -79,6 +79,18 @@ interceptBall playerState = do
         let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
         pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time cooldownTime }
   kickBallInstr playerState f
+  
+tackle :: (Monad m, Match m, Random m, Log m) => PlayerState -> m PlayerState
+tackle playerState = do
+  let f kickLoc playerState' = do
+        ball <- gameBall
+        mult <- randomNormalMeanStd 1.0 0.05
+        ball' <- kickBall (playerStatePlayer playerState') TackleTouch kickLoc $ (- ballMotionVector ball + playerStateMotionVector playerState' * 0.8) * pure mult
+        time <- currentGameTime
+        let cooldownTime = 0.1
+        let eBallPos = ballPositionVector ball' + ballMotionVector ball' * pure cooldownTime
+        pure $ playerState' { playerStateIntention = IntentionCooldown $ gameTimeAddSeconds time cooldownTime }
+  kickBallInstr playerState f
 
 motionVectorForDribble :: PlayerState -> Ball -> V2 Double -> V3 Double
 motionVectorForDribble player ball (V2 targetX targetY) = 

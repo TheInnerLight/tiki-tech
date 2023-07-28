@@ -45,7 +45,7 @@ import Football.Understanding.Zones.Types (ZoneMap(ZoneMap))
 import Football.Understanding.Space (getSpaceMapForTeam, offsideLine)
 import Football.Understanding.LineBreaking (oppositionLines)
 import Football.Locate2D (Locate2D(locate2D))
-import Football.MatchStats (passesCompleted, oppositionPassesPerDefensiveAction, possession, shots, pitchTilt, interceptions)
+import Football.MatchStats (passesCompleted, oppositionPassesPerDefensiveAction, possession, shots, pitchTilt, interceptions, tackles)
 import Football.Types (TeamId(TeamId1))
 import Core (Log(logOutput))
 
@@ -502,16 +502,18 @@ loopFor r fonts fpsm = do
       (pc1, pa1) <- passesCompleted TeamId1
       pitchTilt1 <- pitchTilt TeamId1
       ints1 <- interceptions TeamId1
+      tacks1 <- tackles TeamId1
       oppppda1 <- oppositionPassesPerDefensiveAction TeamId1
       pos2 <- possession TeamId2
       shots2 <- shots TeamId2
       (pc2, pa2) <- passesCompleted TeamId2
       pitchTilt2 <- pitchTilt TeamId2
-      ints2 <- interceptions TeamId1
+      ints2 <- interceptions TeamId2
+      tacks2 <- tackles TeamId2
       oppppda2 <- oppositionPassesPerDefensiveAction TeamId2
 
-      let board1 = StatsBoard TeamId1 pos1 shots1 pc1 pa1 pitchTilt1 ints1 oppppda1
-      let board2 = StatsBoard TeamId2 pos2 shots2 pc2 pa2 pitchTilt2 ints2 oppppda2
+      let board1 = StatsBoard TeamId1 pos1 shots1 pc1 pa1 pitchTilt1 ints1 tacks1 oppppda1
+      let board2 = StatsBoard TeamId2 pos2 shots2 pc2 pa2 pitchTilt2 ints2 tacks2 oppppda2
       liftIO $ render r (fontsDefault fonts) board1
       liftIO $ render r (fontsDefault fonts) board2
 

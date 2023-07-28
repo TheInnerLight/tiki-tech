@@ -154,7 +154,8 @@ enactIntentions = do
         MoveIntoSpace loc _ -> pure playerState
         RunToLocation loc _ -> pure playerState
         ControlBallIntention loc _ -> controlBall playerState
-        WinBallIntention loc _ -> interceptBall playerState
+        InterceptBallIntention loc _ -> interceptBall playerState
+        TackleIntention loc _ -> tackle playerState
         IntentionCooldown _ -> pure playerState
         DoNothing -> pure playerState
       

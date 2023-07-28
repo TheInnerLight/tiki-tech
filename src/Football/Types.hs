@@ -2,6 +2,8 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Football.Types where
 
@@ -34,10 +36,19 @@ data PlayerIntention
   | MoveIntoSpace         (V2 Double)   GameTime
   | RunToLocation         (V2 Double)   GameTime
   | ControlBallIntention  (V2 Double)   GameTime
-  | WinBallIntention      (V2 Double)   GameTime
+  | InterceptBallIntention(V2 Double)   GameTime
+  | TackleIntention   (V2 Double)   GameTime
   | IntentionCooldown     GameTime
   | DoNothing
   deriving (Eq, Ord, Show)
+
+pattern WinBallIntention :: PlayerIntention
+pattern WinBallIntention <- (isWinBack -> True)
+
+isWinBack :: PlayerIntention -> Bool
+isWinBack (InterceptBallIntention _ _) = True
+isWinBack (TackleIntention _ _) = True
+isWinBack _ = False
 
 data PlayerSpeed = PlayerSpeed
   { playerSpeedAcceleration :: !Double

@@ -3,7 +3,7 @@
 module Football.MatchStats where
 
 import Football.Match
-import Football.Types 
+import Football.Types
 import Football.Events (passes, PassageOfPlay (passageOfPlayTeam, passageOfPlayTouches, passageOfPlayElements), passagesOfPlay, PlayElement (PassElement), touchEvents)
 import Data.Foldable (foldr)
 import Football.Maths (average)
@@ -14,22 +14,33 @@ import Football.Understanding.Team (advancementCoeff)
 import Control.Monad (filterM)
 
 shots :: (Match m, Monad m) => TeamId -> m Int
-shots teamId = 
+shots teamId =
   length . filter isTeamShotTouch <$> touchEvents
   where
-    isTeamShotTouch t = 
+    isTeamShotTouch t =
       case (touchOfBallType t, playerTeamId $ touchOfBallPlayer t) of
         (ShotTouch, teamId') | teamId' == teamId -> True
         _                                        -> False
 
 interceptions :: (Match m, Monad m) => TeamId -> m Int
-interceptions teamId = 
-  length . filter isTeamInterceptionTouch <$> touchEvents
+interceptions teamId =
+  length . filter isStartedWithInterception . filter (\p -> teamId == passageOfPlayTeam p) <$> passagesOfPlay
   where
-    isTeamInterceptionTouch t = 
-      case (touchOfBallType t, playerTeamId $ touchOfBallPlayer t) of
-        (InterceptionTouch, teamId') | teamId' == teamId -> True
-        _                                                -> False
+    isStartedWithInterception passage =
+      case passageOfPlayTouches passage of
+        [_] -> False
+        t:_ | touchOfBallType t == InterceptionTouch -> True
+        _ -> False
+
+tackles :: (Match m, Monad m) => TeamId -> m Int
+tackles teamId =
+  length . filter isStartedWithInterception . filter (\p -> teamId == passageOfPlayTeam p) <$> passagesOfPlay
+  where
+    isStartedWithInterception passage =
+      case passageOfPlayTouches passage of
+        [_] -> False
+        t:_ | touchOfBallType t == TackleTouch -> True
+        _ -> False
 
 passesCompleted :: (Match m, Monad m) => TeamId -> m (Int, Int)
 passesCompleted teamId = do
@@ -53,7 +64,7 @@ pitchTilt teamId = do
     pure 0.5
   else
     pure $ fromIntegral finalThirdTeamPasses / fromIntegral (finalThirdTeamPasses + finalThirdOppositionPasses)
-  where 
+  where
     isFinalThirdPass (CompletePass t _) = (> 0.667) <$> advancementCoeff (playerTeamId $ touchOfBallPlayer t) (touchOfBallLocation t)
     isFinalThirdPass _                  = pure False
 
@@ -64,7 +75,7 @@ possession teamId = do
       teamTimeInPosession = sum $ fmap (timeInPossession . passageOfPlayTouches) teamPassages
       oppositionTimeInPossession = sum $ fmap (timeInPossession . passageOfPlayTouches) oppositionPassages
   pure $ teamTimeInPosession / (oppositionTimeInPossession + teamTimeInPosession)
-  where 
+  where
     timeInPossession [] = 0
     timeInPossession [_] = 0
     timeInPossession xs = gameTimeSeconds (touchOfBallTime (last xs)) - gameTimeSeconds (touchOfBallTime (head xs))
@@ -75,13 +86,13 @@ oppositionPassesPerDefensiveAction teamId = do
   let (oppositionPassages, teamPassages) = partition (\pop -> passageOfPlayTeam pop /= teamId) pops
   let turnovers = length $ filter (isTurnover . listToMaybe . passageOfPlayTouches) teamPassages
   pure $ sum (fmap (fromIntegral . length . filter (\case PassElement _ -> True; _ -> False) . passageOfPlayElements) oppositionPassages) / fromIntegral turnovers
-  where 
-    isTurnover (Just t) = 
+  where
+    isTurnover (Just t) =
       case touchOfBallType t of
         InterceptionTouch -> True
         TackleTouch -> True
         _ -> False
     isTurnover Nothing = False
-      
+
 
 

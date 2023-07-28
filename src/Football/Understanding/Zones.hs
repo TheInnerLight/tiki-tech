@@ -17,7 +17,7 @@ import Football.Understanding.Shape (outOfPossessionDesiredPosition)
 createZonalMap :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache) => TeamId -> m ZoneMap
 createZonalMap team = do
   players' <- filter (not . isGoalKeeper . playerStatePlayer) <$> teamPlayers team
-  let players'' = filter (\p -> case playerStateIntention p of WinBallIntention _ _ -> False; _ -> True) players'
+  let players'' = filter (\p -> case playerStateIntention p of WinBallIntention -> False; _ -> True) players'
   pos <- traverse (outOfPossessionDesiredPosition . playerStatePlayer) players''
   let allPlayersVoronoi = jcvSites2 pos
   let map1 = Map.fromList $ fmap (\v -> (polyIndex v, v)) allPlayersVoronoi
