@@ -28,7 +28,7 @@ instance Match TestMLR where
   getPlayerState p = do
     ssc <- TestM get
     case shapeSpecContextPressingPlayer ssc of
-      Just p' | p == p' -> pure $ PlayerState { playerStatePlayer = p, playerStateIntention = WinBallIntention (V2 0 0) (GameTime FirstHalf 0), playerStateMotionVector = V3 0 0 0, playerStatePositionVector = V3 0 0 0}
+      Just p' | p == p' -> pure $ PlayerState { playerStatePlayer = p, playerStateIntention = TackleIntention (V2 0 0) (GameTime FirstHalf 0), playerStateMotionVector = V3 0 0 0, playerStatePositionVector = V3 0 0 0}
       _                 -> pure $ PlayerState { playerStatePlayer = p, playerStateIntention = DoNothing, playerStateMotionVector = V3 0 0 0, playerStatePositionVector = V3 0 0 0}
     
 
