@@ -104,13 +104,17 @@ data PhaseOfPlay
   deriving (Eq, Ord, Show)
 
 data GameState
-  = OpenPlay
-  | ThrowIn TeamId (V2 Double)
+  = OpenPlayState
+  | RestartState Restart
+  deriving Eq
+
+data Restart 
+  = ThrowIn TeamId (V2 Double)
   | CornerKick TeamId (V2 Double)
   | GoalKick TeamId (V2 Double)
   | KickOff TeamId
   deriving Eq
-  
+ 
 data GameHalf
   = FirstHalf
   | SecondHalf
@@ -143,7 +147,7 @@ data TouchOfBall = TouchOfBall
 data MatchLogEntry
   = GoalLogEntry Goal
   | TouchLogEntry TouchOfBall
-  | OutOfPlayLogEntry TeamId
+  | RestartLogEntry Restart
 
 
 data Pitch = Pitch

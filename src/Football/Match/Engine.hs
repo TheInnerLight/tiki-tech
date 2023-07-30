@@ -136,19 +136,19 @@ enactIntentions = do
             pure $ playerState { playerStateIntention = PassIntention target (locate2D ball) mot t}
         ThrowIntention _ iceptloc mot -> do 
             p <- kickBallWithMotion mot TakeThrowTouch playerState
-            setGameState OpenPlay
+            setGameState OpenPlayState
             pure p
         TakeCornerIntention _ iceptloc mot -> do 
             p <- kickBallWithMotion mot TakeCornerTouch playerState
-            setGameState OpenPlay
+            setGameState OpenPlayState
             pure p
         TakeGoalKickIntention _ iceptloc mot -> do 
             p <- kickBallWithMotion mot TakeGoalKickTouch playerState
-            setGameState OpenPlay
+            setGameState OpenPlayState
             pure p
         TakeKickOffIntention _ iceptloc mot -> do 
             p <- kickBallWithMotion mot TakeKickOffTouch playerState
-            setGameState OpenPlay
+            setGameState OpenPlayState
             pure p
         ShootIntention _ iceptloc mot -> kickBallWithMotion mot ShotTouch playerState
         MoveIntoSpace loc _ -> pure playerState
@@ -194,11 +194,11 @@ resetBall :: (Match m, Monad m, Has m MatchState, Atomise m) => m ()
 resetBall = do
   st <- getGameState
   case st of
-    ThrowIn _ loc -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
-    CornerKick _ loc -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
-    GoalKick _ loc -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
-    KickOff _  -> void $ setBallMotionParamsImpl (V3 0 0 0) (V3 0 0 0)
-    OpenPlay -> pure ()
+    RestartState (ThrowIn _ loc)    -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
+    RestartState (CornerKick _ loc) -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
+    RestartState (GoalKick _ loc)   -> void $ setBallMotionParamsImpl (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
+    RestartState (KickOff _)        -> void $ setBallMotionParamsImpl (V3 0 0 0) (V3 0 0 0)
+    OpenPlayState -> pure ()
 
 allPlayersImpl :: (Monad m, Has m MatchState, Atomise m) => m [PlayerState]
 allPlayersImpl = do 
@@ -236,11 +236,11 @@ decideIntentions = do
       let player = playerStatePlayer playerState
       newIntention <- case (intentionCooldown (playerStateIntention playerState), gameState) of
         (Just endTime, _) | time < endTime -> pure $ playerStateIntention playerState -- don't change the player intention during the cooldown
-        (_, OpenPlay) -> decideOpenPlayIntention player
-        (_, ThrowIn loc team) -> decideThrowInIntention loc team player
-        (_, CornerKick loc team) -> decideCornerIntention loc team player
-        (_, GoalKick loc team) -> decideGoalKickIntention loc team player
-        (_, KickOff team) -> decideKickOffIntention team player
+        (_, OpenPlayState) -> decideOpenPlayIntention player
+        (_, RestartState (ThrowIn loc team)) -> decideThrowInIntention loc team player
+        (_, RestartState (CornerKick loc team)) -> decideCornerIntention loc team player
+        (_, RestartState (GoalKick loc team)) -> decideGoalKickIntention loc team player
+        (_, RestartState (KickOff team)) -> decideKickOffIntention team player
       pure $ playerState { playerStateIntention = newIntention }
 
 cacheLookupCentreOfPlayImpl :: (Monad m, Has m MatchState, Atomise m) => () -> m (Maybe CentresOfPlay)

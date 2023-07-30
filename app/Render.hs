@@ -100,6 +100,7 @@ data StatsBoard =
     , statsBoardInterceptions :: Int
     , statsBoardTackles :: Int
     , statsBoardOppPPDA :: Double
+    , statsBoardCorners :: Int
     }
 
 instance Render StatsBoard where
@@ -107,8 +108,8 @@ instance Render StatsBoard where
   render r font board = do
     let scaled' = 
           case statsBoardTeamId board of
-            TeamId1 -> coordinateTransPV (-20,  -30)
-            TeamId2 -> coordinateTransPV (20,  -30)
+            TeamId1 -> coordinateTransPV (-20,  -28)
+            TeamId2 -> coordinateTransPV (20,  -28)
         completionPercentage :: Double = 100.0 * fromIntegral (statsBoardPassesCompleted board) / fromIntegral (statsBoardPassesAttempted board)
         colour = 
           case statsBoardTeamId board of
@@ -121,7 +122,8 @@ instance Render StatsBoard where
            <> "Pitch Tilt: " <> TText.printf "%.2f" (100.0 * statsBoardPitchTilt board) <> "%\n"
            <> "Interceptions: " <> show (statsBoardInterceptions board) <> "\n"
            <> "Tackles: " <> show (statsBoardTackles board) <> "\n"
-           <> "PPDA: " <> TText.printf "%.2f" (statsBoardOppPPDA board)
+           <> "PPDA: " <> TText.printf "%.2f" (statsBoardOppPPDA board) <> "\n"
+           <> "Corners: " <> show (statsBoardCorners board) <> "\n"
     surf <- SDLFont.blendedWrapped font colour 500 text
     shirtNumberTexture <- SVR.createTextureFromSurface r surf
     surfDimensions <- SVR.surfaceDimensions surf

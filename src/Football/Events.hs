@@ -49,7 +49,10 @@ passagesOfPlay = do
 
     entryTeam (TouchLogEntry t1) = playerTeamId $ touchOfBallPlayer t1
     entryTeam (GoalLogEntry goal) = goalTeam goal
-    entryTeam (OutOfPlayLogEntry team) = team
+    entryTeam (RestartLogEntry (CornerKick team _)) = team
+    entryTeam (RestartLogEntry (ThrowIn team _)) = team
+    entryTeam (RestartLogEntry (GoalKick team _)) = team
+    entryTeam (RestartLogEntry (KickOff team)) = team
 
     mapper (TouchLogEntry t) = Just t
     mapper _                 = Nothing

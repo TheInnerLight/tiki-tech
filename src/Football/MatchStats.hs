@@ -13,6 +13,13 @@ import Football.GameTime (gameTimeSeconds)
 import Football.Understanding.Team (advancementCoeff)
 import Control.Monad (filterM)
 
+corners :: (Match m, Monad m) => TeamId -> m Int
+corners teamId =
+  length . concatMap f <$> matchEventLog
+  where
+    f (RestartLogEntry (CornerKick team loc)) | team == teamId = [CornerKick team loc]
+    f _                                                        = []
+
 shots :: (Match m, Monad m) => TeamId -> m Int
 shots teamId =
   length . filter isTeamShotTouch <$> touchEvents
