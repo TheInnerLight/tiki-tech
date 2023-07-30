@@ -36,14 +36,14 @@ wentForThrowIn = do
   let intersecPoint1 = linePlaneIntersection (ballNow, ballDir) (leftTouchLineCentre, leftTouchLineNormal)
   let intersecPoint2 = linePlaneIntersection (ballNow, ballDir) (rightTouchLineCentre, rightTouchLineNormal)
   case (intersecPoint1, intersecPoint2, ltp, gs) of
-    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _y < leftTouchLineMax ^. _y && ip ^. _x >= leftTouchLineMin ^. _x && ip ^. _x <= leftTouchLineMax ^. _x && leftTouchLineNormal `dot` ballDir > 0  -> 
+    (Just ip, _, Just lastTouch, OpenPlayState) | ballNow  ^. _y < leftTouchLineMax ^. _y && ip ^. _x >= leftTouchLineMin ^. _x && ip ^. _x <= leftTouchLineMax ^. _x && leftTouchLineNormal `dot` ballDir > 0  -> 
       let lastTouchTeam = playerTeamId lastTouch
           touchLineLoc = locate2D ball
-      in pure $ Just (oppositionTeam lastTouchTeam, touchLineLoc)
-    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _y > rightTouchLineMax ^. _y && ip ^. _x >= rightTouchLineMin ^. _x && ip ^. _x <= rightTouchLineMax ^. _x && rightTouchLineNormal `dot` ballDir > 0 -> 
+      in pure $ Just (oppositionTeam lastTouchTeam, V2 (touchLineLoc ^. _x) (-pitchHalfWidthY pitch'))
+    (_, Just ip, Just lastTouch, OpenPlayState) | ballNow  ^. _y > rightTouchLineMax ^. _y && ip ^. _x >= rightTouchLineMin ^. _x && ip ^. _x <= rightTouchLineMax ^. _x && rightTouchLineNormal `dot` ballDir > 0 -> 
       let lastTouchTeam = playerTeamId lastTouch
           touchLineLoc = locate2D ball
-      in pure $ Just (oppositionTeam lastTouchTeam, touchLineLoc)
+      in pure $ Just (oppositionTeam lastTouchTeam, V2 (touchLineLoc ^. _x) (pitchHalfWidthY pitch'))
     _ -> pure Nothing
   
 checkForThrowIn :: (Match m, Monad m, Log m) => m ()
@@ -52,7 +52,8 @@ checkForThrowIn = do
   case maybeThrow of
     Just (team, loc) -> do
       _ <- setBallMotionParams (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
-      setGameState $ ThrowIn team loc
+      recordInMatchEventLog $ RestartLogEntry $ ThrowIn team loc
+      setGameState $ RestartState $ ThrowIn team loc
     Nothing -> pure ()
 
 data CrossedGoalLine 
@@ -89,17 +90,17 @@ crossedGoalLine = do
   gs <- getGameState
 
   case (intersecPoint1, intersecPoint2, ltp, gs) of
-    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y < goal1Min ^. _y -> 
+    (Just ip, _, Just lastTouch, OpenPlayState) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y < goal1Min ^. _y -> 
       if playerTeamId lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (V2 (-pitchHalfLengthX pitch' + 5) (goal1Pos ^. _y)) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (V2 (-pitchHalfLengthX pitch') (-pitchHalfWidthY pitch')) leftGoalScoredTeam
-    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y > goal1Max ^. _y -> 
+    (Just ip, _, Just lastTouch, OpenPlayState) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y > goal1Max ^. _y -> 
       if playerTeamId lastTouch == leftGoalScoredTeam then pure $ Just $ CrossedForGoalKick (V2 (-pitchHalfLengthX pitch' + 5) (goal1Pos ^. _y)) rightGoalScoredTeam else pure $ Just $ CrossedForCorner (V2 (-pitchHalfLengthX pitch') (pitchHalfWidthY pitch')) leftGoalScoredTeam
-    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y < goal2Min ^. _y -> 
+    (_, Just ip, Just lastTouch, OpenPlayState) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y < goal2Min ^. _y -> 
       if playerTeamId lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (V2 (pitchHalfLengthX pitch' - 5) (goal2Pos ^. _y)) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (V2 (pitchHalfLengthX pitch') (-pitchHalfWidthY pitch')) rightGoalScoredTeam
-    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y > goal2Max ^. _y -> 
+    (_, Just ip, Just lastTouch, OpenPlayState) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y > goal2Max ^. _y -> 
       if playerTeamId lastTouch == rightGoalScoredTeam then pure $ Just $ CrossedForGoalKick (V2 (pitchHalfLengthX pitch' - 5) (goal2Pos ^. _y)) leftGoalScoredTeam else pure $ Just $ CrossedForCorner (V2 (pitchHalfLengthX pitch') (pitchHalfWidthY pitch')) rightGoalScoredTeam
-    (Just ip, _, Just lastTouch, OpenPlay) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y >= goal1Min ^. _y && ip ^. _y <= goal1Max ^. _y && ip ^. _z >= goal1Min ^. _z && ip ^. _z <= goal1Max ^. _z  -> 
+    (Just ip, _, Just lastTouch, OpenPlayState) | ballNow  ^. _x < goal1Max ^. _x && ip ^. _y >= goal1Min ^. _y && ip ^. _y <= goal1Max ^. _y && ip ^. _z >= goal1Min ^. _z && ip ^. _z <= goal1Max ^. _z  -> 
       pure $ Just $ CrossedForGoal $ Goal leftGoalScoredTeam lastTouch time
-    (_, Just ip, Just lastTouch, OpenPlay) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y >= goal2Min ^. _y && ip ^. _y <= goal2Max ^. _y && ip ^. _z >= goal2Min ^. _z && ip ^. _z <= goal2Max ^. _z  -> 
+    (_, Just ip, Just lastTouch, OpenPlayState) | ballNow  ^. _x > goal2Max ^. _x && ip ^. _y >= goal2Min ^. _y && ip ^. _y <= goal2Max ^. _y && ip ^. _z >= goal2Min ^. _z && ip ^. _z <= goal2Max ^. _z  -> 
       pure $ Just $ CrossedForGoal $ Goal rightGoalScoredTeam lastTouch time
     _ -> pure Nothing
   
@@ -110,10 +111,12 @@ checkedCrossedGoalLine = do
   case maybeCrossedLine of
     Just (CrossedForCorner loc team) -> do
       _ <- setBallMotionParams (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
-      setGameState $ CornerKick team loc
+      recordInMatchEventLog $ RestartLogEntry $ CornerKick team loc
+      setGameState $ RestartState $ CornerKick team loc
     Just (CrossedForGoalKick loc team) -> do
       _ <- setBallMotionParams (V3 (loc ^. _x) (loc ^. _y) 0) (V3 0 0 0)
-      setGameState $ GoalKick team loc
+      recordInMatchEventLog $ RestartLogEntry $ GoalKick team loc
+      setGameState $ RestartState $ GoalKick team loc
     Just (CrossedForGoal goal) -> do
       _ <- setBallMotionParams (V3 0 0 0) (V3 0 0 0)
       recordInMatchEventLog $ GoalLogEntry goal
@@ -121,5 +124,5 @@ checkedCrossedGoalLine = do
       logOutput "Goal!"
       logOutput goal
       logOutput "------------------------------------------------------"
-      setGameState $ KickOff $ oppositionTeam $ goalTeam goal
+      setGameState $ RestartState $ KickOff $ oppositionTeam $ goalTeam goal
     Nothing -> pure ()

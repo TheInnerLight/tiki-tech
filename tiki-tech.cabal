@@ -85,6 +85,7 @@ library
         Football.GameTime
         Football.Locate2D
         Football.Pitch
+        Football.MatchStats
         Football.Maths 
         Football.Types
         Football.Understanding.DecisionFactors

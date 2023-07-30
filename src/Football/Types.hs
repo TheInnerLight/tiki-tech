@@ -2,6 +2,8 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Football.Types where
 
@@ -34,10 +36,19 @@ data PlayerIntention
   | MoveIntoSpace         (V2 Double)   GameTime
   | RunToLocation         (V2 Double)   GameTime
   | ControlBallIntention  (V2 Double)   GameTime
-  | WinBallIntention      (V2 Double)   GameTime
+  | InterceptBallIntention(V2 Double)   GameTime
+  | TackleIntention   (V2 Double)   GameTime
   | IntentionCooldown     GameTime
   | DoNothing
   deriving (Eq, Ord, Show)
+
+pattern WinBallIntention :: PlayerIntention
+pattern WinBallIntention <- (isWinBack -> True)
+
+isWinBack :: PlayerIntention -> Bool
+isWinBack (InterceptBallIntention _ _) = True
+isWinBack (TackleIntention _ _) = True
+isWinBack _ = False
 
 data PlayerSpeed = PlayerSpeed
   { playerSpeedAcceleration :: !Double
@@ -70,6 +81,11 @@ data PassTarget
   | SpaceTarget (V2 Double)
   deriving (Eq, Ord, Show)
 
+data Pass
+  = CompletePass TouchOfBall TouchOfBall
+  | IncompletePass TouchOfBall
+  deriving (Eq, Show)
+
 data ShotTarget 
   = CentreShot (V2 Double)
   deriving (Eq, Ord, Show)
@@ -88,13 +104,17 @@ data PhaseOfPlay
   deriving (Eq, Ord, Show)
 
 data GameState
-  = OpenPlay
-  | ThrowIn TeamId (V2 Double)
+  = OpenPlayState
+  | RestartState Restart
+  deriving Eq
+
+data Restart 
+  = ThrowIn TeamId (V2 Double)
   | CornerKick TeamId (V2 Double)
   | GoalKick TeamId (V2 Double)
   | KickOff TeamId
   deriving Eq
-  
+ 
 data GameHalf
   = FirstHalf
   | SecondHalf
@@ -104,14 +124,30 @@ data GameTime
   = GameTime GameHalf Int
   deriving (Eq, Ord, Show)
 
+data TypeOfTouch 
+  = ControlTouch
+  | DribbleTouch
+  | InterceptionTouch
+  | PassTouch
+  | ShotTouch
+  | TackleTouch
+  | TakeCornerTouch
+  | TakeGoalKickTouch
+  | TakeKickOffTouch
+  | TakeThrowTouch
+  deriving (Eq, Show)
+
 data TouchOfBall = TouchOfBall
   { touchOfBallPlayer :: !Player
   , touchOfBallTime :: !GameTime
-  }
+  , touchOfBallType :: !TypeOfTouch
+  , touchOfBallLocation :: !(V2 Double)
+  } deriving (Eq, Show)
 
 data MatchLogEntry
   = GoalLogEntry Goal
   | TouchLogEntry TouchOfBall
+  | RestartLogEntry Restart
 
 
 data Pitch = Pitch

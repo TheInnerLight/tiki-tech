@@ -46,8 +46,16 @@ decideOutfieldOpenPlayIntention player = do
       pure $ case dfGamePhase decisionFactors of
         InPossessionPhase -> ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
         AttackingTransitionPhase -> ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
-        DefensiveTransitionPhase -> WinBallIntention targetLoc $ gameTimeAddSeconds time timestep
-        OutOfPossessionPhase -> WinBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        DefensiveTransitionPhase -> 
+          if dfIsBallPlayableByOpposition decisionFactors then
+            TackleIntention targetLoc $ gameTimeAddSeconds time timestep
+          else 
+            InterceptBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        OutOfPossessionPhase ->
+          if dfIsBallPlayableByOpposition decisionFactors then
+            TackleIntention targetLoc $ gameTimeAddSeconds time timestep
+          else 
+            InterceptBallIntention targetLoc $ gameTimeAddSeconds time timestep
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = DefensiveTransitionPhase } -> do
       loc <- coverShadowOfPlayerOrientedZonalMark player
       pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
@@ -81,8 +89,8 @@ decideGoalKeeperOpenPlayIntention player = do
       pure $ case dfGamePhase decisionFactors of
         InPossessionPhase -> ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
         AttackingTransitionPhase -> ControlBallIntention targetLoc $ gameTimeAddSeconds time timestep
-        DefensiveTransitionPhase -> WinBallIntention targetLoc $ gameTimeAddSeconds time timestep
-        OutOfPossessionPhase -> WinBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        DefensiveTransitionPhase -> InterceptBallIntention targetLoc $ gameTimeAddSeconds time timestep
+        OutOfPossessionPhase -> InterceptBallIntention targetLoc $ gameTimeAddSeconds time timestep
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = DefensiveTransitionPhase } -> do
       loc <- outOfPossessionDesiredPosition player
       pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1

@@ -25,6 +25,8 @@ import Football.Behaviours.Kick (canKick)
 import Football.Events (touchEvents, turnovers)
 import Football.GameTime (gameTimeSeconds)
 import Football.Understanding.Space (getSpaceMap)
+import Data.Foldable (minimumBy)
+import Data.Function (on)
 
 data DecisionFactors = DecisionFactors
   { dfClosestPlayerToBall :: Maybe ClosestPlayerToBall
@@ -32,6 +34,7 @@ data DecisionFactors = DecisionFactors
   , dfHasControlOfBall :: Bool
   , dfInCompressedSpace :: Bool
   , dfIsUnderPressure :: Bool
+  , dfIsBallPlayableByOpposition :: Bool
   } deriving Show
 
 data ClosestPlayerToBall = ClosestPlayerToBall
@@ -61,13 +64,13 @@ checkPhase player = do
   time <- currentGameTime
   maybeEvent <- listToMaybe <$> turnovers
   case maybeEvent of
-    Just (TouchOfBall touchPlayer touchTime) | playerTeamId touchPlayer == playerTeamId player && gameTimeSeconds time - gameTimeSeconds touchTime <= 3 -> 
+    Just (TouchOfBall touchPlayer touchTime _ _) | playerTeamId touchPlayer == playerTeamId player && gameTimeSeconds time - gameTimeSeconds touchTime <= 3 -> 
       pure AttackingTransitionPhase
-    Just (TouchOfBall touchPlayer _) | playerTeamId touchPlayer == playerTeamId player ->
+    Just (TouchOfBall touchPlayer _ _ _) | playerTeamId touchPlayer == playerTeamId player ->
       pure InPossessionPhase
-    Just (TouchOfBall _ touchTime) | gameTimeSeconds time - gameTimeSeconds touchTime <= 3 ->
+    Just (TouchOfBall _ touchTime _ _) | gameTimeSeconds time - gameTimeSeconds touchTime <= 3 ->
       pure DefensiveTransitionPhase
-    Just (TouchOfBall _ _) ->
+    Just (TouchOfBall {}) ->
       pure OutOfPossessionPhase
     Nothing -> 
       pure InPossessionPhase
@@ -93,6 +96,13 @@ checkIsUnderPressure player = do
   opState <- getPlayerState op
   pure $ distance (playerStatePositionVector playerState) (playerStatePositionVector opState) <= 5.0
 
+checkBallPlayableByOpposition :: (Match m, Monad m, Log m) => Player -> m Bool
+checkBallPlayableByOpposition player = do
+  ball <- gameBall
+  opPlayers <- oppositionPlayers $ playerTeamId player
+  let closestOpToBall = minimumBy (compare `on` (\ps -> distance (playerStatePositionVector ps) (ballPositionVector ball)) ) opPlayers
+  pure $ distance (playerStatePositionVector closestOpToBall) (ballPositionVector ball) < 1.0
+
 calculateDecisionFactors :: (Match m, Monad m, Log m, Cache m InterceptionDataCache, Cache m SpaceCache) => Player -> m DecisionFactors
 calculateDecisionFactors player = do
   cp <- checkClosestPlayer player
@@ -100,10 +110,12 @@ calculateDecisionFactors player = do
   comp <- checkInCompressedSpace player
   unp <- checkIsUnderPressure player
   phase <- checkPhase player
+  opPlayable <- checkBallPlayableByOpposition player
   pure $ DecisionFactors 
     { dfClosestPlayerToBall = cp
     , dfHasControlOfBall = hcb
     , dfInCompressedSpace = comp
     , dfIsUnderPressure = unp
     , dfGamePhase = phase
+    , dfIsBallPlayableByOpposition = opPlayable
     }

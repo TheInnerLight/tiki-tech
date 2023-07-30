@@ -82,14 +82,16 @@ playerDesiredLocation' p =
     intentionToLocation (MoveIntoSpace loc _) = Just loc
     intentionToLocation (RunToLocation loc _) = Just loc
     intentionToLocation (ControlBallIntention loc _) = Just loc
-    intentionToLocation (WinBallIntention loc _) = Just loc
+    intentionToLocation (InterceptBallIntention loc _) = Just loc
+    intentionToLocation (TackleIntention loc _) = Just loc
     intentionToLocation (IntentionCooldown _) = Nothing
     intentionToLocation DoNothing = Nothing
 
 intentionCooldown :: PlayerIntention -> Maybe GameTime
 intentionCooldown (IntentionCooldown t)      = Just t
 intentionCooldown (ControlBallIntention _ t) = Just t
-intentionCooldown (WinBallIntention _ t) = Just t
+intentionCooldown (InterceptBallIntention _ t) = Just t
+intentionCooldown (TackleIntention _ t) = Just t
 intentionCooldown (MoveIntoSpace _ t)        = Just t
 intentionCooldown (RunToLocation _ t)        = Just t
 intentionCooldown (PassIntention _ _ _ t)    = Just t

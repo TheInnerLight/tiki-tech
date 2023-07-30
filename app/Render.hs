@@ -1,9 +1,12 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Render  
   ( Render(..)
   , Pitch(..)
   , OffsideLine(..)
   , DefLine(..)
+  , StatsBoard(..)
   ) where
 
 import qualified SDL as S
@@ -24,6 +27,8 @@ import Football.Types
 import qualified Data.Text as T
 import qualified SDL.Video.Renderer as SVR
 import Football.Locate2D (Locate2D(locate2D))
+import Data.Text as T
+import qualified Text.Printf as TText
 
 white :: SP.Color
 white = V4 255 255 255 255
@@ -83,6 +88,50 @@ data Scoreboard =
     , scoreboardTeamName2 :: T.Text
     }
 
+
+data StatsBoard =
+  StatsBoard
+    { statsBoardTeamId :: TeamId
+    , statsBoardPosession :: Double
+    , statsBoardShots :: Int
+    , statsBoardPassesCompleted :: Int
+    , statsBoardPassesAttempted :: Int
+    , statsBoardPitchTilt :: Double
+    , statsBoardInterceptions :: Int
+    , statsBoardTackles :: Int
+    , statsBoardOppPPDA :: Double
+    , statsBoardCorners :: Int
+    }
+
+instance Render StatsBoard where
+  render :: S.Renderer -> SDLFont.Font -> StatsBoard -> IO ()
+  render r font board = do
+    let scaled' = 
+          case statsBoardTeamId board of
+            TeamId1 -> coordinateTransPV (-20,  -28)
+            TeamId2 -> coordinateTransPV (20,  -28)
+        completionPercentage :: Double = 100.0 * fromIntegral (statsBoardPassesCompleted board) / fromIntegral (statsBoardPassesAttempted board)
+        colour = 
+          case statsBoardTeamId board of
+            TeamId1 -> red
+            TeamId2 -> blue
+        text = T.pack $
+           "Possession: " <> TText.printf "%.2f" (100.0 * statsBoardPosession board) <> "%\n"
+           <> "Shots: " <> show (statsBoardShots board) <> "\n"
+           <> "Passes Completed: " <> show (statsBoardPassesCompleted board) <> " / " <> show (statsBoardPassesAttempted board) <> "  (" <> TText.printf "%.2f" completionPercentage <> "%)\n"
+           <> "Pitch Tilt: " <> TText.printf "%.2f" (100.0 * statsBoardPitchTilt board) <> "%\n"
+           <> "Interceptions: " <> show (statsBoardInterceptions board) <> "\n"
+           <> "Tackles: " <> show (statsBoardTackles board) <> "\n"
+           <> "PPDA: " <> TText.printf "%.2f" (statsBoardOppPPDA board) <> "\n"
+           <> "Corners: " <> show (statsBoardCorners board) <> "\n"
+    surf <- SDLFont.blendedWrapped font colour 500 text
+    shirtNumberTexture <- SVR.createTextureFromSurface r surf
+    surfDimensions <- SVR.surfaceDimensions surf
+    SVR.freeSurface surf
+    let textOffset = floor <$> (\x -> x/2) <$> fromIntegral <$> surfDimensions
+    let targetRect = S.Rectangle (S.P $ scaled' - textOffset) surfDimensions
+    SVR.copy r shirtNumberTexture Nothing (Just targetRect)
+    S.destroyTexture shirtNumberTexture
 
 coordinateTransV :: (Integral b, S.R2 t) => t Double -> V2 b
 coordinateTransV v = 
