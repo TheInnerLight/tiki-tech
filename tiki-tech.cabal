@@ -94,6 +94,7 @@ library
         Football.Understanding.Interception.Data
         Football.Understanding.LineBreaking
         Football.Understanding.Pitch
+        Football.Understanding.PositionalPlay
         Football.Understanding.Shape
         Football.Understanding.Space
         Football.Understanding.Space.Data
