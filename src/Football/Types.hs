@@ -10,6 +10,7 @@ module Football.Types where
 import Linear (V3(..), V2)
 import Data.TypeLits (Nat, type (+), type (==))
 import qualified Data.Text as T
+import qualified Data.Map as Map
 
 data TeamId
   = TeamId1
@@ -23,6 +24,7 @@ oppositionTeam TeamId2 = TeamId1
 data Team = Team
   { teamName :: T.Text
   , teamFormation :: Formation
+  , teamInPossessionSystem :: InPossessionSystem
   }
 
 data PlayerIntention
@@ -170,4 +172,25 @@ data Formation = forall a b c d e. ((a + b + c + d + e) == 10) => Formation
   , formationLine4 :: FormationLine d
   , formationLine5 :: FormationLine e
   }
+
+data VerticalZone
+  = DefZone
+  | DefMidZone
+  | AttMidZone
+  | AttZone
+  deriving (Eq, Ord)
+
+data HorizontalHalf
+  = LeftHalf
+  | RightHalf
+  deriving (Eq, Ord, Show)
+
+data HorizontalZone
+  = CentreHZ
+  | HalfSpaceHZ HorizontalHalf
+  | WingHZ HorizontalHalf
+  deriving (Eq, Ord, Show)
+
+newtype InPossessionSystem 
+  = PositionalPlayInPossessionSystem (Map.Map Player (VerticalZone, HorizontalZone))
 

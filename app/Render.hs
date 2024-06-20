@@ -251,7 +251,20 @@ instance Render Pitch where
     SP.arc r cornerBR (floor $ scaleFactor * 1) (-180) (-90)  white
 
 renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
+-- renderIntention r pos (MoveIntoSpace p _) = do
+--   let spaceLoc = coordinateTransV p
+--   SP.line r spaceLoc pos orange
+renderIntention r pos (ControlBallIntention p _) = do
+  let spaceLoc = coordinateTransV p
+  SP.line r spaceLoc pos pink
+renderIntention r pos (InterceptBallIntention p _) = do
+  let spaceLoc = coordinateTransV p
+  SP.line r spaceLoc pos cyan
+renderIntention r pos (TackleIntention p _) = do
+  let spaceLoc = coordinateTransV p
+  SP.line r spaceLoc pos red
 renderIntention r pos i = pure ()
+
 -- renderIntention r pos (PassIntention t ip p _) = do
 --   let iceptLoc = coordinateTransV ip
 --   SP.line r iceptLoc pos cyan
@@ -260,9 +273,7 @@ renderIntention r pos i = pure ()
 --     SpaceTarget st -> SP.line r pos (coordinateTransV $ locate2D st) darkRed
 --     AheadOfTarget at -> SP.line r pos (coordinateTransV $ locate2D at) orange
 --     _               -> pure ()
--- renderIntention r pos (MoveIntoSpace p _) = do
---   let spaceLoc = coordinateTransV p
---   SP.line r spaceLoc pos orange
+
 -- renderIntention :: S.Renderer -> Pos -> PlayerIntention -> IO()
 -- renderIntention r pos (PassIntention _ ip p) = do
 --   let iceptLoc = coordinateTransPV ip

@@ -16,11 +16,12 @@ import Football.Understanding.Interception.Data (InterceptionDataCache)
 import Football.Understanding.Zones.Types (ZoneCache)
 import Football.Behaviours.Press (coverShadowOfPlayerOrientedZonalMark)
 import Football.Player (isGoalKeeper)
-import Football.Understanding.Shape (outOfPossessionDesiredPosition)
+import Football.Understanding.Shape (outOfPossessionDesiredPosition, inPossessionDesiredPosition)
 import Football.Locate2D (Locate2D(locate2D))
 import Football.Understanding.Pitch (ownGoalVector)
 import Linear (R1(_x), R2 (_y), V3 (V3), Metric (norm), normalize)
 import Football.GameTime (gameTimeAddSeconds)
+import Football.Understanding.PositionalPlay (ppInPossessionDesiredPosition)
 
 
 
@@ -65,11 +66,13 @@ decideOutfieldOpenPlayIntention player = do
     DecisionFactors { dfHasControlOfBall = True } -> do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player
     DecisionFactors { dfHasControlOfBall = False, dfGamePhase = AttackingTransitionPhase } -> do
-      nearbySpace <- optimalNearbySpace player
+      nearbySpace <- ppInPossessionDesiredPosition player
+      --nearbySpace <- optimalNearbySpace player
       targetLoc <- clampPitch nearbySpace
       pure $ MoveIntoSpace targetLoc $ gameTimeAddSeconds time 0.25
     DecisionFactors { dfHasControlOfBall = False, dfGamePhase = InPossessionPhase } -> do
-      nearbySpace <- optimalNearbySpace player
+      nearbySpace <- ppInPossessionDesiredPosition player
+      --nearbySpace <- optimalNearbySpace player
       targetLoc <- clampPitch nearbySpace
       pure $ MoveIntoSpace targetLoc $ gameTimeAddSeconds time 0.25
     _  -> pure DoNothing

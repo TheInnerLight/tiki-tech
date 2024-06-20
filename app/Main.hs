@@ -403,6 +403,18 @@ loopFor r fonts fpsm = do
           , formationLine4 = EmptyLine
           , formationLine5 = ThreeLine (playerStatePlayer player11) (playerStatePlayer player9) (playerStatePlayer player7)
           }
+        , teamInPossessionSystem = PositionalPlayInPossessionSystem $ Map.fromList
+          [ (playerStatePlayer player3, (DefZone, WingHZ LeftHalf))
+          , (playerStatePlayer player5, (DefZone, CentreHZ))
+          , (playerStatePlayer player4, (DefZone, WingHZ RightHalf))
+          , (playerStatePlayer player2, (DefMidZone, HalfSpaceHZ RightHalf))
+          , (playerStatePlayer player6, (DefMidZone, HalfSpaceHZ LeftHalf))
+          , (playerStatePlayer player10, (AttMidZone, HalfSpaceHZ LeftHalf))
+          , (playerStatePlayer player8, (AttMidZone, HalfSpaceHZ RightHalf))
+          , (playerStatePlayer player11, (AttZone, WingHZ LeftHalf))
+          , (playerStatePlayer player7, (AttZone, WingHZ RightHalf))
+          , (playerStatePlayer player9, (AttZone, CentreHZ))
+          ]
         }
   let manshippy = Team
         { teamName = "Man Shippy"
@@ -413,6 +425,18 @@ loopFor r fonts fpsm = do
           , formationLine4 = EmptyLine
           , formationLine5 = ThreeLine (playerStatePlayer player11B) (playerStatePlayer player9B) (playerStatePlayer player7B)
           }
+        , teamInPossessionSystem = PositionalPlayInPossessionSystem $ Map.fromList
+          [ (playerStatePlayer player3B, (DefZone, WingHZ LeftHalf))
+          , (playerStatePlayer player5B, (DefZone, CentreHZ))
+          , (playerStatePlayer player2B, (DefZone, WingHZ RightHalf))
+          , (playerStatePlayer player4B, (DefMidZone, HalfSpaceHZ RightHalf))
+          , (playerStatePlayer player6B, (DefMidZone, HalfSpaceHZ LeftHalf))
+          , (playerStatePlayer player10B, (AttMidZone, HalfSpaceHZ LeftHalf))
+          , (playerStatePlayer player8B, (AttMidZone, HalfSpaceHZ RightHalf))
+          , (playerStatePlayer player11B, (AttZone, WingHZ LeftHalf))
+          , (playerStatePlayer player7B, (AttZone, WingHZ RightHalf))
+          , (playerStatePlayer player9B, (AttZone, CentreHZ))
+          ]
         }
 
   pt <- newTVarIO playerMap
@@ -481,8 +505,8 @@ loopFor r fonts fpsm = do
       -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList t2Sites
 
       --draw zone polygons
-      -- (ZoneMap sitesAll) <- getZoneMap TeamId1
-      -- traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
+      (ZoneMap sitesAll) <- getZoneMap TeamId1
+      traverse_ (liftIO . render r (fontsDefault fonts)) $ fmap snd $ Map.toList sitesAll
 
       -- offside1X <- offsideLine TeamId1
       -- liftIO $ render r (fontsDefault fonts) (OffsideLine offside1X)

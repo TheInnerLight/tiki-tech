@@ -11,9 +11,9 @@ import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Data.List (sortOn)
 import Linear (Metric(distance), V3 (V3), V2)
 import Football.Behaviours.Marking (positionalOrientedZonalMark)
-import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passBallVector))
 import Football.GameTime (gameTimeAddSeconds)
+import Football.Understanding.PositionalPlay (ppInPossessionDesiredPosition)
 
 decideGoalKickIntention :: (Match m, Monad m, Log m, Cache m CentresOfPlayCache, Cache m SpaceCache) => TeamId -> V2 Double -> Player -> m PlayerIntention
 decideGoalKickIntention team goalKickLoc player = do
@@ -30,7 +30,7 @@ decideGoalKickIntention team goalKickLoc player = do
     goalKickPass <- head <$> safestPassingOptions player
     pure $ TakeGoalKickIntention (passTarget goalKickPass) goalKickLoc (passBallVector goalKickPass)
   else  do
-    nearbySpace <- optimalNearbySpace player
+    nearbySpace <- ppInPossessionDesiredPosition player
     targetLoc <- clampPitch nearbySpace
     pure $ MoveIntoSpace targetLoc time
   

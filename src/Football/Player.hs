@@ -59,14 +59,16 @@ distanceToTargetAfter (target, targetVector) t p =
       ms = playerSpeedMax (playerSpeed $ playerStatePlayer p)
       pa = playerSpeedAcceleration (playerSpeed $ playerStatePlayer p)
       -- vector difference between x(t) and A(t)
-      st = target - start - pure ((1 - exp(-pa * t))/pa) * playerStateMotionVector p
-      --st2 = start + pure ((1 - exp(-pa * t))/pa) * playerMotionVector p
-      -- radius B(t)
-      rt = (ms*(t - (1 - exp(-pa * t))/pa))
+
+      radius t pos =
+            let reactionTime = 0.1
+                t' = max 0 (t - reactionTime)
+                st = target - pos - pure ((1 - exp(-pa * t'))/pa - reactionTime) * playerStateMotionVector p
+            in norm st - (ms*(t' - (1 - exp(-pa * t'))/pa))
 
   in 
     -- fst (movingObjectAndPointClosestInterceptWithinTimeStep (-dt) (target, targetVector) st2) - rt
-    norm st - rt
+    average [radius t (start - targetVector*0.0166666666667)]
 
 playerDesiredLocation' :: PlayerState -> Maybe (V2 Double)
 playerDesiredLocation' p =

@@ -22,8 +22,13 @@ canKick player = do
     pure $ Just (ballPositionVector ball)
   else do
     let (dist, closestBallPos, _) = distanceAndClosestInterceptsWithinTimeStep (-1/30) (ballPositionVector ball, ballMotionVector ball) (playerStatePositionVector player, playerStateMotionVector player)
+
     if dist <= 0.7 then do
+      logOutput $ "Can Kick!!!!" ++ show (playerStatePlayer player)
       pure $ Just closestBallPos
+    else if dist <= 1.0 then do
+      logOutput $ "Nearly!!!!" ++ show (playerStatePlayer player)
+      pure Nothing
     else
       pure Nothing
 

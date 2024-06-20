@@ -61,13 +61,27 @@ distanceAndClosestInterceptsWithinTimeStep dt (o1p, o1m) (o2p, o2m) =
       n = o1Dir `cross` o2Dir
       t2 = (o1Dir `cross` n) `dot` (o2p - o1p) / quadrance n
       t1 = (o2Dir `cross` n) `dot` (o2p - o1p) / quadrance n
+
+      r = o2p - o1p
+      v = o2m - o1m
+
+      tClosest = 
+        let temp = -dot r v / quadrance v
+        in if dt < 0 then min 0 $ max dt temp
+           else max 0 $ min dt temp
+
+
+
+        
+      
       
 
-      t1' = max 0 $ min (norm o1m * dt') t1
-      t2' = max 0 $ min (norm o2m * dt') t2
+      -- (t1', t2') = 
+      --   if dt < 0 then (min 0 $ max (norm o1m * dt') t1, min 0 $ max (norm o2m * dt') t2)
+      --   else (max 0 $ min (norm o1m * dt') t1, max 0 $ min (norm o2m * dt') t2)
 
-      closestO1Pos = o1p + pure t1' * o1Dir
-      closestO2Pos = o2p + pure t2' * o2Dir
+      closestO1Pos = o1p + pure tClosest * o1m
+      closestO2Pos = o2p + pure tClosest * o2m
   in (distance closestO1Pos closestO2Pos, closestO1Pos, closestO2Pos)
 
 movingObjectAndPointClosestInterceptWithinTimeStep ::  Double -> (V3 Double, V3 Double) -> V3 Double -> (Double, V3 Double)

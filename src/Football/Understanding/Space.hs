@@ -13,7 +13,7 @@ import Data.Maybe (mapMaybe)
 import Data.Map (Map, (!))
 import Data.List (foldl', minimumBy, maximumBy, sortOn)
 import qualified Data.Map as Map
-import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone(..), HorizontalHalf (..), CentresOfPlay (centresOfPlayBothTeams, CentresOfPlay, centresOfPlayTeam1, centresOfPlayTeam2), CentresOfPlayCache, SpaceCache)
+import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), CentresOfPlay (centresOfPlayBothTeams, CentresOfPlay, centresOfPlayTeam1, centresOfPlayTeam2), CentresOfPlayCache, SpaceCache)
 import qualified Data.Vector as Vec
 import Statistics.Quantile (median, medianUnbiased)
 import Data.Ord (comparing, Down(..))
@@ -63,13 +63,13 @@ pitchHorizontalZone team x = do
   let (V2 _ y) = locate2D x
   attackingDirection' <- attackingDirection team
   pure $
-    if y <= 13.84 then
+    if y <= -20.16 then
       WingHZ $ lowY attackingDirection'
-    else if y <= 24.84 then
+    else if y <= -9.16 then
       HalfSpaceHZ $ lowY attackingDirection'
-    else if y <= 43.16 then
+    else if y <= 9.16 then
       CentreHZ
-    else if y <= 54.16 then
+    else if y <= 20.16 then
       HalfSpaceHZ $ highY attackingDirection'
     else
       WingHZ $ highY attackingDirection'

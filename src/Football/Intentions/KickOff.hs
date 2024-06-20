@@ -9,7 +9,6 @@ import Data.Time.Clock.System (SystemTime(systemNanoseconds))
 import Data.List (sortOn)
 import Linear (Metric(distance), V3 (V3), V2 (V2))
 import Football.Behaviours.Marking (positionalOrientedZonalMark)
-import Football.Behaviours.FindSpace (optimalNearbySpace)
 import Football.Behaviours.Pass (safestPassingOptions, PassDesirability (passTarget, passBallVector))
 import Football.Pitch
 import Football.Understanding.Shape (outOfPossessionFormationRelativeTo)

@@ -20,7 +20,7 @@ import Football.Types
 import Core
 import Voronoi.JCVoronoi
 import Football.Locate2D (Locate2D(locate2D))
-import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), HorizontalZone (HalfSpaceHZ, WingHZ, CentreHZ), HorizontalHalf (LeftHalf, RightHalf), CentresOfPlayCache, SpaceCache)
+import Football.Understanding.Space.Data (SpaceMap(..), SpacePoly (..), CentresOfPlayCache, SpaceCache)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Map ((!))

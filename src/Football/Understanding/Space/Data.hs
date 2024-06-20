@@ -15,17 +15,6 @@ data SpacePoly = SpacePoly
   , spacePolyPlayer :: Player
   } deriving Show
 
-data HorizontalHalf
-  = LeftHalf
-  | RightHalf
-  deriving (Eq, Ord, Show)
-
-data HorizontalZone
-  = CentreHZ
-  | HalfSpaceHZ HorizontalHalf
-  | WingHZ HorizontalHalf
-  deriving (Eq, Ord, Show)
-
 data CentresOfPlay = CentresOfPlay
   { centresOfPlayBothTeams :: V2 Double
   , centresOfPlayTeam1 :: V2 Double

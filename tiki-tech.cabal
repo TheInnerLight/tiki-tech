@@ -112,7 +112,7 @@ library
 
     -- Other library packages from which modules are imported.
     build-depends:    
-        base ^>=4.17.0.0,
+        base ^>=4.18.0.0,
         containers,
         lens,
         linear,
@@ -152,7 +152,7 @@ executable tiki-tech
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base ^>=4.17.0.0,
+        base ^>=4.18.0.0,
         async,
         containers,
         lens,
@@ -210,7 +210,7 @@ test-suite tiki-tech-test
 
     -- Test dependencies.
     build-depends:
-        base ^>=4.17.0.0,
+        base ^>=4.18.0.0,
         tiki-tech,
         linear,
         mtl,

@@ -44,8 +44,8 @@ outOfPossessionFormationRelativeTo Formation { formationLine1 = fl1, formationLi
       fl3' <- outOfPossessionFormationRelativeToLine fl3 horizontalCompactness player
       fl4' <- outOfPossessionFormationRelativeToLine fl4 horizontalCompactness player
       fl5' <- outOfPossessionFormationRelativeToLine fl5 horizontalCompactness player
-      logOutput player
-      logOutput (fl1', fl2', fl3', fl4', fl5')
+      --logOutput player
+      --logOutput (fl1', fl2', fl3', fl4', fl5')
       case (fl1', fl2', fl3', fl4', fl5')  of
         (Just hy, Nothing, Nothing, Nothing, Nothing) -> pure $ inDirection  15  (-52) (-15*verticalCompactness) hy (centreX, centreY)
         (Nothing, Just hy, Nothing, Nothing, Nothing) -> pure $ inDirection  25  (-52) (-10*verticalCompactness) hy (centreX, centreY)
