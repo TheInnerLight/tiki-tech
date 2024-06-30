@@ -59,9 +59,11 @@ decideOutfieldOpenPlayIntention player = do
             InterceptBallIntention targetLoc $ gameTimeAddSeconds time timestep
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = DefensiveTransitionPhase } -> do
       loc <- coverShadowOfPlayerOrientedZonalMark player
+      --loc <- positionalOrientedZonalMark player
       pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
     DecisionFactors { dfClosestPlayerToBall = _, dfHasControlOfBall = False, dfGamePhase = OutOfPossessionPhase } -> do
       loc <- playerOrientedZonalMark player
+      --loc <- positionalOrientedZonalMark player
       pure $ RunToLocation loc $ gameTimeAddSeconds time 0.1
     DecisionFactors { dfHasControlOfBall = True } -> do
       determineOnTheBallIntention (OnTheBallCriteria (Just 0.85) Nothing) player

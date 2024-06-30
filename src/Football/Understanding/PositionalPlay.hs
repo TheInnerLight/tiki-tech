@@ -16,12 +16,36 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad (liftM2)
 import Data.Foldable (foldl')
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isJust, isNothing, fromJust)
 import Voronoi.JCVoronoi (JCVPoly(polyPoint, polyEdges, polyIndex), JCVEdge (jcvEdgePoint1, jcvEdgePoint2), voronoiPolygonArea)
 import qualified Data.Set as Set
 import qualified Data.List as L
 import qualified Data.Ord
+import Data.List (sortOn)
 
+positionalPlayOptions :: [[(VerticalZone, HorizontalZone)]]
+positionalPlayOptions =
+  [ [ (AttZone, WingHZ LeftHalf),         (AttZone, CentreHZ),                 (AttZone, WingHZ RightHalf)
+    ,             (AttMidZone, HalfSpaceHZ LeftHalf), (AttMidZone, HalfSpaceHZ RightHalf)
+    , (DefMidZone, WingHZ LeftHalf),      (DefMidZone, CentreHZ),              (DefMidZone, WingHZ RightHalf)
+    ,             (DefZone, HalfSpaceHZ LeftHalf),    (DefZone, HalfSpaceHZ RightHalf)
+    ] -- this is the W W formation
+  , [             (AttZone, HalfSpaceHZ LeftHalf),    (AttZone, HalfSpaceHZ RightHalf)
+    , (AttMidZone, WingHZ LeftHalf),      (AttMidZone, CentreHZ),              (AttMidZone, WingHZ RightHalf)
+    , (DefMidZone, WingHZ LeftHalf),      (DefMidZone, CentreHZ),              (DefMidZone, WingHZ RightHalf)
+    ,             (DefZone, HalfSpaceHZ LeftHalf),    (DefZone, HalfSpaceHZ RightHalf)
+    ] -- This is  the M W formation
+  , [             (AttZone, HalfSpaceHZ LeftHalf),    (AttZone, HalfSpaceHZ RightHalf)
+    , (AttMidZone, WingHZ LeftHalf),      (AttMidZone, CentreHZ),              (AttMidZone, WingHZ RightHalf)
+    ,             (DefMidZone, HalfSpaceHZ LeftHalf), (DefMidZone, HalfSpaceHZ RightHalf)
+    , (DefZone, WingHZ LeftHalf),         (DefZone, CentreHZ),                 (DefZone, WingHZ RightHalf)
+    ] -- This is the M M formation
+  , [ (AttZone, WingHZ LeftHalf),         (AttZone, CentreHZ),                 (AttZone, WingHZ RightHalf)
+    ,             (AttMidZone, HalfSpaceHZ LeftHalf), (AttMidZone, HalfSpaceHZ RightHalf)
+    ,             (DefMidZone, HalfSpaceHZ LeftHalf), (DefMidZone, HalfSpaceHZ RightHalf)
+    , (DefZone, WingHZ LeftHalf),         (DefZone, CentreHZ),                 (DefZone, WingHZ RightHalf)
+    ] -- This is the W M formation (box midfield)
+  ]
 
 
 allVerticalZones :: [VerticalZone]
@@ -39,11 +63,11 @@ zoneOccupation map' (vz, hz) =
   where
     f c vz' =
       case Map.lookup (vz', hz) map' of
-        Just _ -> c + 1
+        Just ps -> c + length ps
         Nothing -> c
     f2 c hz' =
       case Map.lookup (vz, hz') map' of
-        Just _ -> c + 1
+        Just ps -> c + length ps
         Nothing -> c
 
 verticalZone :: (Monad m, Match m, Locate2D x) => TeamId -> x -> m VerticalZone
@@ -69,23 +93,23 @@ verticalZonePos teamId vz = do
   ball <- gameBall
   ballXY <- toTeamCoordinateSystem2D teamId $ locate2D ball
 
-  let offXY = V2 (min (ballXY ^. _x + 25) (offsideXY ^. _x)) 0
+  let offXY = V2 (min (ballXY ^. _x + 36) (offsideXY ^. _x)) 0
 
   let vzl AttZone = offXY - V2 0 0
-      vzl AttMidZone = offXY - V2 7.5 0
-      vzl DefMidZone = offXY - V2 15 0
-      vzl DefZone = offXY - V2 22.5 0
+      vzl AttMidZone = offXY - V2 12 0
+      vzl DefMidZone = offXY - V2 24 0
+      vzl DefZone = offXY - V2 36 0
   vzp <- fromTeamCoordinateSystem2D teamId $ vzl vz
-  pure (vzp ^. _x, vzp ^. _x + 7.5)
+  pure (vzp ^. _x, vzp ^. _x + 12)
 
 
 horizontalZonePos :: (Monad m, Match m) => TeamId -> HorizontalZone -> m (Double, Double)
 horizontalZonePos teamId hz = do
   let hzl (Just (WingHZ LeftHalf)) = V2 0 (-34)
-      hzl (Just (HalfSpaceHZ LeftHalf)) = V2 0 (-14.66)
-      hzl (Just CentreHZ) = V2 0 0
-      hzl (Just (HalfSpaceHZ RightHalf)) = V2 0 14.66
-      hzl (Just (WingHZ RightHalf)) = V2 0 27.08
+      hzl (Just (HalfSpaceHZ LeftHalf)) = V2 0 (-20.16)
+      hzl (Just CentreHZ) = V2 0 (-9.15)
+      hzl (Just (HalfSpaceHZ RightHalf)) = V2 0 9.15
+      hzl (Just (WingHZ RightHalf)) = V2 0 20.16
       hzl Nothing = 34
       nextHz (WingHZ LeftHalf) = Just $ HalfSpaceHZ LeftHalf
       nextHz (HalfSpaceHZ LeftHalf) = Just CentreHZ
@@ -162,6 +186,20 @@ zoneOptimalLocation teamId (vz, hz) = do
     p:_ -> pure $ blockOfSpaceCentre p
 
 
+zoneDistance ::  (VerticalZone, HorizontalZone) -> (VerticalZone, HorizontalZone) -> Double
+zoneDistance (vz, hz) (vz', hz') =
+  let vzn AttZone = 3
+      vzn AttMidZone = 2
+      vzn DefMidZone = 1
+      vzn DefZone = 0
+      hzn (WingHZ LeftHalf) = 0
+      hzn (HalfSpaceHZ LeftHalf) = 1
+      hzn CentreHZ = 2
+      hzn (HalfSpaceHZ RightHalf) = 3
+      hzn (WingHZ RightHalf) = 4
+  in sqrt $ 4 / 3 * (vzn vz - vzn vz') ** 2 + (hzn hz - hzn hz') ** 2
+      
+
 
 positionalPlayZone :: (Monad m, Match m, Locate2D x) => TeamId -> x -> m (VerticalZone, HorizontalZone)
 positionalPlayZone teamId x = (,) <$> verticalZone teamId x <*> pitchHorizontalZone teamId x
@@ -174,21 +212,41 @@ ppInPossessionDesiredPosition player = do
   offsideLineX <- offsideLine (playerTeamId player)
   attackingDirection' <- attackingDirection (playerTeamId player)
 
+  team <- getTeam (playerTeamId player)
+  let (PositionalPlayInPossessionSystem ppMap) = teamInPossessionSystem team  
+
   playerSt <- getPlayerState player
 
   allTeamPlayers <- teamPlayers (playerTeamId player)
 
   zonesAndPlayers <- traverse (\p -> (, p) <$> positionalPlayZone (playerTeamId player) p )  allTeamPlayers
+  myZone <- positionalPlayZone (playerTeamId player) playerSt
+  let expectedZone = fromJust $ Map.lookup player ppMap
   let zonePlayers = Map.map (fmap snd) $ groupByKey fst zonesAndPlayers
-  let validZonesToMoveTo = filter (\z -> isValid (zoneOccupation zonePlayers z) && isNothing (Map.lookup z zonePlayers)) allZones
+      isZoneEmptyOrOccupiedOnlyByThisPlayer z = 
+        case Map.lookup z zonePlayers of
+          Just [p] -> playerStatePlayer p == player
+          Nothing  -> True
+          _        -> False
+      
+      validZonesToMoveTo = sortOn (zoneDistance myZone) $ filter (\z -> expectedZone == z || (isValid (zoneOccupation zonePlayers z) && isZoneEmptyOrOccupiedOnlyByThisPlayer z)) allZones
 
-  team <- getTeam (playerTeamId player)
+  logOutput player
+  logOutput myZone
+  logOutput validZonesToMoveTo
 
-  let (PositionalPlayInPossessionSystem ppMap) = teamInPossessionSystem team
+  zoneOptimalLocation (playerTeamId player) expectedZone
 
-  case Map.lookup player ppMap of
-    Just (vz, hz) -> zoneOptimalLocation (playerTeamId player) (vz, hz)
-    Nothing -> pure $ V2 0 0
+  -- case validZonesToMoveTo of
+  --   zn:_ -> zoneOptimalLocation (playerTeamId player) zn
+  --   _    -> 
+  --     case Map.lookup player ppMap of
+  --       Just (vz, hz) -> zoneOptimalLocation (playerTeamId player) (vz, hz)
+  --       Nothing -> zoneOptimalLocation (playerTeamId player) myZone
+      
+      
+
+  -- 
 
   where
     isValid (vzCount, hzCount) = vzCount <= 3 && hzCount <= 2

@@ -178,7 +178,7 @@ data VerticalZone
   | DefMidZone
   | AttMidZone
   | AttZone
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 data HorizontalHalf
   = LeftHalf
