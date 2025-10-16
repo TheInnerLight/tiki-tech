@@ -71,7 +71,14 @@ Tiki Tech uses a number of concepts to capture elements of the game.
 
   The match engine makes heavy use of STM to handle atomic updates of the match state in a multithreaded execution context.
 
+## Development
 
-  
+It is recommended to get started using Nix - this will give you all the tooling and dependencies you need to run this locally.
+
+1. Install [Nix (the Package Manager)](https://nixos.org/download/).
+2. Make sure you have flakes enabled: Add `experimental-features = nix-command flakes` in `~/.config/nix/nix.conf` or `/etc/nix/nix.conf`
+3. Run `nix develop` in the repo root folder to get a development shell with all the tooling.
+
+
 
 
