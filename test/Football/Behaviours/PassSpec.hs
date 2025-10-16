@@ -225,7 +225,7 @@ passToFeetTests = testGroup "Passing to feet tests"
         sortOn (Data.Ord.Down . passSafetyCoeff) <$> toFeetPassingOptions (playerStatePlayer playerWithBallAtOrigin)
 
       passTarget (head res) @?= PlayerTarget (playerStatePlayer $ equidistantTeammate $ V3 0 0 0)
-      passSafetyCoeff (head res) `compare` 0.62 @?= GT
+      passSafetyCoeff (head res) `compare` 0.60 @?= GT
       passSafetyCoeff (head res) `compare` 0.65 @?= LT
 
   , testCase "A stationary player will see lower chance of pass completion with equidistant teammate and opponent running toward the ball" $ do

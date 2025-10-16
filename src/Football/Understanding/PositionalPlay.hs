@@ -100,7 +100,7 @@ verticalZonePos teamId vz = do
       vzl DefMidZone = offXY - V2 24 0
       vzl DefZone = offXY - V2 36 0
   vzp <- fromTeamCoordinateSystem2D teamId $ vzl vz
-  pure (vzp ^. _x, vzp ^. _x + 12)
+  pure (vzp ^. _x - 12, vzp ^. _x)
 
 
 horizontalZonePos :: (Monad m, Match m) => TeamId -> HorizontalZone -> m (Double, Double)
@@ -231,9 +231,9 @@ ppInPossessionDesiredPosition player = do
       
       validZonesToMoveTo = sortOn (zoneDistance myZone) $ filter (\z -> expectedZone == z || (isValid (zoneOccupation zonePlayers z) && isZoneEmptyOrOccupiedOnlyByThisPlayer z)) allZones
 
-  logOutput player
-  logOutput myZone
-  logOutput validZonesToMoveTo
+  --logOutput player
+  --logOutput myZone
+  --logOutput validZonesToMoveTo
 
   zoneOptimalLocation (playerTeamId player) expectedZone
 

@@ -24,10 +24,8 @@ canKick player = do
     let (dist, closestBallPos, _) = distanceAndClosestInterceptsWithinTimeStep (-1/30) (ballPositionVector ball, ballMotionVector ball) (playerStatePositionVector player, playerStateMotionVector player)
 
     if dist <= 0.7 then do
-      logOutput $ "Can Kick!!!!" ++ show (playerStatePlayer player)
       pure $ Just closestBallPos
     else if dist <= 1.0 then do
-      logOutput $ "Nearly!!!!" ++ show (playerStatePlayer player)
       pure Nothing
     else
       pure Nothing
@@ -39,7 +37,7 @@ kickBallInstr playerState kickSuccess = do
     Just r -> do
       playerState'' <-  kickSuccess r playerState
       let player = playerStatePlayer playerState''
-      logOutput ("Player: " ++ show (playerTeamId player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
+      --logOutput ("Player: " ++ show (playerTeamId player) ++ " " ++ show (playerNumber player) ++ " " ++ show (playerStateIntention playerState''))
       pure playerState''
     Nothing -> pure playerState
 

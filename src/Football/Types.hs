@@ -115,7 +115,7 @@ data Restart
   | CornerKick TeamId (V2 Double)
   | GoalKick TeamId (V2 Double)
   | KickOff TeamId
-  deriving Eq
+  deriving (Eq, Show)
  
 data GameHalf
   = FirstHalf
@@ -150,6 +150,7 @@ data MatchLogEntry
   = GoalLogEntry Goal
   | TouchLogEntry TouchOfBall
   | RestartLogEntry Restart
+  deriving (Eq, Show)
 
 
 data Pitch = Pitch

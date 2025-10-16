@@ -8,7 +8,6 @@ import Football.Match (Match(..), AttackingDirection (AttackingLeftToRight))
 import Football.Types
 import Football.Understanding.Space (pitchHorizontalZone)
 import Football.Understanding.Space.Data
-import Football.Understanding.Space.Data (HorizontalZone(CentreHZ))
 
 newtype TestMLR a = TestM {unTestMLR :: IO a}
   deriving (Functor, Applicative, Monad)
@@ -22,13 +21,13 @@ runTestMLR = unTestMLR
 spaceSpecTests :: TestTree
 spaceSpecTests = testGroup "SpaceSpec tests"
   [ testCase "Top of pitch is on left wing when attacking left to right" $ do
-      result <- runTestMLR $ pitchHorizontalZone TeamId1 (0.0 :: Double, 0.0 :: Double)
+      result <- runTestMLR $ pitchHorizontalZone TeamId1 (0.0 :: Double, -30.0 :: Double)
       result @?= WingHZ LeftHalf
   , testCase "Middle of pitch is in centre when attacking left to right" $ do
-      result <- runTestMLR $ pitchHorizontalZone TeamId1 (0.0 :: Double, 34.0 :: Double)
+      result <- runTestMLR $ pitchHorizontalZone TeamId1 (0.0 :: Double, 0.0 :: Double)
       result @?= CentreHZ
   , testCase "Bottom of pitch is on right wing when attacking left to right" $ do
-      result <- runTestMLR $ pitchHorizontalZone TeamId1 (0.0 :: Double, 68.0 :: Double)
+      result <- runTestMLR $ pitchHorizontalZone TeamId1 (0.0 :: Double, 30.0 :: Double)
       result @?= WingHZ RightHalf
   ]
 

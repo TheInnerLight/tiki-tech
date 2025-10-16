@@ -9,7 +9,6 @@ import Football.Match (Match(..), AttackingDirection (AttackingLeftToRight, Atta
 import Football.Types
 import Football.Understanding.Space (pitchHorizontalZone)
 import Football.Understanding.Space.Data
-import Football.Understanding.Space.Data (HorizontalZone(CentreHZ))
 import Football.Understanding.ExpectedGoals (locationXG)
 import Linear (V2(V2))
 

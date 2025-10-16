@@ -26,16 +26,20 @@ distanceAndClosestInterceptsTests = testGroup "Distance and Closest Intercepts t
 
       let (t, p1, p2) = distanceAndClosestInterceptsWithinTimeStep (1.0) (v1p, v1m) (v2p, v2m)
 
+      print (t, p1, p2)
+
       t @?~= 1.41421356
       p1 @?= v1p
       p2 @?= v2p
   , testCase "Objects moving toward should have closer intercept" $ do
       let v1p = V3 0 0 0
-          v1m = V3 1 0 0
+          v1m = V3 0.707 (-0.707) 0
           v2p = V3 1 (-1) 0
           v2m = V3 (-0.707) 0.707 0
 
       let (t, p1, p2) = distanceAndClosestInterceptsWithinTimeStep (1.0) (v1p, v1m) (v2p, v2m)
+
+      print (t, p1, p2)
 
       t @?~= 0.414364574
       p1 @?= V3 0.0 0.0 0.0

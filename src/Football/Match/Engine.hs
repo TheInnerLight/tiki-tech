@@ -67,9 +67,10 @@ matchEventLogImpl = do
   st <- has
   atomise $ readTVar $ matchStateEventLog st
 
-recordInMatchEventLogImpl :: (Monad m, Has m MatchState, Atomise m) => MatchLogEntry -> m ()
+recordInMatchEventLogImpl :: (Monad m, Has m MatchState, Atomise m, Log m) => MatchLogEntry -> m ()
 recordInMatchEventLogImpl event = do
   st <- has
+  logOutput event
   atomise $ modifyTVar (matchStateEventLog st) (event : )
 
 getGameStateImpl :: (Monad m, Has m MatchState, Atomise m) => m GameState
@@ -91,20 +92,22 @@ attackingDirectionImpl team =
     TeamId1 -> pure AttackingLeftToRight
     TeamId2 -> pure AttackingRightToLeft
 
-kickImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => Player -> TypeOfTouch -> V3 Double -> V3 Double -> m Ball
+kickImpl :: (Monad m, Match m, Has m MatchState, Atomise m, Log m) => Player -> TypeOfTouch -> V3 Double -> V3 Double -> m Ball
 kickImpl player typeOfTouch loc motionVector' = do
   (state :: MatchState) <- has
   time <- currentGameTime
   let stBall = matchStateBall state
   let stLastPlayerBall = matchStateLastPlayerTouchedBall state
-  atomise $ do
+  (ball',loc2d) <- atomise $ do
     ball <- readTVar stBall
     let ball' = ball { ballPositionVector = loc, ballMotionVector = ballMotionVector ball + motionVector'  }
     let loc2d = locate2D loc
     writeTVar stBall ball'
     writeTMVar stLastPlayerBall player
-    modifyTVar' (matchStateEventLog state) (TouchLogEntry (TouchOfBall player time typeOfTouch loc2d) :)
-    pure ball'
+    --modifyTVar' (matchStateEventLog state) (TouchLogEntry (TouchOfBall player time typeOfTouch loc2d) :)
+    pure (ball', loc2d)
+  recordInMatchEventLogImpl $ TouchLogEntry (TouchOfBall player time typeOfTouch loc2d)
+  pure ball'
 
 setBallMotionParamsImpl :: (Monad m, Match m, Has m MatchState, Atomise m) => V3 Double -> V3 Double -> m Ball
 setBallMotionParamsImpl ballPos ballMot = do
@@ -129,7 +132,7 @@ enactIntentions = do
         DribbleIntention iceptloc kloc -> dribbleToLocation kloc playerState
         PassIntention target iceptloc mot t -> do
           tNow <- currentGameTime
-          if tNow >= gameTimeAddSeconds t (-0.1) then
+          if tNow >= gameTimeAddSeconds t (-0.1) then do
             kickBallWithMotion mot PassTouch playerState
           else do
             ball <- gameBall
