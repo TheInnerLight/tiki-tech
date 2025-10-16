@@ -27,7 +27,6 @@ import Football.Types
 import qualified Data.Text as T
 import qualified SDL.Video.Renderer as SVR
 import Football.Locate2D (Locate2D(locate2D))
-import Data.Text as T
 import qualified Text.Printf as TText
 
 white :: SP.Color

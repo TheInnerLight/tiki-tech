@@ -37,7 +37,7 @@ import App
 import Data.Time.Clock.System (getSystemTime, SystemTime (systemSeconds, systemNanoseconds))
 import Control.Concurrent (threadDelay, forkIO)
 import Control.Monad.Reader.Class (MonadReader(ask))
-import Data.Text as T
+import qualified Data.Text as T
 import qualified Text.Printf as TText
 import Football.Events.Goal (score)
 import Football.Understanding.Zones (getZoneMap)
