@@ -131,6 +131,8 @@ library
     -- Base language which the package is written in.
     default-language: Haskell2010
 
+    include-dirs: cbits
+
     c-sources: cbits/jc_voronoi.c
 
 executable tiki-tech
