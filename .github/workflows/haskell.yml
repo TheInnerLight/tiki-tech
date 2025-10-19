@@ -10,36 +10,13 @@ permissions:
   contents: read
 
 jobs:
-  build:
-
+  tests:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - uses: haskell/actions/setup@v2
-      with:
-        ghc-version: '9.4.4'
-        cabal-version: '3.10.1.0'
-
-    - name: Cache
-      uses: actions/cache@v3
-      env:
-        cache-name: cache-cabal
-      with:
-        path: ~/.cabal
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
-
-    - name: Install native dependencies
-      run: sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libsdl2-gfx-dev
-    - name: Install dependencies
-      run: |
-        cabal update
-        cabal build --only-dependencies --enable-tests --enable-benchmarks
-    - name: Build
-      run: cabal build --enable-tests --enable-benchmarks all
-    - name: Run tests
-      run: cabal test all
+    - uses: actions/checkout@v5
+    - uses: cachix/install-nix-action@v31
+    - name: Pre-build devShell
+      run: nix build --no-link .#devShells.$(nix eval --impure --raw --expr 'builtins.currentSystem').default
+    - name: Run cabal test in Nix devShell
+      shell: 'nix develop -c bash -e {0}'
+      run: cabal test

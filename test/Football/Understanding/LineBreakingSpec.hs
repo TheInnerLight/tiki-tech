@@ -10,13 +10,13 @@ import Football.Types
 import Football.Understanding.Space (pitchHorizontalZone)
 import Football.Understanding.Space.Data
 import Football.Understanding.Space.Data (HorizontalZone(CentreHZ))
-import Control.Monad.Cont (MonadIO)
 import Control.Monad.Reader (ReaderT (runReaderT), MonadReader (ask, local), asks)
 import Core (Cache(..))
 import Linear (V3(V3), V2 (V2))
 import Football.Understanding.LineBreaking (oppositionLines)
 import Data.Maybe (fromJust)
 import Data.Foldable (find)
+import Control.Monad.IO.Class
 
 defaultPlayerSpeed :: PlayerSpeed
 defaultPlayerSpeed =
