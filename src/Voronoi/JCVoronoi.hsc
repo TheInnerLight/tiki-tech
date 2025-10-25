@@ -1,4 +1,4 @@
- {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface #-}
 
 module Voronoi.JCVoronoi where
 
@@ -11,6 +11,8 @@ import Foreign.C (CInt)
 import GHC.IO (unsafePerformIO)
 import Linear (V3 (V3), cross, V2 (V2), _x, _y)
 import Data.Foldable (find)
+
+#include "jc_voronoi.c"
 
 foreign import ccall "generate_from_points" generate_from_points :: Int -> Ptr JCVRectI -> Ptr JCVPoint -> IO (Ptr JCVDiagramI)
 foreign import ccall "jcv_diagram_get_sites" jcv_diagram_get_sites :: Ptr JCVDiagramI -> IO (Ptr JCVSite)
@@ -63,50 +65,50 @@ data JCVPoly = JCVPoly
   } deriving Show
 
 instance Storable JCVPoint where
-  alignment _ = 8
-  sizeOf _ = 16
-  peek ptr = JCVPoint <$> peekByteOff ptr 0 <*> peekByteOff ptr 8 
+  alignment _ = (#alignment jcv_point)
+  sizeOf _ = (#size jcv_point)
+  peek ptr = JCVPoint <$> (#peek jcv_point, x) ptr <*> (#peek jcv_point, y) ptr
   poke ptr (JCVPoint x y) = do
-    pokeByteOff ptr 0 x
-    pokeByteOff ptr 8 y
+    (#poke jcv_point, x) ptr x
+    (#poke jcv_point, y) ptr y
 
 instance Storable JCVRectI where
-  alignment _ = 16
-  sizeOf _ = 32
-  peek ptr = JCVRectI <$> peekByteOff ptr 0 <*> peekByteOff ptr 16
+  alignment _ = (#alignment jcv_rect)
+  sizeOf _ = (#size jcv_rect)
+  peek ptr = JCVRectI <$> (#peek jcv_rect, min) ptr <*> (#peek jcv_rect, max) ptr
   poke ptr (JCVRectI p1 p2) = do
-    pokeByteOff ptr 0 p1
-    pokeByteOff ptr 16 p2
+    (#poke jcv_rect, min) ptr p1
+    (#poke jcv_rect, max) ptr p2
 
 instance Storable JCVEdgeI where
-  alignment _ = 16
-  sizeOf _ = 8 + 2 * 8 + 2 * 16 + 3 * 8
-  peek ptr = JCVEdgeI <$> peekByteOff ptr 0 <*> peekByteOff ptr 8 <*> peekByteOff ptr 16 <*> peekByteOff ptr 24 <*> peekByteOff ptr 40
+  alignment _ = (#alignment jcv_edge)
+  sizeOf _ = (#size jcv_edge)
+  peek ptr = JCVEdgeI <$> (#peek jcv_edge, next) ptr <*> (#peek jcv_edge, sites[0]) ptr <*> (#peek jcv_edge, sites[1]) ptr <*> (#peek jcv_edge, pos[0]) ptr <*> (#peek jcv_edge, pos[1]) ptr
   poke ptr (JCVEdgeI ne s1 s2 e1 e2) = do
-    pokeByteOff ptr 0 ne
-    pokeByteOff ptr 8 s1
-    pokeByteOff ptr 16 s2
-    pokeByteOff ptr 24 e1
-    pokeByteOff ptr 40 e2
+    (#poke jcv_edge, next) ptr ne
+    (#poke jcv_edge, sites[0]) ptr s1
+    (#poke jcv_edge, sites[1]) ptr s2
+    (#poke jcv_edge, pos[0]) ptr e1
+    (#poke jcv_edge, pos[1]) ptr e2
 
 instance Storable JCVSite where
-  alignment _ = 16
-  sizeOf _ = 16 + 4 + 8
-  peek ptr = JCVSite <$> peekByteOff ptr 0 <*> peekByteOff ptr 16 <*> peekByteOff ptr 20
+  alignment _ = (#alignment jcv_site)
+  sizeOf _ = (#size jcv_site)
+  peek ptr = JCVSite <$> (#peek jcv_site, p) ptr <*> (#peek jcv_site, index) ptr <*> (#peek jcv_site, edges) ptr
   poke ptr (JCVSite p i e) = do
-    pokeByteOff ptr 0 p
-    pokeByteOff ptr 16 i
-    pokeByteOff ptr 20 e
+    (#poke jcv_site, p) ptr p
+    (#poke jcv_site, index) ptr i
+    (#poke jcv_site, edges) ptr e
 
 instance Storable JCVDiagramI where
-  alignment _ = 16
-  sizeOf _ = 8 + 4 + 2*16
-  peek ptr = JCVDiagramI <$> peekByteOff ptr 0 <*> peekByteOff ptr 8 <*> peekByteOff ptr 12 <*> peekByteOff ptr 28
+  alignment _ = (#alignment jcv_diagram)
+  sizeOf _ = (#size jcv_diagram)
+  peek ptr = JCVDiagramI <$> (#peek jcv_diagram, internal) ptr <*> (#peek jcv_diagram, numsites) ptr <*> (#peek jcv_diagram, min) ptr <*> (#peek jcv_diagram, max) ptr
   poke ptr (JCVDiagramI iPtr ns minP maxP) = do
-    pokeByteOff ptr 0 iPtr
-    pokeByteOff ptr 8 ns
-    pokeByteOff ptr 12 minP
-    pokeByteOff ptr 28 maxP
+    (#poke jcv_diagram, internal) ptr iPtr
+    (#poke jcv_diagram, numsites) ptr ns
+    (#poke jcv_diagram, min) ptr minP
+    (#poke jcv_diagram, max) ptr maxP
 
 
 jcVoronoi :: [V2 Double] -> IO JCVoronoiDiagram
